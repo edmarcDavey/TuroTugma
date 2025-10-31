@@ -28,7 +28,23 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        // Redirect users to role-specific dashboards when possible.
+        $user = $request->user();
+
+        // Map IDs to dashboard routes
+        $itId = '300627-101';
+        $schedulerId = '300627-201';
+
+        if ($user && $user->email === $itId) {
+            $target = route('dashboard.it', [], false);
+        } elseif ($user && $user->email === $schedulerId) {
+            $target = route('dashboard.scheduler', [], false);
+        } else {
+            // fallback to existing dashboard route (public placeholder)
+            $target = url('/dashboard');
+        }
+
+        return redirect()->intended($target);
     }
 
     /**

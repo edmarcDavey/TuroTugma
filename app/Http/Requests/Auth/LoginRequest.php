@@ -27,7 +27,8 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => ['required', 'string', 'email'],
+            // Accept site ID or email for the login identifier. The form field is still named "email"
+            'email' => ['required', 'string'],
             'password' => ['required', 'string'],
         ];
     }

@@ -17,9 +17,23 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        // Add project test user plus two local DNHS users (IDs used as the 'email' field)
+        // Ensure test user exists
+        \App\Models\User::updateOrCreate(
+            ['email' => 'test@example.com'],
+            ['name' => 'Test User', 'password' => bcrypt('password')]
+        );
+
+        // IT Coordinator
+        \App\Models\User::updateOrCreate(
+            ['email' => '300627-101'],
+            ['name' => 'IT Coordinator', 'password' => bcrypt('TuroTugma@2025/DNHS')]
+        );
+
+        // Scheduler
+        \App\Models\User::updateOrCreate(
+            ['email' => '300627-201'],
+            ['name' => 'Scheduler', 'password' => bcrypt('TuroTugma@2025/DNHS')]
+        );
     }
 }

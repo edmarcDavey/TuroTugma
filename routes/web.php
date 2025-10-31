@@ -12,6 +12,17 @@ Route::get('/dashboard', function () {
     return view('dashboard');
 });
 
+// Role-specific dashboards (require auth)
+Route::middleware('auth')->group(function () {
+    Route::get('/dashboard/it', function () {
+        return view('dashboard_it');
+    })->name('dashboard.it');
+
+    Route::get('/dashboard/scheduler', function () {
+        return view('dashboard_scheduler');
+    })->name('dashboard.scheduler');
+});
+
 // Simple pages for Features and About
 Route::get('/features', function () {
     return view('features');
