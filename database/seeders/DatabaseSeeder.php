@@ -35,5 +35,8 @@ class DatabaseSeeder extends Seeder
             ['email' => '300627-201'],
             ['name' => 'Scheduler', 'password' => bcrypt('TuroTugma@2025/DNHS')]
         );
+
+        // Ensure grade levels exist (Grade 7-12) for initial UI
+        $this->call(\Database\Seeders\InitialGradeLevelsSeeder::class);
     }
 }
