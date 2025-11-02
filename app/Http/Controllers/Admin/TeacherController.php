@@ -13,7 +13,9 @@ class TeacherController extends Controller
     public function index()
     {
         $teachers = Teacher::with(['subjects','gradeLevels'])->paginate(10);
-        return view('admin.it.teachers.index', compact('teachers'));
+        $subjects = Subject::orderBy('name')->get();
+        $gradeLevels = GradeLevel::orderBy('name')->get();
+        return view('admin.it.teachers.index', compact('teachers','subjects','gradeLevels'));
     }
 
     public function create()
@@ -28,6 +30,15 @@ class TeacherController extends Controller
         $data = $request->validate([
             'staff_id' => 'nullable|string|max:64',
             'name' => 'required|string|max:255',
+            'sex' => 'nullable|string|in:male,female,other',
+            'designation' => 'nullable|string|max:255',
+            'status_of_appointment' => 'nullable|string|max:255',
+            'course_degree' => 'nullable|string|max:255',
+            'ancillary_assignments' => 'nullable|string',
+            'course_major' => 'nullable|string|max:255',
+            'course_minor' => 'nullable|string|max:255',
+            'number_handled_per_week' => 'nullable|integer|min:0|max:8',
+            'advisory' => 'nullable|string|max:255',
             'email' => 'nullable|email',
             'contact' => 'nullable|string|max:64',
             'max_load_per_week' => 'nullable|integer|min:0',
@@ -77,6 +88,15 @@ class TeacherController extends Controller
         $data = $request->validate([
             'staff_id' => 'nullable|string|max:64',
             'name' => 'required|string|max:255',
+            'sex' => 'nullable|string|in:male,female,other',
+            'designation' => 'nullable|string|max:255',
+            'status_of_appointment' => 'nullable|string|max:255',
+            'course_degree' => 'nullable|string|max:255',
+            'ancillary_assignments' => 'nullable|string',
+            'course_major' => 'nullable|string|max:255',
+            'course_minor' => 'nullable|string|max:255',
+            'number_handled_per_week' => 'nullable|integer|min:0|max:8',
+            'advisory' => 'nullable|string|max:255',
             'email' => 'nullable|email',
             'contact' => 'nullable|string|max:64',
             'max_load_per_week' => 'nullable|integer|min:0',

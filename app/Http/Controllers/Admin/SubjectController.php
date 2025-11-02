@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Subject;
 use App\Models\GradeLevel;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 
 use Illuminate\Http\JsonResponse;
 
@@ -33,13 +35,37 @@ class SubjectController extends Controller
             'description' => 'nullable|string',
         ]);
 
+        // Normalize name for comparison (case-insensitive) and attempt to find existing
+        $searchName = Str::lower(trim($data['name']));
+        $type = $data['type'] ?? null;
+
+        // Match by name only (case-insensitive) to avoid redundant entries across different types
+        $existing = Subject::whereRaw('LOWER(name) = ?', [$searchName])->first();
+
+        if ($existing) {
+            // merge grade levels if provided
+            if (!empty($data['grade_levels'])) {
+                $validIds = GradeLevel::whereIn('id', $data['grade_levels'])->pluck('id')->toArray();
+                $current = $existing->gradeLevels()->pluck('id')->toArray();
+                $merged = array_values(array_unique(array_merge($current, $validIds)));
+                $existing->gradeLevels()->sync($merged);
+            }
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => true, 'created' => false, 'subject' => $existing], 200);
+            }
+
+            return redirect()->route('admin.it.subjects.index')->with('info','Subject already exists');
+        }
+
         $subject = Subject::create($data);
         if (!empty($data['grade_levels'])) {
-            $subject->gradeLevels()->sync($data['grade_levels']);
+            $validIds = GradeLevel::whereIn('id', $data['grade_levels'])->pluck('id')->toArray();
+            $subject->gradeLevels()->sync($validIds);
         }
 
         if ($request->ajax() || $request->wantsJson()) {
-            return response()->json(['success' => true, 'subject' => $subject], 201);
+            return response()->json(['success' => true, 'created' => true, 'subject' => $subject], 201);
         }
 
         return redirect()->route('admin.it.subjects.index')->with('success','Subject created');

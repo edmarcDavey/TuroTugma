@@ -26,16 +26,21 @@ class SectionController extends Controller
             'count' => 'nullable|integer|min:0|max:200',
             'mode' => 'nullable|in:append,replace',
             'names' => 'nullable|array',
-            'names.*' => 'required|string|max:191',
             'theme' => 'nullable|string|max:191',
             'section_naming_options' => 'nullable|array',
+            'items' => 'nullable|array',
+            'items.*.name' => 'required_with:items|string|max:191',
+            'items.*.is_special' => 'nullable|boolean',
         ]);
 
         $mode = $data['mode'] ?? 'append';
 
         // If names array provided, use it as authoritative list. Otherwise generate by count.
-        if (!empty($data['names'])) {
-            $names = array_map(function($n, $i){ return ['ordinal' => $i+1, 'name' => trim($n)]; }, array_values($data['names']), array_keys($data['names']));
+        if (!empty($data['items'])) {
+            // items contain objects with name and optional is_special
+            $names = array_map(function($it, $i){ return ['ordinal' => $i+1, 'name' => trim($it['name']), 'is_special' => !empty($it['is_special']) ? 1 : 0]; }, array_values($data['items']), array_keys($data['items']));
+        } elseif (!empty($data['names'])) {
+            $names = array_map(function($n, $i){ return ['ordinal' => $i+1, 'name' => trim($n), 'is_special' => 0]; }, array_values($data['names']), array_keys($data['names']));
         } else {
             $count = intval($data['count'] ?? 0);
             // Pass theme/options through to generation so inline theme works without persisting
@@ -63,6 +68,7 @@ class SectionController extends Controller
                     'name' => $name,
                     'ordinal' => $ordinal,
                     'code' => null,
+                    'is_special' => isset($n['is_special']) ? (bool)$n['is_special'] : false,
                 ]);
             }
         });

@@ -88,6 +88,13 @@ return [
             ],
         ],
 
+        'world_leaders' => [
+            'label' => 'World Leaders',
+            'list' => [
+                'Mandela','Churchill','Gandhi','Lincoln','Roosevelt','Kennedy','Obama','Washington','Napoleon','Alexander','Caesar','Catherine','Elizabeth','Victoria','Tokugawa','Meiji','Atatürk','Lee Kuan Yew','Trudeau','Macron','Putin','Zelensky','Nehru','Marcos','Duterte','Lee','Kim','Castro','Bolívar','Bismarck'
+            ],
+        ],
+
         'philosophers' => [
             'label' => 'Philosophers',
             'list' => [

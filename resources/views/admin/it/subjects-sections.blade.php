@@ -39,9 +39,6 @@
                             <div class="grid grid-cols-1 md:grid-cols-4 gap-3 items-center py-2 border-b">
                                 <div class="md:col-span-1 font-medium">{{ $name }}</div>
                                     <div>
-                                        <input name="count" data-year="{{ $yr }}" data-grade-id="{{ $gid }}" type="number" min="0" class="w-full border rounded px-2 py-1" value="{{ $planned }}">
-                                    </div>
-                                    <div>
                                         @php
                                             $allThemes = config('section_themes.themes');
                                             // default to a random theme key if none stored (guard when list empty)
@@ -53,9 +50,23 @@
                                             @endforeach
                                         </select>
                                     </div>
+                                    <div>
+                                        <input name="count" data-year="{{ $yr }}" data-grade-id="{{ $gid }}" type="number" min="0" class="w-full border rounded px-2 py-1" value="{{ $planned }}">
+                                    </div>
                                     
                                 <div class="md:col-span-4 mt-2">
                                     <div class="preview-area" data-year="{{ $yr }}" data-grade-id="{{ $gid }}"></div>
+                                    @php $savedSections = ($grade && $grade->sections) ? $grade->sections->sortBy('ordinal') : collect(); @endphp
+                                    @if($savedSections->count())
+                                        <div class="mt-3">
+                                            <div class="text-sm font-medium mb-2">Saved sections</div>
+                                            <div class="flex flex-wrap gap-2">
+                                                @foreach($savedSections as $sec)
+                                                    <span class="px-2 py-1 bg-gray-100 rounded text-sm">{{ $sec->name }}</span>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    @endif
                                 </div>
                             </div>
                         @endforeach
@@ -80,23 +91,34 @@
                             @endphp
                             <div class="grid grid-cols-1 md:grid-cols-4 gap-3 items-center py-2 border-b">
                                 <div class="md:col-span-1 font-medium">{{ $name }}</div>
-                                    <div>
-                                        <input name="count" data-year="{{ $yr }}" data-grade-id="{{ $gid }}" type="number" min="0" class="w-full border rounded px-2 py-1" value="{{ $planned }}">
-                                    </div>
-                                    <div>
-                                        @php
-                                            $allThemes = config('section_themes.themes');
-                                            $selectedThemeKey = $theme ?: (count($allThemes) ? array_rand($allThemes) : '');
-                                        @endphp
-                                        <select name="theme" data-year="{{ $yr }}" data-grade-id="{{ $gid }}" class="w-full border rounded px-2 py-1">
-                                            @foreach($allThemes as $tkey => $t)
-                                                <option value="{{ $tkey }}" data-label="{{ $t['label'] }}" {{ ($tkey === $selectedThemeKey) ? 'selected' : '' }}>{{ $t['label'] }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
+                                        <div>
+                                            @php
+                                                $allThemes = config('section_themes.themes');
+                                                $selectedThemeKey = $theme ?: (count($allThemes) ? array_rand($allThemes) : '');
+                                            @endphp
+                                            <select name="theme" data-year="{{ $yr }}" data-grade-id="{{ $gid }}" class="w-full border rounded px-2 py-1">
+                                                @foreach($allThemes as $tkey => $t)
+                                                    <option value="{{ $tkey }}" data-label="{{ $t['label'] }}" {{ ($tkey === $selectedThemeKey) ? 'selected' : '' }}>{{ $t['label'] }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <input name="count" data-year="{{ $yr }}" data-grade-id="{{ $gid }}" type="number" min="0" class="w-full border rounded px-2 py-1" value="{{ $planned }}">
+                                        </div>
                                     
                                 <div class="md:col-span-4 mt-2">
                                     <div class="preview-area" data-year="{{ $yr }}" data-grade-id="{{ $gid }}"></div>
+                                        @php $savedSections = ($grade && $grade->sections) ? $grade->sections->sortBy('ordinal') : collect(); @endphp
+                                        @if($savedSections->count())
+                                            <div class="mt-3">
+                                                <div class="text-sm font-medium mb-2">Saved sections</div>
+                                                <div class="flex flex-wrap gap-2">
+                                                    @foreach($savedSections as $sec)
+                                                        <span class="px-2 py-1 bg-gray-100 rounded text-sm">{{ $sec->name }}</span>
+                                                    @endforeach
+                                                </div>
+                                            </div>
+                                        @endif
                                 </div>
                             </div>
                         @endforeach
@@ -115,8 +137,58 @@
             <h2 class="font-semibold mb-3">Subjects</h2>
             <p class="text-sm text-slate-600 mb-4">Manage subjects for Junior High and Senior High separately. No seeded subjects are shown by default.</p>
 
+            <!-- Unified Add Subject form -->
+            <div class="mb-4">
+                <form id="add-subject" class="space-y-3">
+                    <div>
+                        <label class="block text-xs mb-1">Subject Name(s)</label>
+                        <textarea id="subject-name" name="name" rows="4" class="w-full border rounded px-2 py-1" placeholder="e.g. Mathematics\nScience\nEnglish (one per line)"></textarea>
+                        <div class="text-xs text-slate-500 mt-1">You may add multiple subjects at once by entering one subject per line. Commas are allowed inside titles.</div>
+                    </div>
+                    <div>
+                        <label class="block text-xs mb-1">Classification</label>
+                        <select id="subject-classification" name="classification" class="w-full border rounded px-2 py-1">
+                            <option value="abm">ABM Subjects</option>
+                            <option value="humss">HUMSS</option>
+                            <option value="stem">STEM</option>
+                            <option value="tvl">TVL</option>
+                            <option value="gas">GAS</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs mb-1">Grades</label>
+                        <div class="space-y-2">
+                            <div class="flex items-center gap-3">
+                                <label class="inline-flex items-center gap-2 group-toggle-mini"><input type="checkbox" id="select-junior" data-years="7,8,9,10"> <span class="ml-1 font-medium">Junior High (7-10)</span></label>
+                                <div class="flex items-center gap-2 ml-4">
+                                    @foreach(collect($gradeLevels)->sortBy('year') as $g)
+                                        @if($g->year >= 7 && $g->year <= 10)
+                                            <label class="inline-flex items-center gap-1 text-xs"><input type="checkbox" class="grade-checkbox mini" data-year="{{ $g->year }}" name="grades[]" value="{{ $g->id }}"> <span>{{ $g->name }}</span></label>
+                                        @endif
+                                    @endforeach
+                                </div>
+                            </div>
+
+                            <div class="flex items-center gap-3">
+                                <label class="inline-flex items-center gap-2 group-toggle-mini"><input type="checkbox" id="select-senior" data-years="11,12"> <span class="ml-1 font-medium">Senior High (11-12)</span></label>
+                                <div class="flex items-center gap-2 ml-4">
+                                    @foreach(collect($gradeLevels)->sortBy('year') as $g)
+                                        @if($g->year >= 11 && $g->year <= 12)
+                                            <label class="inline-flex items-center gap-1 text-xs"><input type="checkbox" class="grade-checkbox mini" data-year="{{ $g->year }}" name="grades[]" value="{{ $g->id }}"> <span>{{ $g->name }}</span></label>
+                                        @endif
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <button type="submit" class="bg-indigo-600 text-white px-3 py-1 rounded">Add Subject</button>
+                    </div>
+                </form>
+            </div>
+
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Junior High Subjects Card -->
+                <!-- Junior High Subjects Card (empty state / management) -->
                 <div class="border rounded p-4 bg-white">
                     <div class="flex items-center justify-between mb-3">
                         <div class="font-medium">Junior High Subjects</div>
@@ -124,40 +196,45 @@
                     </div>
 
                     <div class="mb-4">
-                        <form id="add-subject-jr" class="space-y-3">
-                            <div>
-                                <label class="block text-xs mb-1">Subject Name</label>
-                                <input id="subject-name-jr" name="name" class="w-full border rounded px-2 py-1" placeholder="e.g. Mathematics">
+                        <!-- Management area: list Junior High subjects (Grades 7-10) -->
+                        @php
+                            $juniorSubjects = $subjects->filter(function($s){
+                                return $s->gradeLevels->pluck('year')->filter(function($y){ return $y >= 7 && $y <= 10; })->count();
+                            });
+                        @endphp
+                        @if($juniorSubjects->count())
+                            @php
+                                $juniorGroups = $juniorSubjects->groupBy(function($s){ return $s->type ?: 'core'; });
+                                $typeLabels = [
+                                    'core' => 'Core Subjects',
+                                    'abm' => 'ABM',
+                                    'humss' => 'HUMSS',
+                                    'stem' => 'STEM',
+                                    'tvl' => 'TVL',
+                                    'gas' => 'GAS',
+                                    'shs_core' => 'SHS Core',
+                                ];
+                            @endphp
+                            <div class="space-y-3 text-sm">
+                                @foreach($juniorGroups as $type => $items)
+                                    <div class="border rounded">
+                                        <button type="button" class="group-toggle w-full text-left px-3 py-2 flex items-center justify-between bg-gray-50 hover:bg-gray-100" data-target="junior-{{ $type }}">
+                                            <span class="font-medium">{{ $typeLabels[$type] ?? strtoupper($type) }}</span>
+                                            <span class="text-xs text-slate-500">{{ $items->count() }} item(s)</span>
+                                        </button>
+                                        <div id="junior-{{ $type }}" class="group-body px-3 py-2">
+                                            <ul class="space-y-1">
+                                                @foreach($items as $sub)
+                                                    <li class="py-1"><div class="font-medium">{{ $sub->name }}</div></li>
+                                                @endforeach
+                                            </ul>
+                                        </div>
+                                    </div>
+                                @endforeach
                             </div>
-                            <div>
-                                <label class="block text-xs mb-1">Classification</label>
-                                <select id="subject-classification-jr" name="classification" class="w-full border rounded px-2 py-1">
-                                    <option value="core">Core</option>
-                                    <option value="__add__">Add classification...</option>
-                                </select>
-                                <input id="subject-classification-jr-new" name="classification_new" type="text" placeholder="Type new classification (e.g. Specialized)" class="w-full border rounded px-2 py-1 mt-2 hidden">
-                            </div>
-                            @foreach($gradeLevels->whereIn('year', range(7,10)) as $g)
-                                <input type="hidden" name="grades[]" value="{{ $g->id }}">
-                            @endforeach
-                            <div>
-                                <button type="submit" class="bg-indigo-600 text-white px-3 py-1 rounded">Add Subject (Junior High)</button>
-                            </div>
-                        </form>
-                    </div>
-
-                    <div>
-                        <div class="font-semibold mb-2">Regular Subjects</div>
-                        <ul class="list-disc pl-5 space-y-1 text-sm text-slate-700">
-                            <li>Filipino</li>
-                            <li>English</li>
-                            <li>Mathematics</li>
-                            <li>Science</li>
-                            <li>Araling Panlipunan (Social Studies)</li>
-                            <li>Edukasyon sa Pagpapakatao (Values Education)</li>
-                            <li>Technology &amp; Livelihood Education (TLE)</li>
-                            <li>Music, Arts, Physical Education, and Health (MAPEH)</li>
-                        </ul>
+                        @else
+                            <div class="text-sm text-slate-500">No subjects yet for Junior High.</div>
+                        @endif
                     </div>
                 </div>
 
@@ -169,29 +246,37 @@
                     </div>
 
                     <div class="mb-4">
-                        <form id="add-subject-sr" class="space-y-3">
-                            <div>
-                                <label class="block text-xs mb-1">Subject Name</label>
-                                <input id="subject-name-sr" name="name" class="w-full border rounded px-2 py-1" placeholder="e.g. Research">
+                        <!-- Management area: list Senior High subjects (Grades 11-12) -->
+                        @php
+                            $seniorSubjects = $subjects->filter(function($s){
+                                return $s->gradeLevels->pluck('year')->filter(function($y){ return $y >= 11 && $y <= 12; })->count();
+                            });
+                        @endphp
+                        @if($seniorSubjects->count())
+                            @php
+                                $seniorGroups = $seniorSubjects->groupBy(function($s){ return $s->type ?: 'core'; });
+                            @endphp
+                            <div class="space-y-3 text-sm">
+                                @foreach($seniorGroups as $type => $items)
+                                    <div class="border rounded">
+                                        <button type="button" class="group-toggle w-full text-left px-3 py-2 flex items-center justify-between bg-gray-50 hover:bg-gray-100" data-target="senior-{{ $type }}">
+                                            <span class="font-medium">{{ $typeLabels[$type] ?? strtoupper($type) }}</span>
+                                            <span class="text-xs text-slate-500">{{ $items->count() }} item(s)</span>
+                                        </button>
+                                        <div id="senior-{{ $type }}" class="group-body px-3 py-2">
+                                            <ul class="space-y-1">
+                                                @foreach($items as $sub)
+                                                    <li class="py-1"><div class="font-medium">{{ $sub->name }}</div></li>
+                                                @endforeach
+                                            </ul>
+                                        </div>
+                                    </div>
+                                @endforeach
                             </div>
-                            <div>
-                                <label class="block text-xs mb-1">Classification</label>
-                                <select id="subject-classification-sr" name="classification" class="w-full border rounded px-2 py-1">
-                                    <option value="core">Core</option>
-                                    <option value="__add__">Add classification...</option>
-                                </select>
-                                <input id="subject-classification-sr-new" name="classification_new" type="text" placeholder="Type new classification (e.g. Specialized)" class="w-full border rounded px-2 py-1 mt-2 hidden">
-                            </div>
-                            @foreach($gradeLevels->whereIn('year', range(11,12)) as $g)
-                                <input type="hidden" name="grades[]" value="{{ $g->id }}">
-                            @endforeach
-                            <div>
-                                <button type="submit" class="bg-indigo-600 text-white px-3 py-1 rounded">Add Subject (Senior High)</button>
-                            </div>
-                        </form>
+                        @else
+                            <div class="text-sm text-slate-500">No subjects yet for Senior High.</div>
+                        @endif
                     </div>
-
-                    <div class="text-sm text-slate-500">No subjects yet for Senior High.</div>
                 </div>
             </div>
         </div>
@@ -201,6 +286,31 @@
 @endsection
 
 @section('scripts')
+<!-- Toggle pill styles for Regular / Special -->
+<style>
+    /* container for previous pill kept for backwards compat */
+    .toggle-pill{ display:inline-flex; align-items:center; gap:1rem; border-radius:9999px; padding:6px 12px; cursor:pointer; user-select:none; border:1px solid #e6eef6; background:#f8fafc; }
+
+    /* Segmented two-button control (Regular / Special) */
+    .seg-toggle{ display:flex; position:relative; align-items:stretch; border-radius:9999px; overflow:visible; border:1px solid #d7e1e6; }
+    /* center divider drawn as pseudo-element so there's no layout gap between buttons */
+    /* make it thinner and sit above the button background but under the focus ring */
+    .seg-toggle::before{ content:''; position:absolute; left:50%; top:8px; bottom:8px; width:2px; background:rgba(59,65,151,0.08); transform:translateX(-50%); border-radius:2px; z-index:3; pointer-events:none; }
+    /* focus visuals intentionally removed per user preference */
+    .seg-toggle .seg-btn{ flex:1 1 0; padding:10px 16px; font-size:0.95rem; background:transparent; border:0; cursor:pointer; color:#334155; margin:0; line-height:1; display:inline-flex; align-items:center; justify-content:center; font-weight:600; position:relative; z-index:2; }
+    /* active uses brand blue and white text; keep weight consistent */
+    .seg-toggle .seg-btn.active{ background:#3B4197; color:#ffffff; }
+    .seg-toggle .seg-btn:not(.active){ opacity:0.95; }
+    /* remove per-button box-shadow focus which produced rectangular artifact; rely on container focus ring instead */
+    .seg-toggle .seg-btn:focus{ outline:0; }
+    /* rounded halves so active background respects the capsule ends */
+    .seg-toggle .seg-left{ border-radius:9999px 0 0 9999px; }
+    .seg-toggle .seg-right{ border-radius:0 9999px 9999px 0; }
+    .seg-toggle.pill-small .seg-btn{ padding:6px 10px; font-size:0.82rem; }
+
+    /* keep old pill styles for any remaining references */
+    .toggle-pill .pill-label{ font-size:0.85rem; padding:4px 8px; color:#475569; display:inline-block; position:relative; z-index:3; transition:color .12s ease, opacity .12s ease; }
+</style>
 <div id="ss-hooks" style="display:none"
     data-preview-url="{{ route('admin.it.grade-levels.preview') }}"
     data-subject-store-url="{{ route('admin.it.subjects.store') }}"
@@ -225,7 +335,7 @@
         async function postJSON(url, body){
             const res = await fetch(url, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token },
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token, 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
                 body: JSON.stringify(body)
             });
             return res.json();
@@ -248,6 +358,40 @@
             return false;
         }
 
+        // Delegated handler: segmented two-button Regular / Special control
+        document.addEventListener('click', function(e){
+            // if a segment button was clicked
+            const segBtn = e.target.closest ? e.target.closest('.seg-btn') : null;
+            if(!segBtn) return;
+            const container = segBtn.closest('.btn-toggle-special');
+            if(!container) return;
+            const val = segBtn.getAttribute('data-value') === '1' ? '1' : '0';
+            container.dataset.special = val;
+            container.setAttribute('aria-pressed', val === '1' ? 'true' : 'false');
+            // update active classes on children
+            const children = Array.from(container.querySelectorAll('.seg-btn'));
+            children.forEach(c => c.classList.toggle('active', c === segBtn));
+        });
+
+        // Ensure toggles default to Regular when not explicitly set by server
+        function ensureToggleDefaults(container){
+            if(!container) container = document;
+            const toggles = Array.from(container.querySelectorAll('.btn-toggle-special'));
+            toggles.forEach(t=>{
+                // if dataset.special is missing/empty, set default to '0' (Regular)
+                if(typeof t.dataset.special === 'undefined' || t.dataset.special === null || t.dataset.special === ''){
+                    t.dataset.special = '0';
+                }
+                // update visual state based on dataset.special
+                const isSpecial = t.dataset.special === '1';
+                t.setAttribute('aria-pressed', isSpecial ? 'true' : 'false');
+                const left = t.querySelector('.seg-left');
+                const right = t.querySelector('.seg-right');
+                if(left) left.classList.toggle('active', !isSpecial);
+                if(right) right.classList.toggle('active', isSpecial);
+            });
+        }
+
         // Preview for inline theme (anonymous preview)
         document.querySelectorAll('.btn-preview').forEach(btn => {
             btn.addEventListener('click', async (e) => {
@@ -266,13 +410,21 @@
                     const list = document.createElement('div');
                     list.className = 'space-y-1';
                     names.forEach((n, idx) => {
-                        const name = (typeof n === 'string') ? n : (n.name ?? '');
+                        const payload = (typeof n === 'string') ? { name: n } : n || {};
+                        const name = payload.name ?? '';
+                        const isSpecial = payload.is_special == 1 || payload.is_special === true ? true : false;
                         const row = document.createElement('div');
                         row.className = 'flex items-center gap-2';
-                        row.innerHTML = `<input data-idx="${idx}" class="w-full border rounded px-2 py-1 section-name-input" value="${name}"/>`;
+                        row.innerHTML = `<input data-idx="${idx}" class="w-full border rounded px-2 py-1 section-name-input" value="${name}"/>` +
+                                        `<div class="btn-toggle-special seg-toggle ml-2 pill-small" data-idx="${idx}" data-special="${isSpecial ? '1' : '0'}" role="tablist" aria-pressed="${isSpecial ? 'true' : 'false'}">` +
+                                            `<button type="button" class="seg-btn seg-left ${isSpecial ? '' : 'active'}" data-value="0">Regular</button>` +
+                                            `<button type="button" class="seg-btn seg-right ${isSpecial ? 'active' : ''}" data-value="1">Special</button>` +
+                                        `</div>`;
                         list.appendChild(row);
                     });
                     area.appendChild(list);
+                    ensureToggleDefaults(area);
+                    // (removed per-list mark-all controls — use per-row toggle buttons)
                 }
             });
         });
@@ -304,13 +456,21 @@
                             const list = document.createElement('div');
                             list.className = 'space-y-1';
                             preview.forEach((item, idx) => {
-                                const name = (typeof item === 'string') ? item : (item.name ?? '');
+                                const payload = (typeof item === 'string') ? { name: item } : item || {};
+                                const name = payload.name ?? '';
+                                const isSpecial = payload.is_special == 1 || payload.is_special === true ? true : false;
                                 const row = document.createElement('div');
-                                row.className = 'py-1';
-                                row.innerHTML = `<input data-idx="${idx}" class="w-full border rounded px-2 py-1 section-name-input" value="${name}"/>`;
+                                row.className = 'flex items-center gap-2 py-1';
+                                row.innerHTML = `<input data-idx="${idx}" class="flex-1 border rounded px-2 py-1 section-name-input" value="${name}"/>` +
+                                                `<div class="btn-toggle-special seg-toggle ml-2 pill-small" data-idx="${idx}" data-special="${isSpecial ? '1' : '0'}" role="tablist" aria-pressed="${isSpecial ? 'true' : 'false'}">` +
+                                                    `<button type="button" class="seg-btn seg-left ${isSpecial ? '' : 'active'}" data-value="0">Regular</button>` +
+                                                    `<button type="button" class="seg-btn seg-right ${isSpecial ? 'active' : ''}" data-value="1">Special</button>` +
+                                                `</div>`;
                                 list.appendChild(row);
                             });
                             area.appendChild(list);
+                            ensureToggleDefaults(area);
+                            // (removed per-list mark-all controls — use per-row toggle buttons)
                         }
                     }
                 } catch(err){
@@ -346,12 +506,17 @@
             btn.addEventListener('click', async (e) => {
                 const gid = btn.getAttribute('data-grade-id');
                 const area = document.querySelector('.preview-area[data-grade-id="'+gid+'"]');
-                const inputs = Array.from(area.querySelectorAll('.section-name-input')).map(i=>i.value.trim()).filter(Boolean);
-                if(!inputs.length){ alert('No section names to save'); return; }
-                const resp = await postJSON(`/admin/it/grade-levels/${gid}/sections/bulk-create`, { names: inputs });
+                const items = Array.from(area.querySelectorAll('.section-name-input')).map(i=>{
+                    const idx = i.getAttribute('data-idx');
+                    const name = i.value.trim();
+                    const btn = area.querySelector('.btn-toggle-special[data-idx="'+idx+'"]');
+                    return { name, is_special: btn && btn.dataset && btn.dataset.special === '1' ? 1 : 0 };
+                }).filter(it=>it.name);
+                if(!items.length){ alert('No section names to save'); return; }
+                const resp = await postJSON(`/admin/it/grade-levels/${gid}/sections/bulk-create`, { items });
                 if(resp && (resp.sections || resp.success)){
                     const countSpan = document.querySelector('.grade-count[data-grade-id="'+gid+'"]');
-                    const newCount = Array.isArray(resp.sections) ? resp.sections.length : (resp.created_count ?? inputs.length);
+                    const newCount = Array.isArray(resp.sections) ? resp.sections.length : (resp.created_count ?? items.length);
                     if(countSpan) countSpan.textContent = newCount;
                     alert('Sections saved');
                 } else {
@@ -360,98 +525,7 @@
             });
         });
 
-        // Add subject (Junior & Senior forms)
-        const jrForm = document.getElementById('add-subject-jr');
-        if(jrForm){
-            jrForm.addEventListener('submit', async function(e){
-                e.preventDefault();
-                const form = e.target;
-                const name = document.getElementById('subject-name-jr').value.trim();
-                const selectEl = document.getElementById('subject-classification-jr');
-                const newInput = document.getElementById('subject-classification-jr-new');
-                let classification = '';
-                if(selectEl){
-                    if(selectEl.value === '__add__'){
-                        classification = newInput ? (newInput.value || '').trim() : '';
-                    } else {
-                        classification = selectEl.value;
-                    }
-                } else {
-                    classification = newInput ? (newInput.value || '').trim() : '';
-                }
-                const grades = Array.from(form.querySelectorAll('input[name="grades[]"]')).map(i=>i.value);
-                if(!name) return alert('Provide a subject name');
-                if(!classification) return alert('Provide or type a classification');
-                const resp = await postJSON(subjectStoreUrl, { name, classification, grades });
-                if(resp && resp.id){
-                    alert('Subject added (Junior High)');
-                    window.location.reload();
-                } else {
-                    alert('Failed to add subject');
-                }
-            });
-
-            // toggle new-classification input
-            const jrSelect = document.getElementById('subject-classification-jr');
-            const jrNew = document.getElementById('subject-classification-jr-new');
-            if(jrSelect && jrNew){
-                jrSelect.addEventListener('change', function(){
-                    if(this.value === '__add__'){
-                        jrNew.classList.remove('hidden');
-                        jrNew.focus();
-                    } else {
-                        jrNew.classList.add('hidden');
-                        jrNew.value = '';
-                    }
-                });
-            }
-        }
-
-        const srForm = document.getElementById('add-subject-sr');
-        if(srForm){
-            srForm.addEventListener('submit', async function(e){
-                e.preventDefault();
-                const form = e.target;
-                const name = document.getElementById('subject-name-sr').value.trim();
-                const selectEl = document.getElementById('subject-classification-sr');
-                const newInput = document.getElementById('subject-classification-sr-new');
-                let classification = '';
-                if(selectEl){
-                    if(selectEl.value === '__add__'){
-                        classification = newInput ? (newInput.value || '').trim() : '';
-                    } else {
-                        classification = selectEl.value;
-                    }
-                } else {
-                    classification = newInput ? (newInput.value || '').trim() : '';
-                }
-                const grades = Array.from(form.querySelectorAll('input[name="grades[]"]')).map(i=>i.value);
-                if(!name) return alert('Provide a subject name');
-                if(!classification) return alert('Provide or type a classification');
-                const resp = await postJSON(subjectStoreUrl, { name, classification, grades });
-                if(resp && resp.id){
-                    alert('Subject added (Senior High)');
-                    window.location.reload();
-                } else {
-                    alert('Failed to add subject');
-                }
-            });
-
-            // toggle new-classification input
-            const srSelect = document.getElementById('subject-classification-sr');
-            const srNew = document.getElementById('subject-classification-sr-new');
-            if(srSelect && srNew){
-                srSelect.addEventListener('change', function(){
-                    if(this.value === '__add__'){
-                        srNew.classList.remove('hidden');
-                        srNew.focus();
-                    } else {
-                        srNew.classList.add('hidden');
-                        srNew.value = '';
-                    }
-                });
-            }
-        }
+        
 
         // Subject grade list toggles & checkbox handlers
         document.querySelectorAll('.subject-toggle-open').forEach(btn => {
@@ -530,13 +604,21 @@
                                     const list = document.createElement('div');
                                     list.className = 'space-y-1';
                                     preview.forEach((item, idx) => {
-                                        const name = (typeof item === 'string') ? item : (item.name ?? '');
+                                        const payload = (typeof item === 'string') ? { name: item } : item || {};
+                                        const name = payload.name ?? '';
+                                        const isSpecial = payload.is_special == 1 || payload.is_special === true ? true : false;
                                         const row = document.createElement('div');
-                                        row.className = 'py-1';
-                                        row.innerHTML = `<input data-idx="${idx}" class="w-full border rounded px-2 py-1 section-name-input" value="${name}"/>`;
+                                            row.className = 'flex items-center gap-2 py-1';
+                                                row.innerHTML = `<input data-idx="${idx}" class="flex-1 border rounded px-2 py-1 section-name-input" value="${name}"/>` +
+                                                                `<div class="btn-toggle-special seg-toggle ml-2 pill-small" data-idx="${idx}" data-special="${isSpecial ? '1' : '0'}" role="tablist" aria-pressed="${isSpecial ? 'true' : 'false'}">` +
+                                                                    `<button type="button" class="seg-btn seg-left ${isSpecial ? '' : 'active'}" data-value="0">Regular</button>` +
+                                                                    `<button type="button" class="seg-btn seg-right ${isSpecial ? 'active' : ''}" data-value="1">Special</button>` +
+                                                                `</div>`;
                                         list.appendChild(row);
                                     });
                                     area.appendChild(list);
+                                    ensureToggleDefaults(area);
+                                    // (removed per-list mark-all controls — use per-row toggle buttons)
                                 }
                             }
                         } catch(err){
@@ -586,13 +668,21 @@
                         const list = document.createElement('div');
                         list.className = 'space-y-1';
                         preview.forEach((item, idx) => {
-                            const name = (typeof item === 'string') ? item : (item.name ?? '');
+                            const payload = (typeof item === 'string') ? { name: item } : item || {};
+                            const name = payload.name ?? '';
+                            const isSpecial = payload.is_special == 1 || payload.is_special === true ? true : false;
                             const row = document.createElement('div');
-                            row.className = 'py-1';
-                            row.innerHTML = `<input data-idx="${idx}" class="w-full border rounded px-2 py-1 section-name-input" value="${name}"/>`;
+                                row.className = 'flex items-center gap-2 py-1';
+                                    row.innerHTML = `<input data-idx="${idx}" class="flex-1 border rounded px-2 py-1 section-name-input" value="${name}"/>` +
+                                                    `<div class="btn-toggle-special seg-toggle ml-2 pill-small" data-idx="${idx}" data-special="${isSpecial ? '1' : '0'}" role="tablist" aria-pressed="${isSpecial ? 'true' : 'false'}">` +
+                                                        `<button type="button" class="seg-btn seg-left ${isSpecial ? '' : 'active'}" data-value="0">Regular</button>` +
+                                                        `<button type="button" class="seg-btn seg-right ${isSpecial ? 'active' : ''}" data-value="1">Special</button>` +
+                                                    `</div>`;
                             list.appendChild(row);
                         });
                         area.appendChild(list);
+                        ensureToggleDefaults(area);
+                        // (removed per-list mark-all controls — use per-row toggle buttons)
                     }
                 } catch(err){
                     console.error('live preview error', err);
@@ -621,8 +711,13 @@
                 for (const area of previewAreas){
                     const year = area.getAttribute('data-year');
                     const gidAttr = area.getAttribute('data-grade-id');
-                    const inputs = Array.from(area.querySelectorAll('.section-name-input')).map(i=>i.value.trim()).filter(Boolean);
-                    if(!inputs.length) continue;
+                    const items = Array.from(area.querySelectorAll('.section-name-input')).map(i=>{
+                        const idx = i.getAttribute('data-idx');
+                        const name = i.value.trim();
+                        const btn = area.querySelector('.btn-toggle-special[data-idx="'+idx+'"]');
+                        return { name, is_special: btn && btn.dataset && btn.dataset.special === '1' ? 1 : 0 };
+                    }).filter(it=>it.name);
+                    if(!items.length) continue;
 
                     let gradeId = gidAttr || null;
                     // if grade not persisted yet, create it
@@ -652,8 +747,8 @@
                     // now bulk-create sections
                     try{
                         const url = `/admin/it/grade-levels/${gradeId}/sections/bulk-create`;
-                        const saveResp = await postJSON(url, { names: inputs });
-                        const created = Array.isArray(saveResp.sections) ? saveResp.sections.length : (saveResp.created_count ?? inputs.length);
+                        const saveResp = await postJSON(url, { items: items });
+                        const created = Array.isArray(saveResp.sections) ? saveResp.sections.length : (saveResp.created_count ?? items.length);
                         summary.push({ year, created });
                     } catch(err){
                         console.error('bulk create error', err);
@@ -671,6 +766,102 @@
                 }
             });
         }
+
+        // Unified Add Subject form (handles both Junior and Senior submissions)
+        const addSubjectForm = document.getElementById('add-subject');
+        if(addSubjectForm){
+            addSubjectForm.addEventListener('submit', async function(e){
+                e.preventDefault();
+                // allow multiple subject names (comma or newline separated)
+                const raw = document.getElementById('subject-name').value || '';
+                const classification = document.getElementById('subject-classification').value;
+                const grades = Array.from(addSubjectForm.querySelectorAll('input[name="grades[]"]:checked')).map(i=>i.value);
+                // split only on newlines so commas inside titles are preserved
+                const names = raw.split(/\r?\n+/).map(s=>s.trim()).filter(Boolean);
+                if(!names.length) return alert('Provide at least one subject name');
+                if(!classification) return alert('Select a classification');
+                if(!grades.length) return alert('Select at least one grade');
+
+                const results = { created: 0, existing: 0, failed: 0 };
+                for(const nm of names){
+                    try{
+                        // map classification -> type and grades -> grade_levels for backend
+                        const payload = { name: nm, type: classification, grade_levels: grades };
+                        const resp = await postJSON(subjectStoreUrl, payload);
+                        if(resp && resp.success){
+                            if(resp.created === true) results.created++;
+                            else results.existing++;
+                        } else {
+                            results.failed++;
+                        }
+                    } catch(err){
+                        console.error('add subject error', err);
+                        results.failed++;
+                    }
+                }
+
+                
+
+                // Show summary
+                let msg = [];
+                if(results.created) msg.push(`${results.created} added`);
+                if(results.existing) msg.push(`${results.existing} already existed`);
+                if(results.failed) msg.push(`${results.failed} failed`);
+                if(msg.length) {
+                    alert(msg.join(', '));
+                    window.location.reload();
+                } else {
+                    alert('No subjects were added');
+                }
+            });
+        }
+
+    // Grade group selectors: toggle ranges (Junior / Senior)
+    const selectJunior = document.getElementById('select-junior');
+    const selectSenior = document.getElementById('select-senior');
+    const gradeCheckboxes = Array.from(document.querySelectorAll('.grade-checkbox'));
+
+        function setGroupChecked(yearsCsv, checked){
+            const years = String(yearsCsv).split(',').map(s=>s.trim());
+            gradeCheckboxes.forEach(cb => {
+                const y = cb.getAttribute('data-year');
+                if(years.indexOf(String(y)) !== -1){ cb.checked = checked; }
+            });
+        }
+
+        if(selectJunior){
+            selectJunior.addEventListener('change', function(){ setGroupChecked(this.dataset.years, this.checked); updateGroupStates(); });
+        }
+        if(selectSenior){
+            selectSenior.addEventListener('change', function(){ setGroupChecked(this.dataset.years, this.checked); updateGroupStates(); });
+        }
+
+        function updateGroupStates(){
+            const juniorYears = (selectJunior && selectJunior.dataset.years) ? selectJunior.dataset.years.split(',') : [];
+            const seniorYears = (selectSenior && selectSenior.dataset.years) ? selectSenior.dataset.years.split(',') : [];
+
+            if(selectJunior){
+                selectJunior.checked = gradeCheckboxes.filter(cb => juniorYears.indexOf(cb.getAttribute('data-year'))!==-1).every(cb=>cb.checked);
+            }
+            if(selectSenior){
+                selectSenior.checked = gradeCheckboxes.filter(cb => seniorYears.indexOf(cb.getAttribute('data-year'))!==-1).every(cb=>cb.checked);
+            }
+        }
+
+        gradeCheckboxes.forEach(cb => cb.addEventListener('change', updateGroupStates));
+
+        // Collapsible groups for subject classifications
+        document.querySelectorAll('.group-toggle').forEach(btn => {
+            const target = btn.dataset.target;
+            const body = document.getElementById(target);
+            if(!body) return;
+            // default: expanded
+            body.style.display = 'block';
+            btn.addEventListener('click', () => {
+                const isHidden = body.style.display === 'none';
+                body.style.display = isHidden ? 'block' : 'none';
+            });
+        });
 
         // No UI for creating default grade levels per user's preference.
     })();
