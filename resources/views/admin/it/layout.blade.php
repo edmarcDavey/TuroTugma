@@ -11,7 +11,7 @@
     <div class="flex">
       <aside class="w-64 p-6 border-r bg-slate-50 min-h-screen">
         <a href="{{ route('admin.it.dashboard') }}" class="text-xl font-bold text-[#3b4197]">IT Coordinator</a>
-        <nav class="mt-6 space-y-2 text-sm">
+        <nav class="mt-6 space-y-3 text-base">
           <a href="{{ route('admin.it.dashboard') }}" class="block text-slate-700 hover:text-[#3b4197]">Overview</a>
           <a href="{{ route('admin.it.subjects-sections') }}" class="block text-slate-700 hover:text-[#3b4197]">Sections and Subjects</a>
           <a href="{{ route('admin.it.teachers.index') }}" class="block text-slate-700 hover:text-[#3b4197]">Teachers</a>
@@ -21,7 +21,7 @@
           <a href="{{ route('admin.it.logs') }}" class="block text-slate-700 hover:text-[#3b4197]">Run History</a>
         </nav>
         <div class="mt-6">
-          <form method="POST" action="{{ route('logout') }}">@csrf<button class="text-sm text-slate-600">Logout</button></form>
+          <form method="POST" action="{{ route('logout') }}">@csrf<button class="text-base text-slate-600">Logout</button></form>
         </div>
       </aside>
 

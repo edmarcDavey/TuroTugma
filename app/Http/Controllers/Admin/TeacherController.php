@@ -10,12 +10,22 @@ use App\Models\GradeLevel;
 
 class TeacherController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $teachers = Teacher::with(['subjects','gradeLevels'])->paginate(10);
+        $q = trim((string)$request->input('q', ''));
+
+        $query = Teacher::with(['subjects','gradeLevels']);
+        if ($q !== '') {
+            $query->where(function($wr) use ($q) {
+                $wr->where('name', 'like', "%{$q}%")
+                   ->orWhere('staff_id', 'like', "%{$q}%");
+            });
+        }
+
+        $teachers = $query->paginate(10)->withQueryString();
         $subjects = Subject::orderBy('name')->get();
         $gradeLevels = GradeLevel::orderBy('name')->get();
-        return view('admin.it.teachers.index', compact('teachers','subjects','gradeLevels'));
+        return view('admin.it.teachers.index', compact('teachers','subjects','gradeLevels','q'));
     }
 
     public function create()
@@ -81,6 +91,36 @@ class TeacherController extends Controller
         $subjects = Subject::orderBy('name')->get();
         $gradeLevels = GradeLevel::orderBy('name')->get();
         return view('admin.it.teachers._form', compact('teacher','subjects','gradeLevels'));
+    }
+
+    /**
+     * Return a JSON fragment containing rendered list items for the teachers list.
+     * Used by the infinite-scroll loader on the left panel.
+     */
+    public function listFragment(Request $request)
+    {
+        $q = trim((string)$request->input('q', ''));
+        $query = Teacher::with(['subjects','gradeLevels']);
+        if ($q !== '') {
+            $query->where(function($wr) use ($q) {
+                $wr->where('name', 'like', "%{$q}%")
+                   ->orWhere('staff_id', 'like', "%{$q}%");
+            });
+        }
+
+        $teachers = $query->paginate(10)->withQueryString();
+        $html = view('admin.it.teachers._list', compact('teachers'))->render();
+        return response()->json([
+            'html' => $html,
+            'next' => $teachers->nextPageUrl()
+        ]);
+    }
+
+    // Return subjects as JSON (used by client-side fallback when fragment is injected)
+    public function subjectsJson()
+    {
+        $subjects = Subject::orderBy('name')->get(['id','name','short_code']);
+        return response()->json($subjects);
     }
 
     public function update(Request $request, Teacher $teacher)

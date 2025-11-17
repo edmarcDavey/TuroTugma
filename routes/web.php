@@ -37,7 +37,7 @@ Route::middleware('auth')->prefix('admin/it')->name('admin.it.')->group(function
     // Teachers resource (basic CRUD)
     Route::get('/teachers', function () {
         if (Auth::user()->role !== 'it_coordinator') abort(403);
-        return app(\App\Http\Controllers\Admin\TeacherController::class)->index();
+        return app(\App\Http\Controllers\Admin\TeacherController::class)->index(request());
     })->name('teachers.index');
 
     Route::get('/teachers/create', function () {
@@ -52,17 +52,20 @@ Route::middleware('auth')->prefix('admin/it')->name('admin.it.')->group(function
 
     Route::get('/teachers/{teacher}/edit', function ($teacher) {
         if (Auth::user()->role !== 'it_coordinator') abort(403);
-        return app(\App\Http\Controllers\Admin\TeacherController::class)->edit($teacher);
+        $t = \App\Models\Teacher::findOrFail($teacher);
+        return app(\App\Http\Controllers\Admin\TeacherController::class)->edit($t);
     })->name('teachers.edit');
 
     Route::put('/teachers/{teacher}', function ($teacher) {
         if (Auth::user()->role !== 'it_coordinator') abort(403);
-        return app(\App\Http\Controllers\Admin\TeacherController::class)->update(request(), $teacher);
+        $t = \App\Models\Teacher::findOrFail($teacher);
+        return app(\App\Http\Controllers\Admin\TeacherController::class)->update(request(), $t);
     })->name('teachers.update');
 
     Route::delete('/teachers/{teacher}', function ($teacher) {
         if (Auth::user()->role !== 'it_coordinator') abort(403);
-        return app(\App\Http\Controllers\Admin\TeacherController::class)->destroy($teacher);
+        $t = \App\Models\Teacher::findOrFail($teacher);
+        return app(\App\Http\Controllers\Admin\TeacherController::class)->destroy($t);
     })->name('teachers.destroy');
 
     // Fragments for master-detail AJAX loading
@@ -71,9 +74,22 @@ Route::middleware('auth')->prefix('admin/it')->name('admin.it.')->group(function
         return app(\App\Http\Controllers\Admin\TeacherController::class)->fragmentCreate();
     })->name('teachers.fragment.create');
 
+    // Fragment that returns list items for infinite scroll (JSON)
+    Route::get('/teachers/list', function () {
+        if (Auth::user()->role !== 'it_coordinator') abort(403);
+        return app(\App\Http\Controllers\Admin\TeacherController::class)->listFragment(request());
+    })->name('teachers.list');
+
+    // Subjects JSON for teacher form fallback
+    Route::get('/teachers/subjects.json', function () {
+        if (Auth::user()->role !== 'it_coordinator') abort(403);
+        return app(\App\Http\Controllers\Admin\TeacherController::class)->subjectsJson();
+    })->name('teachers.subjects.json');
+
     Route::get('/teachers/{teacher}/fragment', function ($teacher) {
         if (Auth::user()->role !== 'it_coordinator') abort(403);
-        return app(\App\Http\Controllers\Admin\TeacherController::class)->fragmentEdit($teacher);
+        $t = \App\Models\Teacher::findOrFail($teacher);
+        return app(\App\Http\Controllers\Admin\TeacherController::class)->fragmentEdit($t);
     })->name('teachers.fragment.edit');
 
     Route::get('/subjects', function () {
@@ -161,13 +177,15 @@ Route::middleware('auth')->prefix('admin/it')->name('admin.it.')->group(function
     // Bulk create sections for a grade level
     Route::post('/grade-levels/{gradeLevel}/sections/bulk-create', function ($gradeLevel) {
         if (Auth::user()->role !== 'it_coordinator') abort(403);
-        return app(\App\Http\Controllers\Admin\SectionController::class)->bulkStore(request(), $gradeLevel);
+        $gl = \App\Models\GradeLevel::findOrFail($gradeLevel);
+        return app(\App\Http\Controllers\Admin\SectionController::class)->bulkStore(request(), $gl);
     })->name('grade-levels.sections.bulk-create');
 
     // Preview generated sections for a grade level (AJAX)
     Route::get('/grade-levels/{gradeLevel}/preview-sections', function ($gradeLevel) {
         if (Auth::user()->role !== 'it_coordinator') abort(403);
-        return app(\App\Http\Controllers\Admin\GradeLevelController::class)->previewSections(request(), $gradeLevel);
+        $gl = \App\Models\GradeLevel::findOrFail($gradeLevel);
+        return app(\App\Http\Controllers\Admin\GradeLevelController::class)->previewSections(request(), $gl);
     })->name('grade-levels.preview-sections');
 
     // Preview generated sections from inline inputs (no existing grade required)
@@ -193,7 +211,9 @@ Route::middleware('auth')->prefix('admin/it')->name('admin.it.')->group(function
             if (Auth::user()->role !== 'it_coordinator') abort(403);
         $gradeLevels = \App\Models\GradeLevel::with('sections')->orderBy('name')->get();
         $subjects = \App\Models\Subject::with('gradeLevels')->orderBy('name')->get();
-            return view('admin.it.subjects-sections', compact('gradeLevels','subjects'));
+        // compute once in the controller/route and pass to the view so Blade does not query the model
+        $hasSections = \App\Models\Section::exists();
+            return view('admin.it.subjects-sections', compact('gradeLevels','subjects','hasSections'));
     })->name('subjects-sections');
 
     Route::get('/scheduler/run', function () {

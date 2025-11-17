@@ -1,0 +1,354 @@
+<form method="POST" action="http://127.0.0.1:8000/admin/it/teachers">
+  <input type="hidden" name="_token" value="" autocomplete="off">  
+  <div class="space-y-4">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+      <div class="md:col-span-2">
+        <label class="block text-sm font-medium">Name</label>
+  <input name="name" required value="" class="mt-1 block w-full border border-gray-300 rounded-md p-2 h-11 bg-white box-border" />
+      </div>
+
+      <div class="md:col-span-1">
+        <label class="block text-sm font-medium">Sex</label>
+  <select name="sex" class="mt-1 block w-full border border-gray-300 rounded-md p-2 h-11 bg-white box-border">
+          <option value="">-- select --</option>
+          <option value="male" >Male</option>
+          <option value="female" >Female</option>
+          <option value="other" >Other</option>
+        </select>
+      </div>
+
+      <div class="md:col-span-1">
+        <label class="block text-sm font-medium">Employee ID</label>
+  <input name="staff_id" value="" class="mt-1 block w-full border border-gray-300 rounded-md p-2 h-11 bg-white box-border" />
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div>
+        <label class="block text-sm font-medium">Designation / Position</label>
+  <input name="designation" value="" class="mt-1 block w-full border border-gray-300 rounded-md p-2 h-11 bg-white box-border" />
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium">Status of Appointment</label>
+  <input name="status_of_appointment" value="" class="mt-1 block w-full border border-gray-300 rounded-md p-2 h-11 bg-white box-border" />
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div>
+        <label class="block text-sm font-medium">Course / Degree</label>
+  <input name="course_degree" value="" class="mt-1 block w-full border border-gray-300 rounded-md p-2 h-11 bg-white box-border" />
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium">Course Major</label>
+  <input name="course_major" value="" class="mt-1 block w-full border border-gray-300 rounded-md p-2 h-11 bg-white box-border" />
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium">Course Minor</label>
+  <input name="course_minor" value="" class="mt-1 block w-full border border-gray-300 rounded-md p-2 h-11 bg-white box-border" />
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div>
+    <label class="block text-sm font-medium">Ancillary / Special Assignments</label>
+  <textarea name="ancillary_assignments" placeholder="e.g. Class sponsor, dept. coordinator" class="mt-1 block w-full border border-gray-300 rounded-md p-2 h-11 bg-white resize-none box-border" rows="2"></textarea>
+        <p class="text-xs text-slate-500 mt-1">Keep it short — a brief note about additional duties (optional).</p>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium">Number of Handled Class per Week (max 8)</label>
+  <input name="number_handled_per_week" type="number" min="0" max="8" value="" class="mt-1 block w-full border border-gray-300 rounded-md p-2 h-11 bg-white box-border" />
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div>
+  <label class="block text-sm font-medium">Subject Assignment</label>
+
+      <style>
+        .ms-container{ position:relative; }
+        .ms-control{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:8px; border:1px solid #d1d5db; border-radius:6px; min-height:44px; background:#fff; }
+        .ms-token{ background:#eef2ff; color:#1e293b; padding:6px 8px; border-radius:9999px; font-size:0.9rem; display:inline-flex; gap:6px; align-items:center; }
+        .ms-token button{ background:transparent; border:0; color:#334155; cursor:pointer; padding:0 4px; }
+        .ms-button{ margin-left:auto; background:transparent; border:0; cursor:pointer; color:#334155; }
+        .ms-dropdown{ position:absolute; left:0; right:0; top:calc(100% + 6px); background:#fff; border:1px solid #e6eef6; box-shadow:0 6px 18px rgba(16,24,40,0.08); border-radius:8px; z-index:50; max-height:280px; overflow:auto; display:none; }
+        .ms-search{ padding:10px; border-bottom:1px solid #eef2ff; }
+        .ms-list{ padding:8px; }
+        .ms-item{ display:flex; align-items:center; gap:8px; padding:8px; border-radius:6px; cursor:pointer; }
+        .ms-item:hover{ background:#f8fafc; }
+        .ms-select-all{ display:flex; align-items:center; gap:8px; padding:8px 10px; border-bottom:1px solid #f1f5f9; }
+        .ms-empty{ padding:12px; color:#64748b; }
+      </style>
+
+      
+  <select id="subjects-native" name="subjects[]" multiple style="display:none" title="Subjects">
+                  <option value="32" >21st Century Literature from the Philippines and the World</option>
+                  <option value="45" >Araling Panlipunan</option>
+                  <option value="63" >Business Math</option>
+                  <option value="33" >Contemporary Philippine Arts from the Regions</option>
+                  <option value="36" >Earth and Life Science</option>
+                  <option value="47" >Edukasyon sa Pagpapakatao</option>
+                  <option value="44" >English</option>
+                  <option value="30" >Entrepreneurship</option>
+                  <option value="43" >Filipino</option>
+                  <option value="5" >History</option>
+                  <option value="31" >Komunikasyon at Pananaliksik sa Wika at Kulturang Pilipino</option>
+                  <option value="49" >MAPEH</option>
+                  <option value="64" >Marketing</option>
+                  <option value="41" >Mathematics</option>
+                  <option value="34" >Media and Information Literacy</option>
+                  <option value="39" >Personal Development</option>
+                  <option value="4" >Physical Education</option>
+                  <option value="40" >Physical Education and Health</option>
+                  <option value="37" >Physical Science</option>
+                  <option value="42" >Science</option>
+                  <option value="35" >Statistics and Probability</option>
+                  <option value="51" >Technology &amp; Livelihood Education (TLE)</option>
+                  <option value="38" >Understanding Culture, Society, and Politics</option>
+              </select>
+
+      <div class="ms-container mt-1">
+  <div class="ms-control" id="ms-control" tabindex="0" role="combobox" aria-expanded="false" aria-haspopup="listbox" aria-label="Subject Assignment">
+          <div id="ms-tokens" style="display:flex;gap:8px;flex-wrap:wrap">
+            
+          </div>
+          <button type="button" id="ms-toggle" class="ms-button" aria-label="Toggle subjects dropdown">▾</button>
+        </div>
+
+        <div class="ms-dropdown" role="listbox" aria-multiselectable="true">
+            <div class="ms-search"><input placeholder="Search..." class="w-full border rounded px-2 py-1" /></div>
+            <div class="ms-select-all"><input type="checkbox" /> <label>Select all</label></div>
+            <div class="ms-list">
+                              <div class="ms-item" data-id="32" role="option" aria-selected="false">
+                  <input type="checkbox" class="ms-checkbox" data-id="32"  />
+                  <div>21st Century Literature from the Philippines and the World  <small class="text-slate-400">(LITP)</small> </div>
+                </div>
+                              <div class="ms-item" data-id="45" role="option" aria-selected="false">
+                  <input type="checkbox" class="ms-checkbox" data-id="45"  />
+                  <div>Araling Panlipunan </div>
+                </div>
+                              <div class="ms-item" data-id="63" role="option" aria-selected="false">
+                  <input type="checkbox" class="ms-checkbox" data-id="63"  />
+                  <div>Business Math </div>
+                </div>
+                              <div class="ms-item" data-id="33" role="option" aria-selected="false">
+                  <input type="checkbox" class="ms-checkbox" data-id="33"  />
+                  <div>Contemporary Philippine Arts from the Regions  <small class="text-slate-400">(CPAR)</small> </div>
+                </div>
+                              <div class="ms-item" data-id="36" role="option" aria-selected="false">
+                  <input type="checkbox" class="ms-checkbox" data-id="36"  />
+                  <div>Earth and Life Science  <small class="text-slate-400">(ELSC)</small> </div>
+                </div>
+                              <div class="ms-item" data-id="47" role="option" aria-selected="false">
+                  <input type="checkbox" class="ms-checkbox" data-id="47"  />
+                  <div>Edukasyon sa Pagpapakatao </div>
+                </div>
+                              <div class="ms-item" data-id="44" role="option" aria-selected="false">
+                  <input type="checkbox" class="ms-checkbox" data-id="44"  />
+                  <div>English </div>
+                </div>
+                              <div class="ms-item" data-id="30" role="option" aria-selected="false">
+                  <input type="checkbox" class="ms-checkbox" data-id="30"  />
+                  <div>Entrepreneurship </div>
+                </div>
+                              <div class="ms-item" data-id="43" role="option" aria-selected="false">
+                  <input type="checkbox" class="ms-checkbox" data-id="43"  />
+                  <div>Filipino </div>
+                </div>
+                              <div class="ms-item" data-id="5" role="option" aria-selected="false">
+                  <input type="checkbox" class="ms-checkbox" data-id="5"  />
+                  <div>History  <small class="text-slate-400">(HIST)</small> </div>
+                </div>
+                              <div class="ms-item" data-id="31" role="option" aria-selected="false">
+                  <input type="checkbox" class="ms-checkbox" data-id="31"  />
+                  <div>Komunikasyon at Pananaliksik sa Wika at Kulturang Pilipino  <small class="text-slate-400">(KOMU)</small> </div>
+                </div>
+                              <div class="ms-item" data-id="49" role="option" aria-selected="false">
+                  <input type="checkbox" class="ms-checkbox" data-id="49"  />
+                  <div>MAPEH </div>
+                </div>
+                              <div class="ms-item" data-id="64" role="option" aria-selected="false">
+                  <input type="checkbox" class="ms-checkbox" data-id="64"  />
+                  <div>Marketing </div>
+                </div>
+                              <div class="ms-item" data-id="41" role="option" aria-selected="false">
+                  <input type="checkbox" class="ms-checkbox" data-id="41"  />
+                  <div>Mathematics </div>
+                </div>
+                              <div class="ms-item" data-id="34" role="option" aria-selected="false">
+                  <input type="checkbox" class="ms-checkbox" data-id="34"  />
+                  <div>Media and Information Literacy  <small class="text-slate-400">(MILR)</small> </div>
+                </div>
+                              <div class="ms-item" data-id="39" role="option" aria-selected="false">
+                  <input type="checkbox" class="ms-checkbox" data-id="39"  />
+                  <div>Personal Development  <small class="text-slate-400">(PDEV)</small> </div>
+                </div>
+                              <div class="ms-item" data-id="4" role="option" aria-selected="false">
+                  <input type="checkbox" class="ms-checkbox" data-id="4"  />
+                  <div>Physical Education  <small class="text-slate-400">(PE)</small> </div>
+                </div>
+                              <div class="ms-item" data-id="40" role="option" aria-selected="false">
+                  <input type="checkbox" class="ms-checkbox" data-id="40"  />
+                  <div>Physical Education and Health  <small class="text-slate-400">(PEHE)</small> </div>
+                </div>
+                              <div class="ms-item" data-id="37" role="option" aria-selected="false">
+                  <input type="checkbox" class="ms-checkbox" data-id="37"  />
+                  <div>Physical Science  <small class="text-slate-400">(PHSC)</small> </div>
+                </div>
+                              <div class="ms-item" data-id="42" role="option" aria-selected="false">
+                  <input type="checkbox" class="ms-checkbox" data-id="42"  />
+                  <div>Science </div>
+                </div>
+                              <div class="ms-item" data-id="35" role="option" aria-selected="false">
+                  <input type="checkbox" class="ms-checkbox" data-id="35"  />
+                  <div>Statistics and Probability  <small class="text-slate-400">(STAT)</small> </div>
+                </div>
+                              <div class="ms-item" data-id="51" role="option" aria-selected="false">
+                  <input type="checkbox" class="ms-checkbox" data-id="51"  />
+                  <div>Technology &amp; Livelihood Education (TLE) </div>
+                </div>
+                              <div class="ms-item" data-id="38" role="option" aria-selected="false">
+                  <input type="checkbox" class="ms-checkbox" data-id="38"  />
+                  <div>Understanding Culture, Society, and Politics  <small class="text-slate-400">(UCSP)</small> </div>
+                </div>
+                          </div>
+          </div>
+        </div>
+      </div>
+
+    <div>
+      <label class="block text-sm font-medium">Unavailable Periods</label>
+      <input type="hidden" id="advisory-input" name="advisory" value="">
+
+      
+  <select id="availability-native" multiple style="display:none" title="Unavailable periods">
+                            <option value="1" >1st Period</option>
+                            <option value="2" >2nd Period</option>
+                            <option value="3" >3rd Period</option>
+                            <option value="4" >4th Period</option>
+                            <option value="5" >5th Period</option>
+                            <option value="6" >6th Period</option>
+                            <option value="7" >7th Period</option>
+                            <option value="8" >8th Period</option>
+                            <option value="9" >9th Period</option>
+              </select>
+
+      <div class="ms-container mt-1">
+    <div class="ms-control" id="avail-control" tabindex="0" role="combobox" aria-expanded="false" aria-haspopup="listbox" aria-label="Unavailable Periods">
+          <div id="avail-tokens" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+          <button type="button" id="avail-toggle" class="ms-button" aria-label="Toggle availability dropdown">▾</button>
+        </div>
+
+        <div class="ms-dropdown" role="listbox" aria-multiselectable="true">
+          <div class="ms-search"><input placeholder="Search..." class="w-full border rounded px-2 py-1" /></div>
+          <div class="ms-select-all"><input type="checkbox" /> <label>Select all</label></div>
+          <div class="ms-list">
+                                        <div class="ms-item" data-id="1" role="option" aria-selected="false">
+                <input type="checkbox" class="ms-checkbox" data-id="1" />
+                <div>1st Period</div>
+              </div>
+                                        <div class="ms-item" data-id="2" role="option" aria-selected="false">
+                <input type="checkbox" class="ms-checkbox" data-id="2" />
+                <div>2nd Period</div>
+              </div>
+                                        <div class="ms-item" data-id="3" role="option" aria-selected="false">
+                <input type="checkbox" class="ms-checkbox" data-id="3" />
+                <div>3rd Period</div>
+              </div>
+                                        <div class="ms-item" data-id="4" role="option" aria-selected="false">
+                <input type="checkbox" class="ms-checkbox" data-id="4" />
+                <div>4th Period</div>
+              </div>
+                                        <div class="ms-item" data-id="5" role="option" aria-selected="false">
+                <input type="checkbox" class="ms-checkbox" data-id="5" />
+                <div>5th Period</div>
+              </div>
+                                        <div class="ms-item" data-id="6" role="option" aria-selected="false">
+                <input type="checkbox" class="ms-checkbox" data-id="6" />
+                <div>6th Period</div>
+              </div>
+                                        <div class="ms-item" data-id="7" role="option" aria-selected="false">
+                <input type="checkbox" class="ms-checkbox" data-id="7" />
+                <div>7th Period</div>
+              </div>
+                                        <div class="ms-item" data-id="8" role="option" aria-selected="false">
+                <input type="checkbox" class="ms-checkbox" data-id="8" />
+                <div>8th Period</div>
+              </div>
+                                        <div class="ms-item" data-id="9" role="option" aria-selected="false">
+                <input type="checkbox" class="ms-checkbox" data-id="9" />
+                <div>9th Period</div>
+              </div>
+                      </div>
+        </div>
+      </div>
+
+      <p class="text-xs text-slate-500 mt-1">Optional — pick one or more periods the teacher cannot teach.</p>
+
+      <script>
+        (function(){
+          const hidden = document.getElementById('advisory-input');
+          const native = document.getElementById('availability-native');
+          const control = document.getElementById('avail-control');
+          const toggle = document.getElementById('avail-toggle');
+          const dropdown = document.getElementById('avail-dropdown');
+          const list = document.getElementById('avail-list');
+          const tokens = document.getElementById('avail-tokens');
+          const search = document.getElementById('avail-search');
+          const selectAll = document.getElementById('avail-select-all');
+
+          function open(){ dropdown.style.display='block'; control.setAttribute('aria-expanded','true'); }
+          function close(){ dropdown.style.display='none'; control.setAttribute('aria-expanded','false'); }
+
+          function render(){
+            tokens.innerHTML='';
+            const selected = Array.from(native.options).filter(o=>o.selected).map(o=>o.value);
+            if(!selected.length){ const ph=document.createElement('div'); ph.className='text-slate-500'; ph.textContent='Select periods...'; tokens.appendChild(ph); }
+            selected.forEach(v=>{
+              const opt = native.querySelector('option[value="'+v+'"]');
+              if(!opt) return;
+              const t=document.createElement('span'); t.className='ms-token'; t.textContent=opt.text;
+              const rem=document.createElement('button'); rem.type='button'; rem.innerHTML='✕'; rem.addEventListener('click', ()=>{ deselect(v); });
+              t.appendChild(rem); tokens.appendChild(t);
+            });
+            hidden.value = selected.join(',');
+          }
+
+          function sync(){
+            const checks = Array.from(list.querySelectorAll('.ms-checkbox'));
+            checks.forEach(cb=>{
+              const val = cb.dataset.id;
+              const opt = native.querySelector('option[value="'+val+'"]');
+              if(opt) opt.selected = cb.checked;
+            });
+            render();
+          }
+
+          function deselect(val){ const cb=list.querySelector('.ms-checkbox[data-id="'+val+'"]'); if(cb){ cb.checked=false; } const opt=native.querySelector('option[value="'+val+'"]'); if(opt) opt.selected=false; render(); }
+
+          // initialize from hidden advisory CSV
+          (function init(){ const v=(hidden.value||'').trim(); if(v.length){ const parts=v.split(',').map(s=>s.trim()).filter(Boolean); parts.forEach(p=>{ const cb=list.querySelector('.ms-checkbox[data-id="'+p+'"]'); if(cb) cb.checked=true; const opt=native.querySelector('option[value="'+p+'"]'); if(opt) opt.selected=true; }); } render(); updateSelectAll(); })();
+
+          toggle.addEventListener('click', ()=>{ if(dropdown.style.display==='block') close(); else { open(); search.focus(); } });
+          list.addEventListener('click', function(e){ const it=e.target.closest('.ms-item'); if(!it) return; const cb=it.querySelector('.ms-checkbox'); if(cb){ cb.checked=!cb.checked; cb.dispatchEvent(new Event('change')); } });
+          list.addEventListener('change', function(e){ if(e.target.matches('.ms-checkbox')){ sync(); updateSelectAll(); } });
+          search.addEventListener('input', function(){ const q=(this.value||'').toLowerCase(); Array.from(list.querySelectorAll('.ms-item')).forEach(it=>{ const txt=it.textContent.toLowerCase(); it.style.display = txt.indexOf(q)===-1 ? 'none' : 'flex'; }); updateSelectAll(); });
+          selectAll.addEventListener('change', function(){ const visible=Array.from(list.querySelectorAll('.ms-item')).filter(it=>it.style.display!=='none'); visible.forEach(it=>{ const cb=it.querySelector('.ms-checkbox'); if(cb) cb.checked=selectAll.checked; }); sync(); });
+
+          function updateSelectAll(){ const all=Array.from(list.querySelectorAll('.ms-checkbox')).filter(cb=>cb.closest('.ms-item').style.display!=='none'); const checked=all.filter(cb=>cb.checked); selectAll.checked = all.length>0 && checked.length===all.length; }
+
+          document.addEventListener('click', function(e){ if(!e.target.closest('.ms-container')) close(); });
+        })();
+      </script>
+    </div>
+
+    <div class="pt-4">
+      <button type="submit" class="px-4 py-2 bg-[#3b4197] text-white rounded">Create</button>
+      <a href="http://127.0.0.1:8000/admin/it/teachers" class="ml-2 text-sm">Cancel</a>
+    </div>
+  </div>
+</form>

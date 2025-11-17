@@ -63,7 +63,7 @@ return [
         'planets' => [
             'label' => 'Planets',
             'list' => [
-                'Mercury','Venus','Earth','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto','Ceres','Eris','Haumea','Makemake','Kepler','Tatooine','Titan','Europa','Io','Ganymede','Callisto','Enceladus','Triton','Rhea','Dione','Mimas','Phobos','Deimos','Hyperion','Oberon','Ariel'
+                'Mercury','Venus','Earth','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto',
             ],
         ],
 
@@ -84,14 +84,7 @@ return [
         'galaxies' => [
             'label' => 'Galaxies',
             'list' => [
-                'Milky Way','Andromeda','Triangulum','Whirlpool','Sombrero','Pinwheel','Messier 87','Centaurus A','Cartwheel','Black Eye','Tadpole','Sunflower','Cigar','Antennae','Sculptor','Comet','Bode\'s Galaxy','Draco Dwarf','Sagittarius Dwarf','Phoenix Dwarf','Leo I','Leo II','Fornax','Pegasus Dwarf','Sextans A','Sextans B','IC 1101','NGC 1300','Hoag\'s Object','Virgo A'
-            ],
-        ],
-
-        'world_leaders' => [
-            'label' => 'World Leaders',
-            'list' => [
-                'Mandela','Churchill','Gandhi','Lincoln','Roosevelt','Kennedy','Obama','Washington','Napoleon','Alexander','Caesar','Catherine','Elizabeth','Victoria','Tokugawa','Meiji','Atatürk','Lee Kuan Yew','Trudeau','Macron','Putin','Zelensky','Nehru','Marcos','Duterte','Lee','Kim','Castro','Bolívar','Bismarck'
+                'Milky Way','Andromeda','Triangulum','Whirlpool','Sombrero','Pinwheel','Messier 87','Centaurus','Cartwheel','Black Eye','Tadpole','Sunflower','Cigar','Antennae','Sculptor','Comet','Bode\'s Galaxy','Draco Dwarf','Sagittarius Dwarf','Phoenix Dwarf','LeoI','Fornax','Pegasus Dwarf','Sextans','IC 1101','NGC 1300','Hoag\'s Object','Virgo'
             ],
         ],
 
@@ -182,7 +175,7 @@ return [
         'continents' => [
             'label' => 'Continents',
             'list' => [
-                'Asia','Africa','Europe','North America','South America','Australia','Antarctica','Oceania','Eurasia','Afro-Eurasia','Gondwana','Pangea','Laurentia','Baltica','Avalonia','Laurasia','Zealandia','Sahul','Arabia','Indochina','Beringia','Sunda','Philippine Sea Plate','Pacific Plate','Atlantic Plate','Polar Region','Equatorial Zone','Tropics','Subtropics','Arctic','Antarctic'
+                'Asia','Africa','Europe','North America','South America','Australia','Antarctica'
             ],
         ],
 
@@ -208,16 +201,16 @@ return [
         ],
 
         'hogwarts_houses' => [
-            'label' => 'Hogwarts Houses / Magic-Inspired',
+            'label' => 'Hogwarts Houses',
             'list' => [
-                'Gryffindor','Slytherin','Ravenclaw','Hufflepuff','Beauxbatons','Durmstrang','Ilvermorny','Horned Serpent','Thunderbird','Wampus','Pukwudgie','Mahoutokoro','Castelobruxo','Uagadou','Salem','Alchemy','Spellbound','Enchantia','Patronus','Lumos','Nox','Accio','Protego','Obliviate','Expelliarmus','Expecto','Leviosa','Incendio','Crucio','Imperio'
+                'Gryffindor','Slytherin','Ravenclaw','Hufflepuff'
             ],
         ],
 
         'pop_culture_icons' => [
             'label' => 'Pop Culture Icons',
             'list' => [
-                'Beyoncé','Taylor','BTS','Swiftie','Jackson','Elvis','Gaga','Madonna','Drake','Rihanna','MJ','The Beatles','Queen','Prince','Selena','Ariana','Ed Sheeran','Harry Styles','Bruno','Doja','Kendrick','Snoop','Eminem','Bieber','Miley','Zendaya','Tom Holland','Keanu','The Rock','Marvel'
+                'Elvis Presley', 'Marilyn Monroe', 'Michael Jackson', 'Madonna', 'Prince', 'The Beatles', 'Beyoncé', 'Taylor Swift', 'Lady Gaga', 'Rihanna', 'Oprah Winfrey', 'Barack Obama', 'Muhammad Ali', 'David Bowie', 'Freddie Mercury', 'Britney Spears', 'Kanye West', 'Drake', 'Justin Bieber', 'Selena Gomez', 'Leonardo DiCaprio', 'Tom Cruise', 'Will Smith', 'Angelina Jolie', 'Jennifer Lopez', 'Stephen King', 'Stan Lee', 'Kobe Bryant', 'LeBron James', 'Cristiano Ronaldo'
             ],
         ],
 
@@ -266,7 +259,7 @@ return [
         'nobel_laureates' => [
             'label' => 'Nobel Laureates',
             'list' => [
-                'Einstein','Curie','Bohr','Feynman','Watson','Crick','Fleming','Salk','Schweitzer','Mandela','King','Turing','Hawking','Goodall','Keynes','Sen','Morrison','Hemingway','Sartre','Tagore','Camus','Kipling','Gide','Bergson','Russell','Pauling','Banting','Fleming','Pavlov','Planck'
+                'Marie Curie', 'Albert Einstein', 'Martin Luther King Jr.', 'Barack Obama', 'Malala Yousafzai', 'Nelson Mandela', 'Mother Teresa', 'Ernest Hemingway', 'Gabriel García Márquez', 'Toni Morrison', 'Alexander Fleming', 'Watson and Crick', 'Jean-Paul Sartre', 'Elie Wiesel', 'Amartya Sen', 'Bertrand Russell', 'Desmond Tutu', 'Aung San Suu Kyi', 'Kofi Annan', 'Shirin Ebadi', 'Jimmy Carter', 'Al Gore', 'Doris Lessing', 'Bob Dylan', 'Niels Bohr', 'Richard Feynman', 'Dorothy Hodgkin', 'Daniel Kahneman', 'Paul Krugman', 'Muhammad Yunus'
             ],
         ],
 
@@ -305,14 +298,7 @@ return [
                 'Bangus','Lapu-Lapu','Tilapia','Tuna','Dilis','Pusit','Alimango','Talaba','Halaan','Tamban','Tulingan','Dugong','Pawikan','Dolphin','Pating','Seahorse','Sea Urchin','Jellyfish','Marlin','Galunggong','Pagi','Igat','Dalag','Hito','Moray','Hipon','Sugpo','Pugita'
             ],
         ],
-
-        'insects' => [
-            'label' => 'Insects',
-            'list' => [
-                'Salagubang','Tutubi','Paruparo','Alitaptap','Langgam','Putakti','Tipaklong','Gagamba','Bubuyog','Anay','Lamok','Niknik','Puting-Gamu-Gamo','Kulisap','Garapata','Putyukan','Uod','Alimatik','Ipis','Putakti','Salaginto','Kuwago-Kuwago','Tamsi','Bangaw','Paling','Putakti-Pula','Kuto','Lintang','Tutubi-Pula','Panganod'
-            ],
-        ],
-
+        
         'endangered_species' => [
             'label' => 'Endangered Species',
             'list' => [
@@ -337,7 +323,7 @@ return [
         'governors_nueva_vizcaya' => [
             'label' => 'Governors (Nueva Vizcaya)',
             'list' => [
-                'Tomas B. Maddela Sr.','Jose B. Ramos','Patricio Dumlao Sr.','Leon Cabarroguis','Patricio Dumlao Jr.','Rodolfo Agbayani','Jose Gambito','Carlos Padilla','Ruth Padilla','Jose Gambito','Carlos M. Padilla'
+                'Tomas P. Maddela Sr.', 'Lope K. Santos', 'Domingo Maddela', 'Alfonso Castañeda', 'Juan A. Manzano', 'Leon Cabarroguis', 'Demetrio Quirino Sr.', 'Martin Lopez', 'Jose A. Madarang', 'Manolo Maddela', 'Jose G. Espino', 'Corazon M. Espino', 'Patricio G. Dumlao Sr.', 'Belen F. Calderon', 'Osias D. Cadiente', 'Natalia F. Dumlao', 'Ruth R. Padilla', 'Rodolfo Q. Agbayani', 'Luisa Lloren Cuaresma', 'Carlos M. Padilla', 'Jose Gambito'
             ],
 
         ],
@@ -373,7 +359,7 @@ return [
         'filipino_deities' => [
             'label' => 'Filipino Deities',
             'list' => [
-                'Bathala','Mayari','Apolaki','Tala','Hanan','Dumangan','Anitun Tabu','Lakapati','Idiyanale','Amanikable','Mapulon','Lihangin','Sidapa','Kan-Laon','Sitan','Bakunawa','Magwayen','Malandok','Alunsina','Tungkung Langit','Laon','Makapulaw','Maklium-sa-Tiburan','Bulalakaw','Panlinugon','Saragnayan','Pandaki','Lalahon','Mandarangan','Lisuga'
+                'Bathala','Mayari','Apolaki','Tala','Hanan','Dumangan','Anitun Tabu','Lakapati','Idiyanale','Amanikable','Mapulon','Lihangin','Sidapa','Kan-Laon','Sitan','Bakunawa','Magwayen','Malandok','Alunsina','Tungkung Langit','Laon','Makapulaw','Maklium-sa-Tiburan','Bulalakaw','Panlinugon','Saragnayan','Pandaki', 'Lalahon','Mandarangan','Lisuga'
             ],
         ],
 

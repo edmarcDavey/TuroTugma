@@ -14,88 +14,38 @@
         </div>
     </div>
 
-    <div id="ss-grid" class="grid grid-cols-1 gap-6">
-        <!-- Sections panel -->
-        <div id="panel-sections">
-            
+            <div id="ss-grid" class="grid grid-cols-1 gap-6">
+                <div id="panel-sections">
+                @php
+                    // themes config
+                    $allThemes = config('section_themes.themes');
+                    // $hasSections should be provided by the route; fallback to DB check if not set
+                    $hasSections = $hasSections ?? \App\Models\Section::exists();
+                @endphp
 
-            <div class="space-y-6">
-                <!-- Junior High container -->
-                <div class="border rounded p-4">
-                    <div class="flex items-center justify-between mb-3">
-                        <div class="font-medium">Junior High School</div>
-                        <div class="text-sm text-slate-500">Grades 7 &ndash; 10</div>
-                    </div>
-
-                    <div class="space-y-3">
-                        @foreach(range(7,10) as $yr)
-                            @php
-                                $grade = $gradeLevels->firstWhere('year', $yr);
-                                $name = $grade->name ?? 'Grade '.$yr;
-                                $gid = $grade->id ?? '';
-                                $theme = $grade->section_naming ?? '';
-                                $planned = $grade->section_naming_options['planned_sections'] ?? 0;
-                            @endphp
-                            <div class="grid grid-cols-1 md:grid-cols-4 gap-3 items-center py-2 border-b">
-                                <div class="md:col-span-1 font-medium">{{ $name }}</div>
-                                    <div>
-                                        @php
-                                            $allThemes = config('section_themes.themes');
-                                            // default to a random theme key if none stored (guard when list empty)
-                                            $selectedThemeKey = $theme ?: (count($allThemes) ? array_rand($allThemes) : '');
-                                        @endphp
-                                        <select name="theme" data-year="{{ $yr }}" data-grade-id="{{ $gid }}" class="w-full border rounded px-2 py-1">
-                                            @foreach($allThemes as $tkey => $t)
-                                                <option value="{{ $tkey }}" data-label="{{ $t['label'] }}" {{ ($tkey === $selectedThemeKey) ? 'selected' : '' }}>{{ $t['label'] }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <input name="count" data-year="{{ $yr }}" data-grade-id="{{ $gid }}" type="number" min="0" class="w-full border rounded px-2 py-1" value="{{ $planned }}">
-                                    </div>
-                                    
-                                <div class="md:col-span-4 mt-2">
-                                    <div class="preview-area" data-year="{{ $yr }}" data-grade-id="{{ $gid }}"></div>
-                                    @php $savedSections = ($grade && $grade->sections) ? $grade->sections->sortBy('ordinal') : collect(); @endphp
-                                    @if($savedSections->count())
-                                        <div class="mt-3">
-                                            <div class="text-sm font-medium mb-2">Saved sections</div>
-                                            <div class="flex flex-wrap gap-2">
-                                                @foreach($savedSections as $sec)
-                                                    <span class="px-2 py-1 bg-gray-100 rounded text-sm">{{ $sec->name }}</span>
-                                                @endforeach
-                                            </div>
-                                        </div>
-                                    @endif
-                                </div>
+                @if(!$hasSections)
+                    <div class="space-y-6">
+                        <!-- Junior High builder -->
+                        <div class="border rounded p-4">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="font-medium">Junior High School</div>
+                                <div class="text-sm text-slate-500">Grades 7 &ndash; 10</div>
                             </div>
-                        @endforeach
-                    </div>
-                </div>
-
-                <!-- Senior High container -->
-                <div class="border rounded p-4">
-                    <div class="flex items-center justify-between mb-3">
-                        <div class="font-medium">Senior High School</div>
-                        <div class="text-sm text-slate-500">Grades 11 &ndash; 12</div>
-                    </div>
-
-                    <div class="space-y-3">
-                        @foreach(range(11,12) as $yr)
-                            @php
-                                $grade = $gradeLevels->firstWhere('year', $yr);
-                                $name = $grade->name ?? 'Grade '.$yr;
-                                $gid = $grade->id ?? '';
-                                $theme = $grade->section_naming ?? '';
-                                $planned = $grade->section_naming_options['planned_sections'] ?? 0;
-                            @endphp
-                            <div class="grid grid-cols-1 md:grid-cols-4 gap-3 items-center py-2 border-b">
-                                <div class="md:col-span-1 font-medium">{{ $name }}</div>
+                            <div class="space-y-3">
+                                @foreach(range(7,10) as $yr)
+                                    @php
+                                        $grade = $gradeLevels->firstWhere('year', $yr);
+                                        $name = $grade->name ?? 'Grade '.$yr;
+                                        $gid = $grade->id ?? '';
+                                        $theme = $grade->section_naming ?? '';
+                                        $planned = $grade->section_naming_options['planned_sections'] ?? 0;
+                                        // if theme not set, pick a random theme key so each grade may get a different theme
+                                        $themeKeys = array_keys($allThemes ?: []);
+                                        $selectedThemeKey = $theme ?: (count($themeKeys) ? $themeKeys[array_rand($themeKeys)] : '');
+                                    @endphp
+                                    <div class="grid grid-cols-1 md:grid-cols-4 gap-3 items-center py-2 border-b">
+                                        <div class="md:col-span-1 font-medium">{{ $name }}</div>
                                         <div>
-                                            @php
-                                                $allThemes = config('section_themes.themes');
-                                                $selectedThemeKey = $theme ?: (count($allThemes) ? array_rand($allThemes) : '');
-                                            @endphp
                                             <select name="theme" data-year="{{ $yr }}" data-grade-id="{{ $gid }}" class="w-full border rounded px-2 py-1">
                                                 @foreach($allThemes as $tkey => $t)
                                                     <option value="{{ $tkey }}" data-label="{{ $t['label'] }}" {{ ($tkey === $selectedThemeKey) ? 'selected' : '' }}>{{ $t['label'] }}</option>
@@ -105,32 +55,108 @@
                                         <div>
                                             <input name="count" data-year="{{ $yr }}" data-grade-id="{{ $gid }}" type="number" min="0" class="w-full border rounded px-2 py-1" value="{{ $planned }}">
                                         </div>
-                                    
-                                <div class="md:col-span-4 mt-2">
-                                    <div class="preview-area" data-year="{{ $yr }}" data-grade-id="{{ $gid }}"></div>
-                                        @php $savedSections = ($grade && $grade->sections) ? $grade->sections->sortBy('ordinal') : collect(); @endphp
-                                        @if($savedSections->count())
-                                            <div class="mt-3">
-                                                <div class="text-sm font-medium mb-2">Saved sections</div>
-                                                <div class="flex flex-wrap gap-2">
-                                                    @foreach($savedSections as $sec)
-                                                        <span class="px-2 py-1 bg-gray-100 rounded text-sm">{{ $sec->name }}</span>
-                                                    @endforeach
-                                                </div>
-                                            </div>
-                                        @endif
-                                </div>
+                                        <div class="md:col-span-4 mt-2">
+                                            <div class="preview-area" data-year="{{ $yr }}" data-grade-id="{{ $gid }}"></div>
+                                        </div>
+                                    </div>
+                                @endforeach
                             </div>
-                        @endforeach
+                        </div>
+
+                        <!-- Senior High builder -->
+                        <div class="border rounded p-4">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="font-medium">Senior High School</div>
+                                <div class="text-sm text-slate-500">Grades 11 &ndash; 12</div>
+                            </div>
+                            <div class="space-y-3">
+                                @foreach(range(11,12) as $yr)
+                                    @php
+                                        $grade = $gradeLevels->firstWhere('year', $yr);
+                                        $name = $grade->name ?? 'Grade '.$yr;
+                                        $gid = $grade->id ?? '';
+                                        $theme = $grade->section_naming ?? '';
+                                        $planned = $grade->section_naming_options['planned_sections'] ?? 0;
+                                        $themeKeys = array_keys($allThemes ?: []);
+                                        $selectedThemeKey = $theme ?: (count($themeKeys) ? $themeKeys[array_rand($themeKeys)] : '');
+                                    @endphp
+                                    <div class="grid grid-cols-1 md:grid-cols-4 gap-3 items-center py-2 border-b">
+                                        <div class="md:col-span-1 font-medium">{{ $name }}</div>
+                                        <div>
+                                            <select name="theme" data-year="{{ $yr }}" data-grade-id="{{ $gid }}" class="w-full border rounded px-2 py-1">
+                                                @foreach($allThemes as $tkey => $t)
+                                                    <option value="{{ $tkey }}" data-label="{{ $t['label'] }}" {{ ($tkey === $selectedThemeKey) ? 'selected' : '' }}>{{ $t['label'] }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <input name="count" data-year="{{ $yr }}" data-grade-id="{{ $gid }}" type="number" min="0" class="w-full border rounded px-2 py-1" value="{{ $planned }}">
+                                        </div>
+                                        <div class="md:col-span-4 mt-2">
+                                            <div class="preview-area" data-year="{{ $yr }}" data-grade-id="{{ $gid }}"></div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        <div class="mt-4 flex justify-end">
+                            <button id="save-all" type="button" class="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 w-36 text-center">Create Sections</button>
+                        </div>
                     </div>
-                </div>
-                
-                <!-- Global toolbar placed below Senior High (single Save button) -->
-                <div class="mt-4 flex justify-end">
-                    <button id="save-all" type="button" class="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 w-36 text-center">Save</button>
+                @else
+                    <div id="server-created-sections" class="space-y-6">
+                        <div class="border rounded p-4 bg-white">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="font-medium">Junior High Sections</div>
+                                <div class="text-sm text-slate-500">Grades 7 &ndash; 10</div>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                @foreach(range(7,10) as $yr)
+                                    @php $grade = $gradeLevels->firstWhere('year',$yr); $secs = ($grade && $grade->sections) ? $grade->sections->sortBy('ordinal') : collect(); @endphp
+                                    <div class="border rounded p-3 bg-gray-50">
+                                        <div class="flex items-center justify-between mb-2"><div class="font-medium">Grade {{ $yr }}</div><div class="text-xs text-slate-500">{{ $secs->count() }} item(s)</div></div>
+                                        @if($secs->count())
+                                            <ul class="space-y-1">
+                                                @foreach($secs as $s)
+                                                    <li class="py-1"><div class="font-medium">{{ $s->name }}</div></li>
+                                                @endforeach
+                                            </ul>
+                                        @else
+                                            <div class="text-sm text-slate-500">No sections</div>
+                                        @endif
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        <div class="border rounded p-4 bg-white">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="font-medium">Senior High Sections</div>
+                                <div class="text-sm text-slate-500">Grades 11 &ndash; 12</div>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                @foreach(range(11,12) as $yr)
+                                    @php $grade = $gradeLevels->firstWhere('year',$yr); $secs = ($grade && $grade->sections) ? $grade->sections->sortBy('ordinal') : collect(); @endphp
+                                    <div class="border rounded p-3 bg-gray-50">
+                                        <div class="flex items-center justify-between mb-2"><div class="font-medium">Grade {{ $yr }}</div><div class="text-xs text-slate-500">{{ $secs->count() }} item(s)</div></div>
+                                        @if($secs->count())
+                                            <ul class="space-y-1">
+                                                @foreach($secs as $s)
+                                                    <li class="py-1"><div class="font-medium">{{ $s->name }}</div></li>
+                                                @endforeach
+                                            </ul>
+                                        @else
+                                            <div class="text-sm text-slate-500">No sections</div>
+                                        @endif
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                @endif
                 </div>
             </div>
-        </div>
 
         <!-- Subjects panel -->
         <div id="panel-subjects" class="hidden bg-white border rounded p-4">
@@ -358,31 +384,14 @@
             return false;
         }
 
-        // Delegated handler: segmented two-button Regular / Special control
-        document.addEventListener('click', function(e){
-            // if a segment button was clicked
-            const segBtn = e.target.closest ? e.target.closest('.seg-btn') : null;
-            if(!segBtn) return;
-            const container = segBtn.closest('.btn-toggle-special');
-            if(!container) return;
-            const val = segBtn.getAttribute('data-value') === '1' ? '1' : '0';
-            container.dataset.special = val;
-            container.setAttribute('aria-pressed', val === '1' ? 'true' : 'false');
-            // update active classes on children
-            const children = Array.from(container.querySelectorAll('.seg-btn'));
-            children.forEach(c => c.classList.toggle('active', c === segBtn));
-        });
-
         // Ensure toggles default to Regular when not explicitly set by server
         function ensureToggleDefaults(container){
             if(!container) container = document;
             const toggles = Array.from(container.querySelectorAll('.btn-toggle-special'));
             toggles.forEach(t=>{
-                // if dataset.special is missing/empty, set default to '0' (Regular)
                 if(typeof t.dataset.special === 'undefined' || t.dataset.special === null || t.dataset.special === ''){
                     t.dataset.special = '0';
                 }
-                // update visual state based on dataset.special
                 const isSpecial = t.dataset.special === '1';
                 t.setAttribute('aria-pressed', isSpecial ? 'true' : 'false');
                 const left = t.querySelector('.seg-left');
@@ -392,142 +401,20 @@
             });
         }
 
-        // Preview for inline theme (anonymous preview)
-        document.querySelectorAll('.btn-preview').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                const gid = btn.getAttribute('data-grade-id');
-                const { theme, count } = getInputsForGrade(gid);
-                if(!theme || !count){
-                    alert('Please provide a naming theme and a count > 0');
-                    return;
-                }
-                const payload = { theme, count };
-                const resp = await postJSON(previewUrl, payload);
-                const area = document.querySelector('.preview-area[data-grade-id="'+gid+'"]');
-                area.innerHTML = '';
-                const names = Array.isArray(resp) ? resp : (resp.preview ?? resp.names ?? []);
-                if (Array.isArray(names) && names.length) {
-                    const list = document.createElement('div');
-                    list.className = 'space-y-1';
-                    names.forEach((n, idx) => {
-                        const payload = (typeof n === 'string') ? { name: n } : n || {};
-                        const name = payload.name ?? '';
-                        const isSpecial = payload.is_special == 1 || payload.is_special === true ? true : false;
-                        const row = document.createElement('div');
-                        row.className = 'flex items-center gap-2';
-                        row.innerHTML = `<input data-idx="${idx}" class="w-full border rounded px-2 py-1 section-name-input" value="${name}"/>` +
-                                        `<div class="btn-toggle-special seg-toggle ml-2 pill-small" data-idx="${idx}" data-special="${isSpecial ? '1' : '0'}" role="tablist" aria-pressed="${isSpecial ? 'true' : 'false'}">` +
-                                            `<button type="button" class="seg-btn seg-left ${isSpecial ? '' : 'active'}" data-value="0">Regular</button>` +
-                                            `<button type="button" class="seg-btn seg-right ${isSpecial ? 'active' : ''}" data-value="1">Special</button>` +
-                                        `</div>`;
-                        list.appendChild(row);
-                    });
-                    area.appendChild(list);
-                    ensureToggleDefaults(area);
-                    // (removed per-list mark-all controls — use per-row toggle buttons)
-                }
-            });
+        // Delegated handler: segmented two-button Regular / Special control
+        document.addEventListener('click', function(e){
+            const segBtn = e.target.closest ? e.target.closest('.seg-btn') : null;
+            if(!segBtn) return;
+            const container = segBtn.closest('.btn-toggle-special');
+            if(!container) return;
+            const val = segBtn.getAttribute('data-value') === '1' ? '1' : '0';
+            container.dataset.special = val;
+            container.setAttribute('aria-pressed', val === '1' ? 'true' : 'false');
+            const children = Array.from(container.querySelectorAll('.seg-btn'));
+            children.forEach(c => c.classList.toggle('active', c === segBtn));
         });
 
-        // Auto-generate: per-grade generate button handler (requests preview for that grade)
-        document.querySelectorAll('.btn-generate').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                const gid = btn.getAttribute('data-grade-id');
-                const year = btn.getAttribute('data-year');
-                const themeInput = document.querySelector('select[name="theme"][data-grade-id="'+gid+'"]') || document.querySelector('select[name="theme"][data-year="'+year+'"]');
-                const countInput = document.querySelector('input[name="count"][data-grade-id="'+gid+'"]') || document.querySelector('input[name="count"][data-year="'+year+'"]');
-                const theme = themeInput ? themeInput.value.trim() : '';
-                const count = countInput ? parseInt(countInput.value||'0',10) : 0;
-                if(!count){ alert('Please set a number of sections greater than 0'); return; }
-                try{
-                    const payload = { theme: theme, count: count, name: 'Grade ' + year };
-                    const resp = await postJSON(previewUrl, payload);
-                    const preview = resp.preview ?? resp.names ?? resp;
-                    const area = document.querySelector('.preview-area[data-grade-id="'+gid+'"]') || document.querySelector('.preview-area[data-year="'+year+'"]');
-                    if(themeInput){ const ok = setThemeSelect(themeInput, resp); if(!ok){
-                            // fallback: pick a random real option (skip empty placeholder)
-                            const opts = Array.from(themeInput.options).filter(o=>o.value && o.value.trim()!=='');
-                            if(opts.length){ const pick = opts[Math.floor(Math.random()*opts.length)]; themeInput.value = pick.value; }
-                        }
-                    }
-                    if(area){
-                        area.innerHTML = '';
-                        if(Array.isArray(preview) && preview.length){
-                            const list = document.createElement('div');
-                            list.className = 'space-y-1';
-                            preview.forEach((item, idx) => {
-                                const payload = (typeof item === 'string') ? { name: item } : item || {};
-                                const name = payload.name ?? '';
-                                const isSpecial = payload.is_special == 1 || payload.is_special === true ? true : false;
-                                const row = document.createElement('div');
-                                row.className = 'flex items-center gap-2 py-1';
-                                row.innerHTML = `<input data-idx="${idx}" class="flex-1 border rounded px-2 py-1 section-name-input" value="${name}"/>` +
-                                                `<div class="btn-toggle-special seg-toggle ml-2 pill-small" data-idx="${idx}" data-special="${isSpecial ? '1' : '0'}" role="tablist" aria-pressed="${isSpecial ? 'true' : 'false'}">` +
-                                                    `<button type="button" class="seg-btn seg-left ${isSpecial ? '' : 'active'}" data-value="0">Regular</button>` +
-                                                    `<button type="button" class="seg-btn seg-right ${isSpecial ? 'active' : ''}" data-value="1">Special</button>` +
-                                                `</div>`;
-                                list.appendChild(row);
-                            });
-                            area.appendChild(list);
-                            ensureToggleDefaults(area);
-                            // (removed per-list mark-all controls — use per-row toggle buttons)
-                        }
-                    }
-                } catch(err){
-                    console.error('generate error', err);
-                    alert('Preview failed');
-                }
-            });
-        });
-
-        // Save to grade (bulk-create)
-        document.querySelectorAll('.btn-save').forEach(btn => {
-
-        // Auto-populate theme selects with a server-chosen random theme when empty.
-        (async function autoPopulateThemes(){
-            const themeSelects = Array.from(document.querySelectorAll('select[name="theme"]'));
-            for(const sel of themeSelects){
-                try{
-                    const year = sel.getAttribute('data-year') || '';
-                    if(sel.value && sel.value.trim() !== '') continue; // skip non-empty
-                    const payload = { theme: '', count: 0, name: 'Grade ' + year };
-                    const resp = await postJSON(previewUrl, payload);
-                    if(resp){ const ok = setThemeSelect(sel, resp); if(!ok){
-                            // fallback to client-side random pick
-                            const opts = Array.from(sel.options).filter(o=>o.value && o.value.trim()!=='');
-                            if(opts.length){ const pick = opts[Math.floor(Math.random()*opts.length)]; sel.value = pick.value; }
-                        }
-                    }
-                } catch(err){
-                    console.error('autopopulate theme error', err);
-                }
-            }
-        })();
-            btn.addEventListener('click', async (e) => {
-                const gid = btn.getAttribute('data-grade-id');
-                const area = document.querySelector('.preview-area[data-grade-id="'+gid+'"]');
-                const items = Array.from(area.querySelectorAll('.section-name-input')).map(i=>{
-                    const idx = i.getAttribute('data-idx');
-                    const name = i.value.trim();
-                    const btn = area.querySelector('.btn-toggle-special[data-idx="'+idx+'"]');
-                    return { name, is_special: btn && btn.dataset && btn.dataset.special === '1' ? 1 : 0 };
-                }).filter(it=>it.name);
-                if(!items.length){ alert('No section names to save'); return; }
-                const resp = await postJSON(`/admin/it/grade-levels/${gid}/sections/bulk-create`, { items });
-                if(resp && (resp.sections || resp.success)){
-                    const countSpan = document.querySelector('.grade-count[data-grade-id="'+gid+'"]');
-                    const newCount = Array.isArray(resp.sections) ? resp.sections.length : (resp.created_count ?? items.length);
-                    if(countSpan) countSpan.textContent = newCount;
-                    alert('Sections saved');
-                } else {
-                    alert('Failed to save sections');
-                }
-            });
-        });
-
-        
-
-        // Subject grade list toggles & checkbox handlers
+        // (Builder-related preview/generate/save JS removed to slim page; subject handlers remain below)
         document.querySelectorAll('.subject-toggle-open').forEach(btn => {
             btn.addEventListener('click', function(){
                 const sid = this.dataset.subjectId;
@@ -589,10 +476,19 @@
                     const year = inp.getAttribute('data-year');
                     if (!year) continue;
                     const themeInput = document.querySelector('select[name="theme"][data-year="'+year+'"]');
-                    const theme = themeInput ? themeInput.value.trim() : '';
-                    if (cnt > 0) {
+                        const theme = themeInput ? themeInput.value.trim() : '';
+                            if (cnt > 0) {
                         try {
-                            const payload = { theme: theme, count: cnt, name: 'Grade ' + year };
+                            // if theme is empty, pick a random theme from the select options for this year
+                            let chosenTheme = theme;
+                            if(!chosenTheme){
+                                if (themeInput && themeInput.options && themeInput.options.length){
+                                    // collect non-empty option values
+                                    const opts = Array.from(themeInput.options).map(o=>o.value).filter(v=>v);
+                                    if(opts.length) chosenTheme = opts[Math.floor(Math.random()*opts.length)];
+                                }
+                            }
+                            const payload = { theme: chosenTheme, count: cnt, name: 'Grade ' + year };
                             const resp = await postJSON(previewUrl, payload);
                             const preview = resp.preview ?? resp.names ?? resp;
                             // if server returned the resolved theme, populate the theme input so UI reflects it
@@ -655,7 +551,16 @@
                     return;
                 }
                 try{
-                    const payload = { theme: theme, count: cnt, name: 'Grade ' + year };
+                    // if theme is empty, pick a random theme from the select options for this year
+                    let chosenTheme = theme;
+                    if(!chosenTheme){
+                        const themeInputLocal = document.querySelector('select[name="theme"][data-year="'+year+'"]');
+                        if(themeInputLocal && themeInputLocal.options && themeInputLocal.options.length){
+                            const opts = Array.from(themeInputLocal.options).map(o=>o.value).filter(v=>v);
+                            if(opts.length) chosenTheme = opts[Math.floor(Math.random()*opts.length)];
+                        }
+                    }
+                    const payload = { theme: chosenTheme, count: cnt, name: 'Grade ' + year };
                     const resp = await postJSON(previewUrl, payload);
                     const preview = resp.preview ?? resp.names ?? resp;
                     // populate theme input if server tells us which theme was used
@@ -703,20 +608,148 @@
 
         // Save All: create grade if missing, then bulk-create sections for each previewed grade
         const saveAllBtn = document.getElementById('save-all');
+        // Helper to render a view-only horizontal grid panel showing created sections grouped into Junior (7-10) and Senior (11-12)
+        function renderCreatedSectionsView(createdMap, failedYears){
+            // createdMap: { year: [ { name, is_special, id? } ] }
+            // failedYears: Set or array of years that failed
+            let container = document.getElementById('created-sections-view');
+            if(!container){
+                container = document.createElement('div');
+                container.id = 'created-sections-view';
+                container.className = 'mt-6';
+                const toolbar = document.querySelector('.mt-4.flex.justify-end');
+                if(toolbar && toolbar.parentNode){
+                    toolbar.parentNode.insertBefore(container, toolbar);
+                } else {
+                    const panel = document.getElementById('panel-sections');
+                    panel.insertBefore(container, panel.firstChild);
+                }
+            }
+            container.innerHTML = '';
+
+            // Create a horizontal grid for a set of years
+            function makeHorizontalGrid(title, subtitle, years, cols){
+                const wrapper = document.createElement('div');
+                wrapper.className = 'border rounded p-4 mb-4 bg-white';
+                const header = document.createElement('div');
+                header.className = 'flex items-center justify-between mb-3';
+                header.innerHTML = `<div class="font-medium">${title}</div><div class="text-sm text-slate-500">${subtitle}</div>`;
+                wrapper.appendChild(header);
+
+                // Use Tailwind grid cols via utility - if unavailable, fallback to flex
+                const grid = document.createElement('div');
+                grid.className = 'grid gap-4';
+                grid.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
+
+                years.forEach(y => {
+                    const secList = createdMap[y] || [];
+                    const col = document.createElement('div');
+                    col.className = 'border rounded p-3 bg-gray-50 flex flex-col h-full';
+                    const head = document.createElement('div');
+                    head.className = 'flex items-center justify-between mb-2';
+                    head.innerHTML = `<div class="font-medium">Grade ${y}</div><div class="text-xs text-slate-500">${secList.length} item(s)</div>`;
+                    col.appendChild(head);
+
+                    const body = document.createElement('div');
+                    body.className = 'overflow-auto';
+                    // default: expanded, show list
+                    if(secList.length){
+                        const ul = document.createElement('ul');
+                        ul.className = 'space-y-1';
+                        secList.forEach(s => {
+                            const li = document.createElement('li');
+                            li.className = 'py-1';
+                            const label = document.createElement('div'); label.className = 'flex items-center justify-between';
+                            const nm = document.createElement('div'); nm.className = 'font-medium'; nm.textContent = s.name;
+                            const tag = document.createElement('div'); tag.className = 'text-xs text-slate-500'; tag.textContent = s.is_special ? 'Special' : '';
+                            label.appendChild(nm); label.appendChild(tag);
+                            li.appendChild(label);
+                            ul.appendChild(li);
+                        });
+                        body.appendChild(ul);
+                    } else {
+                        const p = document.createElement('div'); p.className = 'text-sm text-slate-500'; p.textContent = failedYears && failedYears.indexOf(String(y)) !== -1 ? 'Failed to create sections for this grade' : 'No new sections';
+                        body.appendChild(p);
+                    }
+                    col.appendChild(body);
+                    grid.appendChild(col);
+                });
+
+                wrapper.appendChild(grid);
+                return wrapper;
+            }
+
+            // Junior: 4 columns for grades 7-10
+            const junior = makeHorizontalGrid('Junior High Sections', 'Grades 7 – 10', [7,8,9,10], 4);
+            const senior = makeHorizontalGrid('Senior High Sections', 'Grades 11 – 12', [11,12], 2);
+            container.appendChild(junior);
+            container.appendChild(senior);
+
+            container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // Hide builder inputs/preview for grades that have been created (do NOT render per-grade static lists here)
+        // The canonical created sections view is the bottom horizontal grid; avoid duplicating lists in the grade rows.
+        function updateBuilderForCreated(createdMap){
+            try{
+                Object.keys(createdMap || {}).forEach(year => {
+                    const preview = document.querySelector('.preview-area[data-year="'+year+'"]');
+                    // clear preview area (do not insert static list to avoid duplication)
+                    if(preview){ preview.innerHTML = ''; }
+
+                    // hide theme select and count input for the created grade
+                    const themeSel = document.querySelector('select[name="theme"][data-year="'+year+'"]');
+                    const countInp = document.querySelector('input[name="count"][data-year="'+year+'"]');
+                    if(themeSel) themeSel.style.display = 'none';
+                    if(countInp) countInp.style.display = 'none';
+
+                    // hide any generate/preview/save buttons associated with this year
+                    const btns = Array.from(document.querySelectorAll('button[data-year="'+year+'"], button[data-grade-id="'+year+'"]'));
+                    btns.forEach(b => { try{ b.style.display = 'none'; }catch(e){} });
+                });
+            }catch(err){ console.error('updateBuilderForCreated error', err); }
+        }
+
         if (saveAllBtn) {
             saveAllBtn.addEventListener('click', async function(){
-                if(!confirm('Save all generated sections for all grades? This will persist sections to the database.')) return;
+                if(!confirm('Create all generated sections for all grades? This will persist sections to the database.')) return;
                 const previewAreas = Array.from(document.querySelectorAll('.preview-area'));
-                let summary = [];
+                const createdMap = {}; // year -> [{name, is_special, id?}]
+                const failedYears = [];
+
+                // disable inputs while processing
+                saveAllBtn.disabled = true; saveAllBtn.textContent = 'Creating…';
+                const inputsToDisable = Array.from(document.querySelectorAll('select[name="theme"], input[name="count"], button.btn-generate, button.btn-preview, #save-all, #global-generate'));
+                inputsToDisable.forEach(i => i.disabled = true);
+
                 for (const area of previewAreas){
                     const year = area.getAttribute('data-year');
                     const gidAttr = area.getAttribute('data-grade-id');
-                    const items = Array.from(area.querySelectorAll('.section-name-input')).map(i=>{
+                    let items = Array.from(area.querySelectorAll('.section-name-input')).map(i=>{
                         const idx = i.getAttribute('data-idx');
                         const name = i.value.trim();
                         const btn = area.querySelector('.btn-toggle-special[data-idx="'+idx+'"]');
                         return { name, is_special: btn && btn.dataset && btn.dataset.special === '1' ? 1 : 0 };
                     }).filter(it=>it.name);
+
+                    // If no preview items are present but a count input exists and >0, request a preview from the server
+                    if(!items.length){
+                        const countInputLocal = document.querySelector('input[name="count"][data-year="'+year+'"]');
+                        const themeInputLocal = document.querySelector('select[name="theme"][data-year="'+year+'"]');
+                        const cntLocal = countInputLocal ? parseInt(countInputLocal.value||'0',10) : 0;
+                        const themeLocal = themeInputLocal ? (themeInputLocal.value || '') : '';
+                        if(cntLocal > 0){
+                            try{
+                                const resp = await postJSON(previewUrl, { theme: themeLocal, count: cntLocal, name: 'Grade ' + year });
+                                const preview = resp.preview ?? resp.names ?? resp;
+                                if(Array.isArray(preview) && preview.length){
+                                    items = preview.map(it => (typeof it === 'string') ? { name: it, is_special: 0 } : { name: it.name || '', is_special: it.is_special ? 1 : 0 }).filter(it => it.name);
+                                }
+                            } catch(err){
+                                console.error('preview before save error', err);
+                            }
+                        }
+                    }
                     if(!items.length) continue;
 
                     let gradeId = gidAttr || null;
@@ -727,19 +760,25 @@
                         const theme = themeInput ? themeInput.value.trim() : null;
                         const planned = countInput ? parseInt(countInput.value||'0',10) : 0;
                         try{
-                            const createResp = await postJSON('/admin/it/grade-levels', { name: 'Grade ' + year, section_naming: theme, section_naming_options: { planned_sections: planned } });
+                            // if theme empty, choose random from options
+                            let gradeTheme = theme;
+                            if(!gradeTheme && themeInput && themeInput.options && themeInput.options.length){
+                                const opts = Array.from(themeInput.options).map(o=>o.value).filter(v=>v);
+                                if(opts.length) gradeTheme = opts[Math.floor(Math.random()*opts.length)];
+                            }
+                            const createResp = await postJSON('/admin/it/grade-levels', { name: 'Grade ' + year, section_naming: gradeTheme, section_naming_options: { planned_sections: planned } });
                             if(createResp && createResp.grade && createResp.grade.id){
                                 gradeId = createResp.grade.id;
                                 // annotate DOM so future saves know id
                                 area.setAttribute('data-grade-id', gradeId);
                             } else {
                                 console.warn('failed to create grade for year', year);
-                                summary.push({ year, created: 0, error: true });
+                                failedYears.push(year);
                                 continue;
                             }
                         } catch(err){
                             console.error('create grade error', err);
-                            summary.push({ year, created: 0, error: true });
+                            failedYears.push(year);
                             continue;
                         }
                     }
@@ -748,24 +787,60 @@
                     try{
                         const url = `/admin/it/grade-levels/${gradeId}/sections/bulk-create`;
                         const saveResp = await postJSON(url, { items: items });
-                        const created = Array.isArray(saveResp.sections) ? saveResp.sections.length : (saveResp.created_count ?? items.length);
-                        summary.push({ year, created });
+                        // prefer server-returned sections (with ids) else use submitted items
+                        const sections = Array.isArray(saveResp.sections) && saveResp.sections.length ? saveResp.sections.map(s => ({ name: s.name || s, is_special: s.is_special || 0, id: s.id || null })) : items.map(i => ({ name: i.name, is_special: i.is_special || 0 }));
+                        createdMap[year] = sections;
                     } catch(err){
                         console.error('bulk create error', err);
-                        summary.push({ year, created: 0, error: true });
+                        failedYears.push(year);
                     }
                 }
 
-                // show a short summary
-                const ok = summary.every(s => !s.error);
-                if(ok){
-                    alert('Sections saved for ' + summary.length + ' grades');
-                    window.location.reload();
+                // re-enable inputs
+                saveAllBtn.disabled = false; saveAllBtn.textContent = 'Create Sections';
+                inputsToDisable.forEach(i => i.disabled = false);
+
+                // Show results inline and update builder areas
+                renderCreatedSectionsView(createdMap, failedYears);
+                try{ updateBuilderForCreated(createdMap); }catch(err){ console.error('updateBuilderForCreated error', err); }
+
+                if(failedYears.length){
+                    alert('Some grades failed to create. See the created sections panel for details.');
                 } else {
-                    alert('Some grades failed to save. Check console for details.');
+                    alert('Sections created');
+                    // reload so server-side $hasSections becomes true and BUILDER is hidden
+                    location.reload();
                 }
             });
         }
+
+        // On page load: if the grade already has saved sections rendered server-side, hide the builder for that grade
+        function hideBuilderIfSavedExists(){
+            try{
+                const previewAreas = Array.from(document.querySelectorAll('.preview-area'));
+                previewAreas.forEach(area => {
+                    const year = area.getAttribute('data-year');
+                    // look for a sibling saved sections container (the server renders a flex.wrap container with saved section pills)
+                    const parent = area.parentElement || area.parentNode;
+                    if(!parent) return;
+                    const saved = parent.querySelector('.flex.flex-wrap');
+                    if(saved && saved.children && saved.children.length){
+                        // hide inputs and preview and buttons for this year (do NOT copy saved pills into preview area)
+                        const themeSel = document.querySelector('select[name="theme"][data-year="'+year+'"]');
+                        const countInp = document.querySelector('input[name="count"][data-year="'+year+'"]');
+                        if(themeSel) themeSel.style.display = 'none';
+                        if(countInp) countInp.style.display = 'none';
+                        area.innerHTML = '';
+                        // hide any buttons associated with this year
+                        const btns = Array.from(document.querySelectorAll('button[data-year="'+year+'"], button[data-grade-id="'+year+'"]'));
+                        btns.forEach(b => { try{ b.style.display = 'none'; }catch(e){} });
+                    }
+                });
+            }catch(err){ console.error('hideBuilderIfSavedExists error', err); }
+        }
+
+        // run initial hide pass
+        hideBuilderIfSavedExists();
 
         // Unified Add Subject form (handles both Junior and Senior submissions)
         const addSubjectForm = document.getElementById('add-subject');
