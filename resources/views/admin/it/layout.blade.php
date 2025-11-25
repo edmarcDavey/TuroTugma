@@ -16,7 +16,7 @@
           <a href="{{ route('admin.it.subjects-sections') }}" class="block text-slate-700 hover:text-[#3b4197]">Sections and Subjects</a>
           <a href="{{ route('admin.it.teachers.index') }}" class="block text-slate-700 hover:text-[#3b4197]">Teachers</a>
           <a href="{{ route('admin.it.scheduling.index') }}" class="block text-slate-700 hover:text-[#3b4197]">Scheduling Settings</a>
-          <a href="{{ route('admin.it.scheduler.run') }}" class="block text-slate-700 hover:text-[#3b4197]">Run Scheduler</a>
+          <a href="{{ route('admin.it.scheduler.run') }}" class="block text-slate-700 hover:text-[#3b4197]">Scheduling</a>
           <a href="{{ route('admin.it.exports') }}" class="block text-slate-700 hover:text-[#3b4197]">Exports & Analytics</a>
           <a href="{{ route('admin.it.logs') }}" class="block text-slate-700 hover:text-[#3b4197]">Run History</a>
         </nav>

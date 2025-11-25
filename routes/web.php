@@ -216,10 +216,107 @@ Route::middleware('auth')->prefix('admin/it')->name('admin.it.')->group(function
             return view('admin.it.subjects-sections', compact('gradeLevels','subjects','hasSections'));
     })->name('subjects-sections');
 
-    Route::get('/scheduler/run', function () {
+    // Scheduling workspace: list runs and create draft runs (index/store left as closures)
+    Route::get('/scheduler', function () {
         if (Auth::user()->role !== 'it_coordinator') abort(403);
-        return view('admin.it.scheduler.run');
+        // Redirect users straight to the interactive matrix for the latest run.
+        $run = \App\Models\SchedulingRun::orderBy('created_at', 'desc')->first();
+        if (! $run) {
+            // create a draft run if none exist
+            $run = \App\Models\SchedulingRun::create([
+                'name' => 'Draft ' . now()->format('Y-m-d H:i'),
+                'created_by' => Auth::id(),
+                'meta' => null,
+            ]);
+        }
+        return redirect()->route('admin.it.scheduler.matrix', ['run' => $run->id]);
     })->name('scheduler.run');
+
+    Route::post('/scheduler', function () {
+        if (Auth::user()->role !== 'it_coordinator') abort(403);
+        $run = \App\Models\SchedulingRun::create([
+            'name' => 'Draft ' . now()->format('Y-m-d H:i'),
+            'created_by' => Auth::id(),
+            'meta' => null,
+        ]);
+        return redirect()->route('admin.it.scheduler.run');
+    })->name('scheduler.store');
+
+    // Show a scheduling run (detailed per-section schedules)
+    Route::get('/scheduler/{run}', [\App\Http\Controllers\Admin\SchedulingRunController::class, 'show'])
+        ->whereNumber('run')
+        ->name('scheduler.show');
+
+    // Per-teacher schedule for a run
+    Route::get('/scheduler/{run}/teacher/{teacher}', [\App\Http\Controllers\Admin\SchedulingRunController::class, 'teacherSchedule'])
+        ->whereNumber('run')
+        ->whereNumber('teacher')
+        ->name('scheduler.teacher');
+
+    // Substitutions and absences view
+    Route::get('/scheduler/{run}/substitutions', [\App\Http\Controllers\Admin\SchedulingRunController::class, 'substitutions'])
+        ->whereNumber('run')
+        ->name('scheduler.substitutions');
+
+    // generate populate entries for a run (POST)
+    Route::post('/scheduler/{run}/generate', [\App\Http\Controllers\Admin\SchedulingRunController::class, 'generate'])
+        ->whereNumber('run')
+        ->name('scheduler.generate');
+
+    // async generate status (AJAX polling)
+    Route::get('/scheduler/{run}/generate/status', [\App\Http\Controllers\Admin\SchedulingRunController::class, 'generateStatus'])
+        ->whereNumber('run')
+        ->name('scheduler.generate.status');
+
+    // compact matrix view (class / teacher toggle) — single-page compact print-friendly
+    Route::get('/scheduler/{run}/matrix', [\App\Http\Controllers\Admin\SchedulingRunController::class, 'matrix'])
+        ->whereNumber('run')
+        ->name('scheduler.matrix');
+
+    // subjects by stage (AJAX JSON)
+    Route::get('/scheduler/{run}/subjects/{stage}', [\App\Http\Controllers\Admin\SchedulingRunController::class, 'subjectsByStage'])
+        ->whereNumber('run')
+        ->name('scheduler.subjects.stage');
+
+    // teachers candidates for a slot (AJAX JSON)
+    Route::get('/scheduler/{run}/teachers-for-slot', [\App\Http\Controllers\Admin\SchedulingRunController::class, 'teachersForSlot'])
+        ->whereNumber('run')
+        ->name('scheduler.teachers.for_slot');
+
+    // create a new schedule entry (used by inline cell creation)
+    Route::post('/scheduler/{run}/entry/create', [\App\Http\Controllers\Admin\SchedulingRunController::class, 'createEntry'])
+        ->whereNumber('run')
+        ->name('scheduler.entry.create');
+
+    // assign/update a schedule entry (AJAX)
+    Route::post('/scheduler/{run}/entry/{entry}/assign', [\App\Http\Controllers\Admin\SchedulingRunController::class, 'assignEntry'])
+        ->whereNumber('run')
+        ->whereNumber('entry')
+        ->name('scheduler.entry.assign');
+
+    // suggest substitutes for a teacher's timetable slots
+    Route::get('/scheduler/{run}/teacher/{teacher}/substitutes', [\App\Http\Controllers\Admin\SchedulingRunController::class, 'suggestSubstitutes'])
+        ->whereNumber('run')
+        ->whereNumber('teacher')
+        ->name('scheduler.teacher.substitutes');
+
+    // Suggest substitutes for a specific schedule entry (AJAX JSON)
+    Route::get('/scheduler/{run}/entry/{entry}/substitutes', [\App\Http\Controllers\Admin\SchedulingRunController::class, 'suggestSubstitutesForEntry'])
+        ->whereNumber('run')
+        ->whereNumber('entry')
+        ->name('scheduler.entry.substitutes');
+
+    // Apply a substitute to a schedule entry (POST)
+    Route::post('/scheduler/{run}/entry/{entry}/apply-substitute', [\App\Http\Controllers\Admin\SchedulingRunController::class, 'applySubstitute'])
+        ->whereNumber('run')
+        ->whereNumber('entry')
+        ->name('scheduler.entry.apply_substitute');
+
+    // Return a schedule entry as JSON (including conflicts) for modal detail
+    Route::get('/scheduler/{run}/entry/{entry}', [\App\Http\Controllers\Admin\SchedulingRunController::class, 'getEntry'])
+        ->whereNumber('run')
+        ->whereNumber('entry')
+        ->name('scheduler.entry.get');
 
     Route::get('/exports', function () {
         if (Auth::user()->role !== 'it_coordinator') abort(403);
