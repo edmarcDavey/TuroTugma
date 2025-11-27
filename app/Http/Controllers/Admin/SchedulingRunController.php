@@ -104,12 +104,27 @@ class SchedulingRunController extends Controller
                 $q->where('stage', $stageKey);
             })->orderBy('name')->get();
 
+            // Enforce policy: for Junior High regular sections (not special),
+            // exclude subjects whose `type` is 'special subjects' so only
+            // designated special sections can receive those subjects.
+            if ($stageKey === 'jhs' && !(isset($section->is_special) && $section->is_special)) {
+                $subjects = $subjects->filter(function($s){
+                    $t = strtolower(trim($s->type ?? ''));
+                    return $t !== 'special subjects';
+                })->values();
+            }
+
             // Quick-fix policy (matrix mode):
             // - choose N distinct subjects per section (default 8)
+            // - SHS sections remain at 8; JHS special sections may have 9 subjects
             // - assign each chosen subject to a unique period (no duplicates per section)
             // - one period (if periods > subjects) will remain empty
             // - for each assigned period pick the lowest-load available teacher (or leave null)
             $desiredSubjects = 8;
+            // Allow junior-high special sections to have 9 subjects (user-requested special subjects)
+            if ($stageKey === 'jhs' && isset($section->is_special) && $section->is_special) {
+                $desiredSubjects = 9;
+            }
 
             // build slots as periods only (day will be set to 1 for storage compatibility)
             $slots = [];
@@ -121,10 +136,11 @@ class SchedulingRunController extends Controller
             $subjectArr = $subjects->values()->all();
             $subjectCandidates = [];
             foreach ($subjectArr as $subj) {
+                // only consider teachers who teach the subject and are explicitly assigned to this section's grade level
                 $cands = $subj->teachers()->with('gradeLevels')->get()->filter(function ($t) use ($section) {
-                    if ($t->gradeLevels && $t->gradeLevels->count() && !$t->gradeLevels->contains('id', $section->grade_level_id)) {
-                        return false;
-                    }
+                    // teacher must have gradeLevels defined and must include the section's grade level
+                    if (!($t->gradeLevels && $t->gradeLevels->count())) return false;
+                    if (!$t->gradeLevels->contains('id', $section->grade_level_id)) return false;
                     return true;
                 })->values();
                 $subjectCandidates[$subj->id] = $cands;
@@ -136,18 +152,56 @@ class SchedulingRunController extends Controller
             $withoutCandidates = array_filter($subjectArr, fn($s) => !isset($subjectCandidates[$s->id]) || $subjectCandidates[$s->id]->count() == 0);
 
             $selectedSubjects = [];
-            // first take from those with candidates (shuffle to avoid deterministic skew)
-            shuffle($withCandidates);
-            foreach ($withCandidates as $s) {
-                if (count($selectedSubjects) >= $desiredSubjects) break;
-                $selectedSubjects[] = $s->id;
-            }
-            // if still short, take subjects without candidates to reach desired count
-            if (count($selectedSubjects) < $desiredSubjects) {
-                shuffle($withoutCandidates);
-                foreach ($withoutCandidates as $s) {
+            // For junior-high special sections: ensure AT MOST ONE special subject
+            $isJhsSpecialSection = ($stageKey === 'jhs' && isset($section->is_special) && $section->is_special);
+
+            if ($isJhsSpecialSection) {
+                // Separate subjects with candidates into special and normal
+                $specialWithCandidates = array_filter($withCandidates, function($s){
+                    return strtolower(trim($s->type ?? '')) === 'special subjects';
+                });
+                $normalWithCandidates = array_filter($withCandidates, function($s){
+                    return strtolower(trim($s->type ?? '')) !== 'special subjects';
+                });
+
+                // Pick one special subject (if available)
+                if (count($specialWithCandidates) > 0) {
+                    shuffle($specialWithCandidates);
+                    $picked = array_shift($specialWithCandidates);
+                    $selectedSubjects[] = $picked->id;
+                }
+
+                // Fill remaining slots from normal-with-candidates
+                shuffle($normalWithCandidates);
+                foreach ($normalWithCandidates as $s) {
+                    if (count($selectedSubjects) >= $desiredSubjects) break;
+                    if (!in_array($s->id, $selectedSubjects)) $selectedSubjects[] = $s->id;
+                }
+
+                // If still short, fall back to subjects without candidates (excluding special subjects)
+                if (count($selectedSubjects) < $desiredSubjects) {
+                    // exclude special subjects from fallback for JHS special sections' normal pool
+                    $fallback = array_filter($withoutCandidates, function($s){ return strtolower(trim($s->type ?? '')) !== 'special subjects'; });
+                    shuffle($fallback);
+                    foreach ($fallback as $s) {
+                        if (count($selectedSubjects) >= $desiredSubjects) break;
+                        if (!in_array($s->id, $selectedSubjects)) $selectedSubjects[] = $s->id;
+                    }
+                }
+            } else {
+                // Non-special or other stages: pick from withCandidates first
+                shuffle($withCandidates);
+                foreach ($withCandidates as $s) {
                     if (count($selectedSubjects) >= $desiredSubjects) break;
                     $selectedSubjects[] = $s->id;
+                }
+                // if still short, take subjects without candidates to reach desired count
+                if (count($selectedSubjects) < $desiredSubjects) {
+                    shuffle($withoutCandidates);
+                    foreach ($withoutCandidates as $s) {
+                        if (count($selectedSubjects) >= $desiredSubjects) break;
+                        $selectedSubjects[] = $s->id;
+                    }
                 }
             }
 
@@ -176,10 +230,15 @@ class SchedulingRunController extends Controller
                 $selectedCount = count($selectedSubjects);
             }
             // reserve period 9 as the empty period (P9 should always be empty in the matrix)
+            // Exception: allow JHS special sections to use P9 so they can have 9 distinct subjects.
             $fixedEmptyPeriod = 9;
-            // randomly pick $selectedCount distinct periods from available periods (exclude P9)
+            if ($stageKey === 'jhs' && isset($section->is_special) && $section->is_special) {
+                // allow using period 9 for special junior-high sections
+                $fixedEmptyPeriod = null;
+            }
+            // randomly pick $selectedCount distinct periods from available periods (exclude fixed empty if set)
             $periodPool = array_map(fn($s) => $s['period'], $slots);
-            $availablePeriods = array_values(array_filter($periodPool, fn($p) => $p !== $fixedEmptyPeriod));
+            $availablePeriods = $fixedEmptyPeriod === null ? array_values($periodPool) : array_values(array_filter($periodPool, fn($p) => $p !== $fixedEmptyPeriod));
             shuffle($availablePeriods);
             $assignedPeriods = array_slice($availablePeriods, 0, $selectedCount);
             // shuffle subjects to randomize mapping to periods
@@ -254,7 +313,79 @@ class SchedulingRunController extends Controller
         if ($request->expectsJson()) {
             $total = ScheduleEntry::where('scheduling_run_id', $run->id)->count();
             $conflicts = ScheduleEntry::where('scheduling_run_id', $run->id)->whereNotNull('conflict')->count();
-            return response()->json([ 'success' => true, 'entries' => $total, 'conflicts' => $conflicts ]);
+
+            // prepare entries payload for client-side update
+            $entries = ScheduleEntry::with(['section','subject','teacher'])
+                ->where('scheduling_run_id', $run->id)
+                ->get()
+                ->map(function($e){
+                    return [
+                        'id' => $e->id,
+                        'section_id' => $e->section_id,
+                        'period' => $e->period,
+                        'subject_id' => $e->subject_id,
+                        'subject_name' => $e->subject ? $e->subject->name : null,
+                        'teacher_id' => $e->teacher_id,
+                        'teacher_name' => $e->teacher ? $e->teacher->name : null,
+                        'conflict' => $e->conflict,
+                    ];
+                })->values();
+
+            // compute initialCandidates similar to matrix() so frontend can populate selects instantly
+            $initialCandidates = [];
+            $periods = range(1,9);
+            $assignedByPeriod = [];
+            foreach ($periods as $p) {
+                $assignedByPeriod[$p] = ScheduleEntry::where('scheduling_run_id', $run->id)
+                    ->where('period', $p)
+                    ->get()
+                    ->groupBy('teacher_id');
+            }
+            $loads = ScheduleEntry::where('scheduling_run_id', $run->id)
+                ->whereNotNull('teacher_id')
+                ->groupBy('teacher_id')
+                ->selectRaw('teacher_id, count(*) as cnt')
+                ->pluck('cnt','teacher_id')
+                ->all();
+
+            $sections = \App\Models\Section::with('gradeLevel')->get();
+            foreach ($sections as $section) {
+                foreach ($periods as $p) {
+                    $entry = ScheduleEntry::where('scheduling_run_id', $run->id)->where('section_id', $section->id)->where('period', $p)->first();
+                    $subjectId = $entry ? $entry->subject_id : null;
+                    if (!$subjectId) continue;
+
+                    $candColl = \App\Models\Subject::find($subjectId) ? \App\Models\Subject::find($subjectId)->teachers()->with(['gradeLevels','subjects'])->get() : \App\Models\Teacher::with(['gradeLevels','subjects'])->get();
+                    $assignedMap = $assignedByPeriod[$p] ?? collect();
+                    $gradeLevelId = $section ? $section->grade_level_id : null;
+
+                    $out = [];
+                    foreach ($candColl as $t) {
+                        $isAssigned = isset($assignedMap[$t->id]);
+                        $load = (int) ($loads[$t->id] ?? 0);
+                        $available = true;
+                        if (is_array($t->availability) && count($t->availability)) {
+                            $flat = [];
+                            if (isset($t->availability['unavailable']) && is_array($t->availability['unavailable'])) {
+                                $flat = $t->availability['unavailable'];
+                            } else { $flat = $t->availability; }
+                            foreach ($flat as $f) { if (is_string($f) && (str_ends_with($f, ":{$p}") || (string)$f === (string)$p)) { $available = false; break; } }
+                        }
+                        $teaches = $t->subjects->contains('id', $subjectId);
+                        $gradeOk = true;
+                        if ($gradeLevelId) { if (!($t->gradeLevels && $t->gradeLevels->count())) $gradeOk = false; elseif (!$t->gradeLevels->contains('id', $gradeLevelId)) $gradeOk = false; }
+                        $eligible = $available && !$isAssigned && $teaches && $gradeOk;
+                        $notes = null;
+                        if (!$available) $notes = 'Unavailable'; elseif ($isAssigned) $notes = 'Already assigned at this period'; elseif (!$teaches) $notes = 'Does not teach selected subject'; elseif (!$gradeOk) $notes = 'Not assigned to this grade level';
+                        $out[] = [ 'id'=>$t->id, 'name'=>$t->name, 'load'=>$load, 'is_assigned'=>(bool)$isAssigned, 'eligible'=>(bool)$eligible, 'grade_level_ids'=>$t->gradeLevels->pluck('id')->all(), 'subjects'=>$t->subjects->map(fn($s)=>['id'=>$s->id,'name'=>$s->name])->values()->all(), 'notes'=>$notes ];
+                    }
+                    usort($out, function($a,$b){ if ($a['eligible'] !== $b['eligible']) return $a['eligible'] ? -1 : 1; if ($a['load'] !== $b['load']) return $a['load'] <=> $b['load']; return strcmp($a['name'],$b['name']); });
+                    $mapKey = intval($section->id) . ':' . intval($p) . ':' . intval($subjectId);
+                    $initialCandidates[$mapKey] = $out;
+                }
+            }
+
+            return response()->json([ 'success' => true, 'entries' => $total, 'conflicts' => $conflicts, 'entries_data' => $entries, 'initialCandidates' => $initialCandidates ]);
         }
 
         // Otherwise redirect to the compact matrix view so generated results are visible.
@@ -299,17 +430,18 @@ class SchedulingRunController extends Controller
         // - subjects with their `stage` set to the target stage
         // - subjects linked to a GradeLevel whose `school_stage` matches the target stage
         // - subjects with NULL/empty stage (fallback)
-        $jhsSubjects = \App\Models\Subject::where(function($q){
-            $q->where('stage','jhs')->orWhereNull('stage')->orWhere('stage','');
-        })->orWhereHas('gradeLevels', function($q){
-            $q->where('school_stage','jhs');
-        })->orderBy('name')->get(['id','name'])->map(fn($s) => ['id' => $s->id, 'name' => $s->name])->unique('id')->values();
+        // Strict stage filtering: include only subjects explicitly marked for the stage
+        // or subjects assigned to grade levels of that stage. Do NOT include subjects
+        // with NULL/empty stage here because they can belong to either list unpredictably.
+        $jhsSubjects = \App\Models\Subject::where('stage','jhs')
+            ->orWhereHas('gradeLevels', function($q){
+                $q->where('school_stage','jhs');
+            })->orderBy('name')->get(['id','name','type'])->map(fn($s) => ['id' => $s->id, 'name' => $s->name, 'type' => $s->type ?? null])->unique('id')->values();
 
-        $shsSubjects = \App\Models\Subject::where(function($q){
-            $q->where('stage','shs')->orWhereNull('stage')->orWhere('stage','');
-        })->orWhereHas('gradeLevels', function($q){
-            $q->where('school_stage','shs');
-        })->orderBy('name')->get(['id','name'])->map(fn($s) => ['id' => $s->id, 'name' => $s->name])->unique('id')->values();
+        $shsSubjects = \App\Models\Subject::where('stage','shs')
+            ->orWhereHas('gradeLevels', function($q){
+                $q->where('school_stage','shs');
+            })->orderBy('name')->get(['id','name','type'])->map(fn($s) => ['id' => $s->id, 'name' => $s->name, 'type' => $s->type ?? null])->unique('id')->values();
 
         $subjectsByStage = [
             'jhs' => $jhsSubjects,
@@ -333,15 +465,114 @@ class SchedulingRunController extends Controller
             } else {
                 $stageKey = 'jhs';
             }
-            $subjects = \App\Models\Subject::where(function($q) use ($stageKey){
-                $q->where('stage', $stageKey)->orWhereNull('stage')->orWhere('stage','');
-            })->orWhereHas('gradeLevels', function($q) use ($grade){
-                $q->where('grade_levels.id', $grade->id);
-            })->orderBy('name')->get(['id','name'])->map(fn($s)=>['id'=>$s->id,'name'=>$s->name])->unique('id')->values();
+            $subjects = \App\Models\Subject::where('stage', $stageKey)
+                ->orWhereHas('gradeLevels', function($q) use ($grade){
+                    $q->where('grade_levels.id', $grade->id);
+                })->orderBy('name')->get(['id','name','type'])->map(fn($s)=>['id'=>$s->id,'name'=>$s->name,'type'=>$s->type ?? null])->unique('id')->values();
             $subjectsByGradeId[$grade->id] = $subjects;
         }
 
-        return view('admin.it.scheduler.matrix', compact('run','gradeLevels','grid','periods','subjectsByStage','entriesByTeacher','allTeachers','subjectsByGradeId'));
+        // Precompute initial teacher candidates for visible slots so the page can render teacher lists instantly.
+        $initialCandidates = [];
+        // compute assigned map per period for this run
+        $assignedByPeriod = [];
+        foreach ($periods as $p) {
+            $assignedByPeriod[$p] = ScheduleEntry::where('scheduling_run_id', $run->id)
+                ->where('period', $p)
+                ->get()
+                ->groupBy('teacher_id');
+        }
+        // compute loads once
+        $loads = ScheduleEntry::where('scheduling_run_id', $run->id)
+            ->whereNotNull('teacher_id')
+            ->groupBy('teacher_id')
+            ->selectRaw('teacher_id, count(*) as cnt')
+            ->pluck('cnt','teacher_id')
+            ->all();
+
+        // iterate visible grid slots and compute candidates when a subject is present
+        foreach ($gradeLevels as $grade) {
+            foreach ($grade->sections as $section) {
+                foreach ($periods as $p) {
+                    $key = $section->id . ':' . $p;
+                    $entry = $entriesByKey->get($key) ? $entriesByKey->get($key)->first() : null;
+                    $subjectId = $entry ? $entry->subject_id : null;
+                    if (!$subjectId) continue;
+
+                    $candidates = [];
+                    $subject = \App\Models\Subject::find($subjectId);
+                    if ($subject) {
+                        $candColl = $subject->teachers()->with(['gradeLevels','subjects'])->get();
+                    } else {
+                        $candColl = \App\Models\Teacher::with(['gradeLevels','subjects'])->get();
+                    }
+
+                    $assignedMap = $assignedByPeriod[$p] ?? collect();
+                    $gradeLevelId = $section ? $section->grade_level_id : null;
+
+                    foreach ($candColl as $t) {
+                        $isAssigned = isset($assignedMap[$t->id]);
+                        $load = (int) ($loads[$t->id] ?? 0);
+
+                        // availability
+                        $available = true;
+                        if (is_array($t->availability) && count($t->availability)) {
+                            $flat = [];
+                            if (isset($t->availability['unavailable']) && is_array($t->availability['unavailable'])) {
+                                $flat = $t->availability['unavailable'];
+                            } else {
+                                $flat = $t->availability;
+                            }
+                            foreach ($flat as $f) {
+                                if (is_string($f) && (str_ends_with($f, ":{$p}") || (string)$f === (string)$p)) { $available = false; break; }
+                            }
+                        }
+
+                        $teaches = true;
+                        if ($subjectId) $teaches = $t->subjects->contains('id', $subjectId);
+
+                        $gradeOk = true;
+                        if ($gradeLevelId) {
+                            if (!($t->gradeLevels && $t->gradeLevels->count())) $gradeOk = false;
+                            elseif (!$t->gradeLevels->contains('id', $gradeLevelId)) $gradeOk = false;
+                        }
+
+                        $eligible = $available && !$isAssigned && $teaches && $gradeOk;
+
+                        $notes = null;
+                        if (!$available) $notes = 'Unavailable';
+                        elseif ($isAssigned) $notes = 'Already assigned at this period';
+                        elseif (!$teaches) $notes = 'Does not teach selected subject';
+                        elseif (!$gradeOk) $notes = 'Not assigned to this grade level';
+
+                        $subs = $t->subjects->map(fn($s)=>['id'=>$s->id,'name'=>$s->name])->values()->all();
+                        $gradeIds = $t->gradeLevels->pluck('id')->all();
+
+                        $candidates[] = [
+                            'id' => $t->id,
+                            'name' => $t->name,
+                            'load' => $load,
+                            'is_assigned' => (bool) $isAssigned,
+                            'eligible' => (bool) $eligible,
+                            'grade_level_ids' => $gradeIds,
+                            'subjects' => $subs,
+                            'notes' => $notes,
+                        ];
+                    }
+
+                    usort($candidates, function($a,$b){
+                        if ($a['eligible'] !== $b['eligible']) return $a['eligible'] ? -1 : 1;
+                        if ($a['load'] !== $b['load']) return $a['load'] <=> $b['load'];
+                        return strcmp($a['name'], $b['name']);
+                    });
+
+                    $mapKey = intval($section->id) . ':' . intval($p) . ':' . intval($subjectId);
+                    $initialCandidates[$mapKey] = $candidates;
+                }
+            }
+        }
+
+        return view('admin.it.scheduler.matrix', compact('run','gradeLevels','grid','periods','subjectsByStage','entriesByTeacher','allTeachers','subjectsByGradeId','initialCandidates'));
     }
 
     /**
@@ -363,13 +594,15 @@ class SchedulingRunController extends Controller
         $subjectId = request('subject_id');
         $period = request('period');
         $sectionId = request('section_id');
+        // a simple search query (new)
+        $q = trim((string) request('q', ''));
 
-        // load subject teachers or all teachers
+        // load subject teachers or all teachers, eager-load gradeLevels & subjects for richer metadata
         if ($subjectId) {
             $subject = \App\Models\Subject::find($subjectId);
-            $candidates = $subject ? $subject->teachers()->with('gradeLevels')->get() : collect();
+            $candidates = $subject ? $subject->teachers()->with(['gradeLevels','subjects'])->get() : collect();
         } else {
-            $candidates = \App\Models\Teacher::with('gradeLevels')->get();
+            $candidates = \App\Models\Teacher::with(['gradeLevels','subjects'])->get();
         }
 
         // build assigned map for the run to avoid double-booking at this period
@@ -377,6 +610,14 @@ class SchedulingRunController extends Controller
             ->where('period', $period)
             ->get()
             ->groupBy('teacher_id');
+
+        // compute load (number of assignments in this run) per teacher
+        $loads = ScheduleEntry::where('scheduling_run_id', $run->id)
+            ->whereNotNull('teacher_id')
+            ->groupBy('teacher_id')
+            ->selectRaw('teacher_id, count(*) as cnt')
+            ->pluck('cnt','teacher_id')
+            ->all();
 
         // determine section's grade_level for filtering
         $section = null;
@@ -386,8 +627,17 @@ class SchedulingRunController extends Controller
             $gradeLevelId = $section ? $section->grade_level_id : null;
         }
 
-        $candidates = $candidates->filter(function ($t) use ($period, $assignedMap, $gradeLevelId) {
-            // availability: check any entry that references this period
+        // build enriched candidate objects
+        $out = [];
+        foreach ($candidates as $t) {
+            // search filter
+            if ($q !== '' && stripos($t->name, $q) === false) continue;
+
+            $isAssigned = isset($assignedMap[$t->id]);
+            $load = (int) ($loads[$t->id] ?? 0);
+
+            // availability check (period-only matching)
+            $available = true;
             if (is_array($t->availability) && count($t->availability)) {
                 $flat = [];
                 if (isset($t->availability['unavailable']) && is_array($t->availability['unavailable'])) {
@@ -395,38 +645,251 @@ class SchedulingRunController extends Controller
                 } else {
                     $flat = $t->availability;
                 }
-                // treat availability entries as 'day:period' or just 'period'; match on period suffix
                 foreach ($flat as $f) {
-                    if (is_string($f) && (str_ends_with($f, ":{$period}") || (string)$f === (string)$period)) return false;
+                    if (is_string($f) && (str_ends_with($f, ":{$period}") || (string)$f === (string)$period)) { $available = false; break; }
                 }
             }
 
-            // if already assigned at this period in the run, exclude
-            if (isset($assignedMap[$t->id])) return false;
-
-            // if teacher has grade level constraints, ensure they match
-            if ($t->gradeLevels && $t->gradeLevels->count() && $gradeLevelId) {
-                if (!$t->gradeLevels->contains('id', $gradeLevelId)) return false;
+            // teaches this subject?
+            $teaches = true;
+            if ($subjectId) {
+                $teaches = $t->subjects->contains('id', $subjectId);
             }
 
-            return true;
-        });
+            // grade-level membership
+            $gradeOk = true;
+            if ($gradeLevelId) {
+                if (!($t->gradeLevels && $t->gradeLevels->count())) $gradeOk = false;
+                elseif (!$t->gradeLevels->contains('id', $gradeLevelId)) $gradeOk = false;
+            }
 
-        $data = $candidates->map(fn($c) => ['id'=>$c->id,'name'=>$c->name])->values()->all();
+            // Hide if any of these are true (per user rule):
+            // - unavailable for the period
+            // - does not teach the selected subject
+            // - not assigned to the section's grade level
+            // Keep teachers visible even if they are already assigned at the same period;
+            // ineligible state is used only for already-assigned.
+            if (!$available || !$teaches || !$gradeOk) {
+                continue;
+            }
+
+            // By this point teacher is available, teaches the subject, and is in grade.
+            // Mark ineligible only when already assigned at this period in the run.
+            $eligible = !$isAssigned;
+
+            $notes = null;
+            if ($isAssigned) $notes = 'Already assigned at this period';
+
+            $subs = $t->subjects->map(fn($s)=>['id'=>$s->id,'name'=>$s->name])->values()->all();
+            $gradeIds = $t->gradeLevels->pluck('id')->all();
+
+            $out[] = [
+                'id' => $t->id,
+                'name' => $t->name,
+                'load' => $load,
+                'is_assigned' => (bool) $isAssigned,
+                'eligible' => (bool) $eligible,
+                'grade_level_ids' => $gradeIds,
+                'subjects' => $subs,
+                'notes' => $notes,
+            ];
+        }
 
         // Optionally include a specific teacher (useful when editing an existing assignment)
         $includeId = request('include_teacher');
         if ($includeId) {
-            $inc = \App\Models\Teacher::find($includeId);
-            if ($inc) {
-                $found = collect($data)->first(fn($x) => (int)$x['id'] === (int)$inc->id);
-                if (!$found) {
-                    $data[] = ['id' => $inc->id, 'name' => $inc->name];
+            $found = collect($out)->first(fn($x) => (int)$x['id'] === (int)$includeId);
+            if (!$found) {
+                $inc = \App\Models\Teacher::with(['gradeLevels','subjects'])->find($includeId);
+                if ($inc) {
+                    $isAssigned = isset($assignedMap[$inc->id]);
+                    $load = (int) ($loads[$inc->id] ?? 0);
+                    $available = true;
+                    if (is_array($inc->availability) && count($inc->availability)) {
+                        $flat = [];
+                        if (isset($inc->availability['unavailable']) && is_array($inc->availability['unavailable'])) {
+                            $flat = $inc->availability['unavailable'];
+                        } else {
+                            $flat = $inc->availability;
+                        }
+                        foreach ($flat as $f) {
+                            if (is_string($f) && (str_ends_with($f, ":{$period}") || (string)$f === (string)$period)) { $available = false; break; }
+                        }
+                    }
+                    $teaches = true;
+                    if ($subjectId) $teaches = $inc->subjects->contains('id', $subjectId);
+                    $gradeOk = true;
+                    if ($gradeLevelId) {
+                        if (!($inc->gradeLevels && $inc->gradeLevels->count())) $gradeOk = false;
+                        elseif (!$inc->gradeLevels->contains('id', $gradeLevelId)) $gradeOk = false;
+                    }
+                    // For included teacher (editing), mark ineligible only when
+                    // already assigned at this period. However, enforce the same
+                    // visibility/hide rule: do not include the teacher if they are
+                    // unavailable OR do not teach the subject OR are not in grade.
+                    $eligible = !$isAssigned;
+                    $notes = null;
+                    if ($isAssigned) $notes = 'Already assigned at this period';
+
+                    if (!$available || !$teaches || !$gradeOk) {
+                        // do not append the included teacher because they fail
+                        // the visibility rules the user requested
+                    } else {
+                        $out[] = [
+                            'id' => $inc->id,
+                            'name' => $inc->name,
+                            'load' => $load,
+                            'is_assigned' => (bool) $isAssigned,
+                            'eligible' => (bool) $eligible,
+                            'grade_level_ids' => $inc->gradeLevels->pluck('id')->all(),
+                            'subjects' => $inc->subjects->map(fn($s)=>['id'=>$s->id,'name'=>$s->name])->values()->all(),
+                            'notes' => $notes,
+                        ];
+                    }
                 }
             }
         }
 
-        return response()->json(['candidates' => $data]);
+        // sort: eligible first, then by load asc, then name
+        usort($out, function($a,$b){
+            if ($a['eligible'] !== $b['eligible']) return $a['eligible'] ? -1 : 1;
+            if ($a['load'] !== $b['load']) return $a['load'] <=> $b['load'];
+            return strcmp($a['name'], $b['name']);
+        });
+
+        return response()->json(['candidates' => $out]);
+    }
+
+    /**
+     * Return candidate teachers for multiple slots in one request.
+     * Expects POST JSON: { slots: [ { section_id, period, subject_id, key? }, ... ] }
+     * Returns: { results: { "section:period:subject": [candidates], ... } }
+     */
+    public function teachersForSlots(Request $request, $runId)
+    {
+        $run = SchedulingRun::findOrFail($runId);
+        $slots = $request->input('slots');
+        if (!is_array($slots)) {
+            return response()->json(['error' => 'Invalid payload, expected slots array'], 400);
+        }
+
+        // Precompute maps shared across slots to optimize repeated work
+        // build assigned map per period
+        $allPeriods = array_values(array_unique(array_map(fn($s)=>($s['period'] ?? null), $slots)));
+        $assignedByPeriod = [];
+        foreach ($allPeriods as $p) {
+            $assignedByPeriod[$p] = ScheduleEntry::where('scheduling_run_id', $run->id)
+                ->where('period', $p)
+                ->get()
+                ->groupBy('teacher_id');
+        }
+
+        // compute loads once for the run
+        $loads = ScheduleEntry::where('scheduling_run_id', $run->id)
+            ->whereNotNull('teacher_id')
+            ->groupBy('teacher_id')
+            ->selectRaw('teacher_id, count(*) as cnt')
+            ->pluck('cnt','teacher_id')
+            ->all();
+
+        $results = [];
+        foreach ($slots as $slot) {
+            $sectionId = $slot['section_id'] ?? null;
+            $period = $slot['period'] ?? null;
+            $subjectId = $slot['subject_id'] ?? null;
+            $key = $slot['key'] ?? null;
+            $mapKey = $key ?: (intval($sectionId) . ':' . intval($period) . ':' . intval($subjectId));
+
+            // load subject teachers or all teachers
+            if ($subjectId) {
+                $subject = \App\Models\Subject::find($subjectId);
+                $candidates = $subject ? $subject->teachers()->with(['gradeLevels','subjects'])->get() : collect();
+            } else {
+                $candidates = \App\Models\Teacher::with(['gradeLevels','subjects'])->get();
+            }
+
+            // assigned map for this period
+            $assignedMap = $assignedByPeriod[$period] ?? collect();
+
+            $section = null;
+            $gradeLevelId = null;
+            if ($sectionId) {
+                $section = \App\Models\Section::with('gradeLevel')->find($sectionId);
+                $gradeLevelId = $section ? $section->grade_level_id : null;
+            }
+
+            $out = [];
+            foreach ($candidates as $t) {
+                $isAssigned = isset($assignedMap[$t->id]);
+                $load = (int) ($loads[$t->id] ?? 0);
+
+                // availability
+                $available = true;
+                if (is_array($t->availability) && count($t->availability)) {
+                    $flat = [];
+                    if (isset($t->availability['unavailable']) && is_array($t->availability['unavailable'])) {
+                        $flat = $t->availability['unavailable'];
+                    } else {
+                        $flat = $t->availability;
+                    }
+                    foreach ($flat as $f) {
+                        if (is_string($f) && (str_ends_with($f, ":{$period}") || (string)$f === (string)$period)) { $available = false; break; }
+                    }
+                }
+
+                // teaches this subject?
+                $teaches = true;
+                if ($subjectId) {
+                    $teaches = $t->subjects->contains('id', $subjectId);
+                }
+
+                // grade-level membership
+                $gradeOk = true;
+                if ($gradeLevelId) {
+                    if (!($t->gradeLevels && $t->gradeLevels->count())) $gradeOk = false;
+                    elseif (!$t->gradeLevels->contains('id', $gradeLevelId)) $gradeOk = false;
+                }
+
+                // Hide if any of these are true (per user rule):
+                // - unavailable for the period
+                // - does not teach the selected subject
+                // - not assigned to the section's grade level
+                if (!$available || !$teaches || !$gradeOk) {
+                    continue;
+                }
+
+                // By this point teacher is available, teaches the subject, and is in grade.
+                // Mark ineligible only when already assigned at this period in the run.
+                $eligible = !$isAssigned;
+
+                $notes = null;
+                if ($isAssigned) $notes = 'Already assigned at this period';
+
+                $subs = $t->subjects->map(fn($s)=>['id'=>$s->id,'name'=>$s->name])->values()->all();
+                $gradeIds = $t->gradeLevels->pluck('id')->all();
+
+                $out[] = [
+                    'id' => $t->id,
+                    'name' => $t->name,
+                    'load' => $load,
+                    'is_assigned' => (bool) $isAssigned,
+                    'eligible' => (bool) $eligible,
+                    'grade_level_ids' => $gradeIds,
+                    'subjects' => $subs,
+                    'notes' => $notes,
+                ];
+            }
+
+            usort($out, function($a,$b){
+                if ($a['eligible'] !== $b['eligible']) return $a['eligible'] ? -1 : 1;
+                if ($a['load'] !== $b['load']) return $a['load'] <=> $b['load'];
+                return strcmp($a['name'], $b['name']);
+            });
+
+            $results[$mapKey] = $out;
+        }
+
+        return response()->json(['results' => $results]);
     }
 
     /**
@@ -454,6 +917,13 @@ class SchedulingRunController extends Controller
             if ($gradeLevel && $subject && $subject->stage && $gradeLevel->school_stage && $subject->stage !== $gradeLevel->school_stage) {
                 return response()->json(['success'=>false,'errors'=>['subject_id' => ['Subject not valid for this grade stage']]], 422);
             }
+                // Prevent assigning 'special subjects' to regular JHS sections
+                if ($subject && strtolower(trim($subject->type ?? '')) === 'special subjects') {
+                    $isSpecialSection = isset($section->is_special) && $section->is_special;
+                    if (! $isSpecialSection) {
+                        return response()->json(['success'=>false,'errors'=>['subject_id' => ['Special subjects may only be assigned to designated special sections']]], 422);
+                    }
+                }
             // uniqueness per section: no duplicate subject for other periods
             $exists = ScheduleEntry::where('scheduling_run_id', $run->id)
                 ->where('section_id', $entry->section_id)
@@ -466,7 +936,7 @@ class SchedulingRunController extends Controller
             $entry->subject_id = $subjectId;
         }
 
-        if ($teacherId !== null) {
+            if ($teacherId !== null) {
             $teacher = \App\Models\Teacher::with('subjects','gradeLevels')->find($teacherId);
             if (!$teacher) {
                 return response()->json(['success'=>false,'errors'=>['teacher_id' => ['Invalid teacher']]], 422);
@@ -478,8 +948,9 @@ class SchedulingRunController extends Controller
             // teacher must be allowed for this grade level
             $section = $entry->section()->with('gradeLevel')->first();
             $gradeLevelId = $section ? $section->grade_level_id : null;
-            if ($teacher->gradeLevels && $teacher->gradeLevels->count() && $gradeLevelId) {
-                if (!$teacher->gradeLevels->contains('id', $gradeLevelId)) {
+            // strict: teacher must be explicitly assigned to the grade level
+            if ($gradeLevelId) {
+                if (!($teacher->gradeLevels && $teacher->gradeLevels->count() && $teacher->gradeLevels->contains('id', $gradeLevelId))) {
                     return response()->json(['success'=>false,'errors'=>['teacher_id' => ['Teacher not assigned to this grade level']]], 422);
                 }
             }
@@ -552,6 +1023,14 @@ class SchedulingRunController extends Controller
                     $entry->delete();
                     return response()->json(['success'=>false,'errors'=>['subject_id' => ['Subject not valid for this grade stage']]], 422);
                 }
+                // Prevent assigning 'special subjects' to regular JHS sections
+                if ($subject && strtolower(trim($subject->type ?? '')) === 'special subjects') {
+                    $isSpecialSection = isset($section->is_special) && $section->is_special;
+                    if (! $isSpecialSection) {
+                        $entry->delete();
+                        return response()->json(['success'=>false,'errors'=>['subject_id' => ['Special subjects may only be assigned to designated special sections']]], 422);
+                    }
+                }
                 $dupe = ScheduleEntry::where('scheduling_run_id', $run->id)
                     ->where('section_id', $entry->section_id)
                     ->where('subject_id', $subjectId)
@@ -565,8 +1044,9 @@ class SchedulingRunController extends Controller
                 if ($entry->subject_id && !$teacher->subjects->contains('id', $entry->subject_id)) { $entry->delete(); return response()->json(['success'=>false,'errors'=>['teacher_id' => ['Teacher does not teach selected subject']]], 422); }
                 $section = $entry->section()->with('gradeLevel')->first();
                 $gradeLevelId = $section ? $section->grade_level_id : null;
-                if ($teacher->gradeLevels && $teacher->gradeLevels->count() && $gradeLevelId) {
-                    if (!$teacher->gradeLevels->contains('id', $gradeLevelId)) { $entry->delete(); return response()->json(['success'=>false,'errors'=>['teacher_id' => ['Teacher not assigned to this grade level']]], 422); }
+                // strict: teacher must be explicitly assigned to the grade level
+                if ($gradeLevelId) {
+                    if (!($teacher->gradeLevels && $teacher->gradeLevels->count() && $teacher->gradeLevels->contains('id', $gradeLevelId))) { $entry->delete(); return response()->json(['success'=>false,'errors'=>['teacher_id' => ['Teacher not assigned to this grade level']]], 422); }
                 }
                 $conflict = ScheduleEntry::where('scheduling_run_id', $run->id)
                     ->where('period', $entry->period)
@@ -599,12 +1079,11 @@ class SchedulingRunController extends Controller
         $days = range(1,5);
         $maxPeriod = $entries->max('period') ?? 8;
 
-        $substitutesBySlot = [];
-
-        // precompute teacher assignments to avoid double-booking substitutes
-        $assignedMap = ScheduleEntry::where('scheduling_run_id', $run->id)
-            ->get()
-            ->groupBy(fn($e) => "{$e->day}:{$e->period}");
+            $substitutesBySlot = [];
+            // build assigned map by slot (day:period) so we can avoid teachers already booked at the same slot
+            $assignedMap = ScheduleEntry::where('scheduling_run_id', $run->id)
+                ->get()
+                ->groupBy(fn($e) => "{$e->day}:{$e->period}");
 
         foreach ($entries as $e) {
             $slotKey = "{$e->day}:{$e->period}";
@@ -632,9 +1111,11 @@ class SchedulingRunController extends Controller
                     }
                 }
 
-                // prefer same grade-level teachers (if teacher has gradeLevels)
-                if ($t->gradeLevels && $t->gradeLevels->count() && $e->section) {
-                    if (!$t->gradeLevels->contains('id', $e->section->grade_level_id)) return false;
+                // strict: only consider teachers explicitly assigned to this grade level
+                if ($e->section) {
+                    $gid = $e->section->grade_level_id;
+                    if (!($t->gradeLevels && $t->gradeLevels->count())) return false;
+                    if (!$t->gradeLevels->contains('id', $gid)) return false;
                 }
 
                 return true;
@@ -692,9 +1173,11 @@ class SchedulingRunController extends Controller
                 }
             }
 
-            // prefer same grade-level teachers if possible
-            if ($t->gradeLevels && $t->gradeLevels->count() && $entry->section) {
-                if (!$t->gradeLevels->contains('id', $entry->section->grade_level_id)) return false;
+            // strict: only consider teachers explicitly assigned to this grade level
+            if ($entry->section) {
+                $gid = $entry->section->grade_level_id;
+                if (!($t->gradeLevels && $t->gradeLevels->count())) return false;
+                if (!$t->gradeLevels->contains('id', $gid)) return false;
             }
 
             return true;

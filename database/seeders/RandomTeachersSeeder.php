@@ -37,8 +37,19 @@ class RandomTeachersSeeder extends Seeder
 
     protected function createStageTeachers(int $count, $gradeLevels, $subjects, $faker, string $stage)
     {
+        // Filipino name pools
+        $maleFirst = ['Juan','Jose','Mark','Ramon','Carlos','Miguel','Antonio','Rogelio','Roberto','Emilio','Ramon','Daniel','Rodolfo','Luis','Eduardo','Fernando','Alfredo','Nestor','Victor','Michael','Renato'];
+        $femaleFirst = ['Maria','Ana','Ligaya','Carmela','Rosa','Gloria','Liza','May','Christine','Patricia','Nicole','Sofia','Isabel','Evelyn','Grace','Janet','Miriam','Lourdes','Imelda','Karen'];
+        $surnames = ['Dela Cruz','Santos','Reyes','Cruz','Garcia','Mendoza','Bautista','Ramos','Gonzales','Fernandez','Aquino','Soriano','Uy','Dela Rosa','Valdez','Lopez','Villanueva','Delos Santos','Ortiz','Navarro'];
+
         for ($i = 0; $i < $count; $i++) {
-            $name = $faker->name();
+            // build a Filipino-style name
+            $sex = $faker->randomElement(['male','female']);
+            $first = $sex === 'male' ? $faker->randomElement($maleFirst) : $faker->randomElement($femaleFirst);
+            // sometimes include a middle initial
+            $middle = $faker->boolean(40) ? ' ' . chr(65 + $faker->numberBetween(0, 25)) . '.' : '';
+            $last = $faker->randomElement($surnames);
+            $name = trim("{$first}{$middle} {$last}");
             $email = $faker->unique()->safeEmail();
             $staff = strtoupper('T' . str_pad((string)$faker->numberBetween(1000, 9999), 4, '0', STR_PAD_LEFT));
 
@@ -59,15 +70,39 @@ class RandomTeachersSeeder extends Seeder
 
             // attach 1-2 grade levels within this stage (if available)
             if ($gradeLevels->isNotEmpty()) {
-                $pick = $gradeLevels->random(min(2, $gradeLevels->count()));
+                $maxGrades = min(2, $gradeLevels->count());
+                $numGrades = $faker->numberBetween(1, max(1, $maxGrades));
+                $pick = $gradeLevels->random($numGrades);
                 $ids = $pick instanceof \Illuminate\Support\Collection ? $pick->pluck('id')->toArray() : [$pick->id];
                 $teacher->gradeLevels()->sync($ids);
             }
 
-            // attach 2-6 random subjects (if available)
+            // attach 2-5 random subjects related to the selected grade levels / stage
             if ($subjects->isNotEmpty()) {
-                $num = $faker->numberBetween(2, min(6, $subjects->count()));
-                $sel = $subjects->random($num);
+                // map our stage to subject.stage values (seed subjects likely use 'jhs'/'shs')
+                $subjectStageKey = $stage === 'junior' ? 'jhs' : 'shs';
+                $eligible = collect();
+                // prefer subjects attached to any of the teacher's grade levels
+                if (!empty($ids)) {
+                    // prefer subjects linked to the chosen grade levels
+                    $eligible = \App\Models\Subject::whereHas('gradeLevels', function($q) use ($ids){
+                        $q->whereIn('grade_levels.id', $ids);
+                    })->orderBy('name')->get();
+                }
+                // if still few, include subjects that match the stage key
+                if ($eligible->count() < 2) {
+                        $stageMatches = $subjects->filter(function($s) use ($subjectStageKey) {
+                            return isset($s->stage) && strtolower($s->stage) === strtolower($subjectStageKey);
+                        });
+                        $eligible = $eligible->merge($stageMatches)->unique('id');
+                }
+                // fallback to any subjects if still insufficient
+                if ($eligible->count() < 2) {
+                    $eligible = $subjects;
+                }
+
+                $numSubjects = $faker->numberBetween(2, min(5, max(2, $eligible->count())));
+                $sel = $eligible->random($numSubjects);
                 $teacher->subjects()->sync(collect($sel)->pluck('id')->toArray());
             }
         }

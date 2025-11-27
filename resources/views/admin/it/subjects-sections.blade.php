@@ -9,13 +9,13 @@
     <!-- Tabs -->
     <div class="mb-4">
         <div class="inline-flex rounded-md border bg-white">
-            <button type="button" id="tab-sections" class="px-4 py-2 text-sm font-medium border-r" aria-pressed="true">Sections</button>
-            <button type="button" id="tab-subjects" class="px-4 py-2 text-sm font-medium" aria-pressed="false">Subjects</button>
+            <button type="button" id="tab-sections" class="px-4 py-2 text-sm font-medium border-r" aria-pressed="true" role="tab" aria-controls="panel-sections">Sections</button>
+            <button type="button" id="tab-subjects" class="px-4 py-2 text-sm font-medium" aria-pressed="false" role="tab" aria-controls="panel-subjects">Subjects</button>
         </div>
     </div>
 
             <div id="ss-grid" class="grid grid-cols-1 gap-6">
-                <div id="panel-sections">
+                <div id="panel-sections" role="tabpanel" aria-labelledby="tab-sections">
                 @php
                     // themes config
                     $allThemes = config('section_themes.themes');
@@ -119,7 +119,12 @@
                                         @if($secs->count())
                                             <ul class="space-y-1">
                                                 @foreach($secs as $s)
-                                                    <li class="py-1"><div class="font-medium">{{ $s->name }}</div></li>
+                                                    <li class="py-1">
+                                                        <div class="flex items-center justify-between">
+                                                            <div class="font-medium">{{ $s->name }}</div>
+                                                            <div class="text-xs text-slate-500">{{ $s->track ?? ($s->is_special ? 'Special' : '') }}</div>
+                                                        </div>
+                                                    </li>
                                                 @endforeach
                                             </ul>
                                         @else
@@ -143,7 +148,12 @@
                                         @if($secs->count())
                                             <ul class="space-y-1">
                                                 @foreach($secs as $s)
-                                                    <li class="py-1"><div class="font-medium">{{ $s->name }}</div></li>
+                                                    <li class="py-1">
+                                                        <div class="flex items-center justify-between">
+                                                            <div class="font-medium">{{ $s->name }}</div>
+                                                            <div class="text-xs text-slate-500">{{ $s->track ?? ($s->is_special ? 'Special' : '') }}</div>
+                                                        </div>
+                                                    </li>
                                                 @endforeach
                                             </ul>
                                         @else
@@ -159,7 +169,7 @@
             </div>
 
         <!-- Subjects panel -->
-        <div id="panel-subjects" class="hidden bg-white border rounded p-4">
+        <div id="panel-subjects" class="hidden bg-white border rounded p-4" role="tabpanel" aria-labelledby="tab-subjects">
             <h2 class="font-semibold mb-3">Subjects</h2>
             <p class="text-sm text-slate-600 mb-4">Manage subjects for Junior High and Senior High separately. No seeded subjects are shown by default.</p>
 
@@ -350,6 +360,8 @@
         const subjectStoreUrl = hooks.dataset.subjectStoreUrl;
         const toggleBase = '/admin/it/subjects';
 
+        const SHS_TRACK_OPTIONS = ['STEM','ABM','HUMSS','TVL','GAS'];
+
         function getInputsForGrade(gradeId, container=null){
             container = container || document;
             const themeEl = container.querySelector('select[name="theme"][data-grade-id="'+gradeId+'"]');
@@ -450,21 +462,51 @@
         const panelSections = document.getElementById('panel-sections');
         const panelSubjects = document.getElementById('panel-subjects');
 
-        function showSections(){
-            panelSections.classList.remove('hidden');
-            panelSubjects.classList.add('hidden');
-            tabSections.setAttribute('aria-pressed','true');
-            tabSubjects.setAttribute('aria-pressed','false');
+        function activateTab(tab){
+            if(!tab) return;
+            if(tab === 'sections'){
+                panelSections.classList.remove('hidden');
+                panelSubjects.classList.add('hidden');
+                tabSections.setAttribute('aria-pressed','true');
+                tabSubjects.setAttribute('aria-pressed','false');
+                tabSections.focus();
+            } else {
+                panelSections.classList.add('hidden');
+                panelSubjects.classList.remove('hidden');
+                tabSections.setAttribute('aria-pressed','false');
+                tabSubjects.setAttribute('aria-pressed','true');
+                tabSubjects.focus();
+            }
+            try{ localStorage.setItem('ss-active-tab', tab); }catch(e){}
         }
-        function showSubjects(){
-            panelSections.classList.add('hidden');
-            panelSubjects.classList.remove('hidden');
-            tabSections.setAttribute('aria-pressed','false');
-            tabSubjects.setAttribute('aria-pressed','true');
-        }
+
+        function showSections(){ activateTab('sections'); }
+        function showSubjects(){ activateTab('subjects'); }
 
         tabSections.addEventListener('click', showSections);
         tabSubjects.addEventListener('click', showSubjects);
+
+        // initialize from localStorage (persist last active tab)
+        try{
+            const saved = localStorage.getItem('ss-active-tab');
+            if(saved === 'subjects') activateTab('subjects'); else activateTab('sections');
+        }catch(e){ /* ignore */ }
+
+        // keyboard navigation: left/right arrows switch tabs
+        const tabButtons = [tabSections, tabSubjects];
+        tabButtons.forEach((btn, idx) => {
+            btn.addEventListener('keydown', (ev) => {
+                if(ev.key === 'ArrowRight' || ev.key === 'ArrowLeft'){
+                    ev.preventDefault();
+                    const nextIdx = ev.key === 'ArrowRight' ? (idx + 1) % tabButtons.length : (idx - 1 + tabButtons.length) % tabButtons.length;
+                    tabButtons[nextIdx].focus();
+                    // also activate on arrow navigation
+                    const id = tabButtons[nextIdx].id === 'tab-sections' ? 'sections' : 'subjects';
+                    activateTab(id);
+                }
+                if(ev.key === 'Enter' || ev.key === ' '){ ev.preventDefault(); btn.click(); }
+            });
+        });
 
         // Global generate button: request preview for each grade-year that has a count > 0
         const globalGenerate = document.getElementById('global-generate');
@@ -500,18 +542,31 @@
                                     const list = document.createElement('div');
                                     list.className = 'space-y-1';
                                     preview.forEach((item, idx) => {
-                                        const payload = (typeof item === 'string') ? { name: item } : item || {};
-                                        const name = payload.name ?? '';
-                                        const isSpecial = payload.is_special == 1 || payload.is_special === true ? true : false;
-                                        const row = document.createElement('div');
-                                            row.className = 'flex items-center gap-2 py-1';
-                                                row.innerHTML = `<input data-idx="${idx}" class="flex-1 border rounded px-2 py-1 section-name-input" value="${name}"/>` +
-                                                                `<div class="btn-toggle-special seg-toggle ml-2 pill-small" data-idx="${idx}" data-special="${isSpecial ? '1' : '0'}" role="tablist" aria-pressed="${isSpecial ? 'true' : 'false'}">` +
-                                                                    `<button type="button" class="seg-btn seg-left ${isSpecial ? '' : 'active'}" data-value="0">Regular</button>` +
-                                                                    `<button type="button" class="seg-btn seg-right ${isSpecial ? 'active' : ''}" data-value="1">Special</button>` +
-                                                                `</div>`;
-                                        list.appendChild(row);
-                                    });
+                            const payload = (typeof item === 'string') ? { name: item } : item || {};
+                            const name = payload.name ?? '';
+                            const isSpecial = payload.is_special == 1 || payload.is_special === true ? true : false;
+                            const trackVal = payload.track || '';
+                            const row = document.createElement('div');
+                                row.className = 'flex items-center gap-2 py-1';
+                                const year = (area && area.getAttribute) ? area.getAttribute('data-year') : null;
+                                let html = `<input data-idx="${idx}" class="flex-1 border rounded px-2 py-1 section-name-input" value="${name}"/>`;
+                                // show Regular/Special only for Junior High (years < 11)
+                                if(!year || parseInt(year,10) < 11){
+                                    html += `<div class="btn-toggle-special seg-toggle ml-2 pill-small" data-idx="${idx}" data-special="${isSpecial ? '1' : '0'}" role="tablist" aria-pressed="${isSpecial ? 'true' : 'false'}">` +
+                                                `<button type="button" class="seg-btn seg-left ${isSpecial ? '' : 'active'}" data-value="0">Regular</button>` +
+                                                `<button type="button" class="seg-btn seg-right ${isSpecial ? 'active' : ''}" data-value="1">Special</button>` +
+                                            `</div>`;
+                                }
+                                // show Track selector only for Senior High (years >= 11)
+                                if(year && parseInt(year,10) >= 11){
+                                    let sel = `<select class="section-track-select border rounded px-2 py-1 ml-2" data-idx="${idx}"><option value="">— Track —</option>`;
+                                    SHS_TRACK_OPTIONS.forEach(t => { sel += `<option value="${t}" ${trackVal === t ? 'selected' : ''}>${t}</option>`; });
+                                    sel += `</select>`;
+                                    html += sel;
+                                }
+                                row.innerHTML = html;
+                            list.appendChild(row);
+                        });
                                     area.appendChild(list);
                                     ensureToggleDefaults(area);
                                     // (removed per-list mark-all controls — use per-row toggle buttons)
@@ -576,13 +631,26 @@
                             const payload = (typeof item === 'string') ? { name: item } : item || {};
                             const name = payload.name ?? '';
                             const isSpecial = payload.is_special == 1 || payload.is_special === true ? true : false;
+                            const trackVal = payload.track || '';
                             const row = document.createElement('div');
                                 row.className = 'flex items-center gap-2 py-1';
-                                    row.innerHTML = `<input data-idx="${idx}" class="flex-1 border rounded px-2 py-1 section-name-input" value="${name}"/>` +
-                                                    `<div class="btn-toggle-special seg-toggle ml-2 pill-small" data-idx="${idx}" data-special="${isSpecial ? '1' : '0'}" role="tablist" aria-pressed="${isSpecial ? 'true' : 'false'}">` +
-                                                        `<button type="button" class="seg-btn seg-left ${isSpecial ? '' : 'active'}" data-value="0">Regular</button>` +
-                                                        `<button type="button" class="seg-btn seg-right ${isSpecial ? 'active' : ''}" data-value="1">Special</button>` +
-                                                    `</div>`;
+                                const year = (area && area.getAttribute) ? area.getAttribute('data-year') : null;
+                                let html = `<input data-idx="${idx}" class="flex-1 border rounded px-2 py-1 section-name-input" value="${name}"/>`;
+                                // show Regular/Special only for Junior High (years < 11)
+                                if(!year || parseInt(year,10) < 11){
+                                    html += `<div class="btn-toggle-special seg-toggle ml-2 pill-small" data-idx="${idx}" data-special="${isSpecial ? '1' : '0'}" role="tablist" aria-pressed="${isSpecial ? 'true' : 'false'}">` +
+                                                `<button type="button" class="seg-btn seg-left ${isSpecial ? '' : 'active'}" data-value="0">Regular</button>` +
+                                                `<button type="button" class="seg-btn seg-right ${isSpecial ? 'active' : ''}" data-value="1">Special</button>` +
+                                            `</div>`;
+                                }
+                                // show Track selector only for Senior High (years >= 11)
+                                if(year && parseInt(year,10) >= 11){
+                                    let sel = `<select class="section-track-select border rounded px-2 py-1 ml-2" data-idx="${idx}"><option value="">— Track —</option>`;
+                                    SHS_TRACK_OPTIONS.forEach(t => { sel += `<option value="${t}" ${trackVal === t ? 'selected' : ''}>${t}</option>`; });
+                                    sel += `</select>`;
+                                    html += sel;
+                                }
+                                row.innerHTML = html;
                             list.appendChild(row);
                         });
                         area.appendChild(list);
@@ -661,7 +729,7 @@
                             li.className = 'py-1';
                             const label = document.createElement('div'); label.className = 'flex items-center justify-between';
                             const nm = document.createElement('div'); nm.className = 'font-medium'; nm.textContent = s.name;
-                            const tag = document.createElement('div'); tag.className = 'text-xs text-slate-500'; tag.textContent = s.is_special ? 'Special' : '';
+                            const tag = document.createElement('div'); tag.className = 'text-xs text-slate-500'; tag.textContent = s.track ? s.track : (s.is_special ? 'Special' : '');
                             label.appendChild(nm); label.appendChild(tag);
                             li.appendChild(label);
                             ul.appendChild(li);
@@ -728,8 +796,13 @@
                     let items = Array.from(area.querySelectorAll('.section-name-input')).map(i=>{
                         const idx = i.getAttribute('data-idx');
                         const name = i.value.trim();
+                        const yearLocal = area.getAttribute('data-year');
+                        const isJHS = !yearLocal || parseInt(yearLocal,10) < 11;
                         const btn = area.querySelector('.btn-toggle-special[data-idx="'+idx+'"]');
-                        return { name, is_special: btn && btn.dataset && btn.dataset.special === '1' ? 1 : 0 };
+                        const trackSel = area.querySelector('.section-track-select[data-idx="'+idx+'"]');
+                        const track = trackSel ? (trackSel.value || null) : null;
+                        const is_special = isJHS ? (btn && btn.dataset && btn.dataset.special === '1' ? 1 : 0) : 0;
+                        return { name, is_special, track };
                     }).filter(it=>it.name);
 
                     // If no preview items are present but a count input exists and >0, request a preview from the server
@@ -742,8 +815,8 @@
                             try{
                                 const resp = await postJSON(previewUrl, { theme: themeLocal, count: cntLocal, name: 'Grade ' + year });
                                 const preview = resp.preview ?? resp.names ?? resp;
-                                if(Array.isArray(preview) && preview.length){
-                                    items = preview.map(it => (typeof it === 'string') ? { name: it, is_special: 0 } : { name: it.name || '', is_special: it.is_special ? 1 : 0 }).filter(it => it.name);
+                                    if(Array.isArray(preview) && preview.length){
+                                    items = preview.map(it => (typeof it === 'string') ? { name: it, is_special: 0, track: null } : { name: it.name || '', is_special: it.is_special ? 1 : 0, track: it.track || null }).filter(it => it.name);
                                 }
                             } catch(err){
                                 console.error('preview before save error', err);
@@ -788,7 +861,7 @@
                         const url = `/admin/it/grade-levels/${gradeId}/sections/bulk-create`;
                         const saveResp = await postJSON(url, { items: items });
                         // prefer server-returned sections (with ids) else use submitted items
-                        const sections = Array.isArray(saveResp.sections) && saveResp.sections.length ? saveResp.sections.map(s => ({ name: s.name || s, is_special: s.is_special || 0, id: s.id || null })) : items.map(i => ({ name: i.name, is_special: i.is_special || 0 }));
+                        const sections = Array.isArray(saveResp.sections) && saveResp.sections.length ? saveResp.sections.map(s => ({ name: s.name || s, is_special: s.is_special || 0, track: s.track || null, id: s.id || null })) : items.map(i => ({ name: i.name, is_special: i.is_special || 0, track: i.track || null }));
                         createdMap[year] = sections;
                     } catch(err){
                         console.error('bulk create error', err);

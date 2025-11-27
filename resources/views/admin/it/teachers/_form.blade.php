@@ -127,11 +127,51 @@
       </div>
 
   <div>
+  <label class="block text-sm font-medium">Grade Level Assignment</label>
+
+      {{-- native select for grade levels (submitted as grade_levels[]) --}}
+  <select id="grade-levels-native" name="grade_levels[]" multiple class="ms-native-hidden" title="Grade levels">
+        @php
+          $selectedGrades = old('grade_levels', $isEdit && isset($teacher) && isset($teacher->gradeLevels) ? $teacher->gradeLevels->pluck('id')->toArray() : []);
+        @endphp
+        @foreach($gradeLevels as $g)
+          <option value="{{ $g->id }}" @if(in_array($g->id, $selectedGrades)) selected @endif>{{ $g->name }}</option>
+        @endforeach
+      </select>
+
+      <div class="ms-container mt-1">
+      <div class="ms-control" id="grade-control" tabindex="0" role="combobox" aria-expanded="false" aria-haspopup="listbox" aria-label="Grade Level Assignment">
+              <div id="grade-tokens" class="ms-tokens"></div>
+          <button type="button" id="grade-toggle" class="ms-button" aria-label="Toggle grade levels dropdown">▾</button>
+        </div>
+
+        <div class="ms-dropdown" role="listbox" aria-multiselectable="true">
+            <div class="ms-search"><input aria-label="Search grade levels" placeholder="Search..." class="w-full border rounded px-2 py-1" /></div>
+            <div class="ms-select-all"><input id="grade-select-all" type="checkbox" /> <label for="grade-select-all">Select all</label></div>
+            <div class="ms-list">
+              @foreach($gradeLevels as $g)
+                <div class="ms-item" data-id="{{ $g->id }}" role="option" aria-selected="{{ in_array($g->id,$selectedGrades) ? 'true' : 'false' }}">
+                  <input type="checkbox" class="ms-checkbox" data-id="{{ $g->id }}" @if(in_array($g->id,$selectedGrades)) checked @endif />
+                  <div>{{ $g->name }}</div>
+                </div>
+              @endforeach
+            </div>
+          </div>
+        </div>
+      <p class="text-xs text-slate-500 mt-1">Optional — pick one or more grade levels this teacher can handle.</p>
+
+      </div>
+
+  <div>
   <label for="avail-control" class="block text-sm font-medium">Unavailable Periods</label>
       <input type="hidden" id="advisory-input" name="advisory" value="{{ old('advisory', $teacher->advisory ?? '') }}">
 
       {{-- reuse the ms-control look for periods; selections sync back into the hidden CSV advisory input --}}
-  <select id="availability-native" multiple class="ms-native-hidden" title="Unavailable periods">
+  <select id="availability-native" name="availability[]" multiple class="ms-native-hidden" title="Unavailable periods">
+        @php
+          $selAvail = old('availability', $teacher->availability ?? []);
+          if (is_string($selAvail)) $selAvail = explode(',', $selAvail);
+        @endphp
         @for($i=1;$i<=9;$i++)
           @php
             $val = (string)$i;
@@ -140,7 +180,7 @@
             if($i==2) $label='2nd Period';
             if($i==3) $label='3rd Period';
           @endphp
-          <option value="{{ $val }}" @if(in_array($val, explode(',', old('advisory', $teacher->advisory ?? '')))) selected @endif>{{ $label }}</option>
+          <option value="{{ $val }}" @if(in_array($val, $selAvail)) selected @endif>{{ $label }}</option>
         @endfor
       </select>
 
@@ -179,6 +219,40 @@
     <div class="pt-4">
       <button type="submit" class="px-4 py-2 bg-[#3b4197] text-white rounded">{{ $isEdit ? 'Save' : 'Create' }}</button>
       <a href="{{ route('admin.it.teachers.index') }}" class="ml-2 text-sm">Cancel</a>
+      @if($isEdit)
+        <button type="button" id="btn-delete-teacher" data-id="{{ $teacher->id }}" class="ml-2 px-3 py-1 bg-red-600 text-white rounded text-sm">Remove</button>
+      @endif
     </div>
   </div>
 </form>
+@if($isEdit)
+<script>
+  (function(){
+    const del = document.getElementById('btn-delete-teacher');
+    if (!del) return;
+    del.addEventListener('click', async function(){
+      if (!confirm('Remove this teacher? This action cannot be undone.')) return;
+      const id = this.dataset.id;
+      if (!id) return;
+      try{
+        const hooks = document.getElementById('teachers-urls');
+        const csrf = hooks ? hooks.dataset.csrf : '';
+        const base = hooks ? hooks.dataset.baseUrl : '/admin/it/teachers';
+        const res = await fetch(base + '/' + id, { method: 'DELETE', headers: { 'X-CSRF-TOKEN': csrf, 'X-Requested-With': 'XMLHttpRequest' } });
+        if (!res.ok) throw new Error('Delete failed');
+        // remove the row from left list if present
+        const li = document.querySelector(`#teacher-list [data-id='${id}']`);
+        if (li) li.remove();
+        // reload create form into detail pane
+        const pane = document.getElementById('detail-pane');
+        if (pane && typeof loadFragment === 'function') {
+          const html = await loadFragment(TEACHERS_FRAGMENT_URL);
+          pane.innerHTML = html;
+        } else if (pane) {
+          pane.innerHTML = 'Teacher removed.';
+        }
+      } catch(e){ console.error(e); alert('Failed to delete teacher'); }
+    });
+  })();
+</script>
+@endif

@@ -44,7 +44,8 @@
       data-fragment-url="{{ url('admin/it/teachers/fragment') }}"
       data-base-url="{{ url('admin/it/teachers') }}"
       data-list-url="{{ url('admin/it/teachers/list') }}"
-      data-next-url="{{ $teachers->nextPageUrl() }}"></div>
+      data-next-url="{{ $teachers->nextPageUrl() }}"
+      data-csrf="{{ csrf_token() }}"></div>
 
   <script>
     // Read server-generated URLs from data attributes to avoid embedding Blade inside JS expressions
@@ -98,12 +99,18 @@
       }
 
       // Attach click handlers to teacher rows so loadTeacher is invoked when a row is clicked
-      document.querySelectorAll('.teacher-row').forEach(el => {
-        el.addEventListener('click', function(){
-          const id = this.getAttribute('data-id');
-          if (id) loadTeacher(id);
+      function attachRowHandlers(root){
+        const rows = (root || document).querySelectorAll('.teacher-row');
+        rows.forEach(el => {
+          if (el.dataset.attached) return;
+          el.addEventListener('click', function(){
+            const id = this.getAttribute('data-id');
+            if (id) loadTeacher(id);
+          });
+          el.dataset.attached = '1';
         });
-      });
+      }
+      attachRowHandlers();
 
       // Load create form by default so the admin sees an empty form immediately
       (async function loadInitialForm(){

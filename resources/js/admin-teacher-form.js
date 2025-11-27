@@ -52,11 +52,20 @@ function initContainer(container) {
 
   function openDropdown(){ if(dropdown) { dropdown.style.display='block'; control.setAttribute('aria-expanded','true'); } }
   function closeDropdown(){ if(dropdown) { dropdown.style.display='none'; control.setAttribute('aria-expanded','false'); } }
+  let _closeTimer = null;
+  // close dropdown when mouse leaves the container after a short delay
+  container.addEventListener('mouseenter', function(){ if(_closeTimer){ clearTimeout(_closeTimer); _closeTimer = null; } });
+  container.addEventListener('mouseleave', function(){ if(dropdown){ if(_closeTimer) clearTimeout(_closeTimer); _closeTimer = setTimeout(function(){ closeDropdown(); _closeTimer = null; }, 350); } });
 
   function renderTokens(){
     tokens.innerHTML = '';
     const checked = Array.from(native.options).filter(o=>o.selected);
-    if(!checked.length){ const ph = document.createElement('div'); ph.className='text-slate-500'; ph.textContent=(native.name && native.name.indexOf('subjects')!==-1)?'Select subjects...':'Select periods...'; tokens.appendChild(ph); }
+    if(!checked.length){ const ph = document.createElement('div'); ph.className='text-slate-500';
+      let placeholder = 'Select...';
+      if (native.name && native.name.indexOf('subjects')!==-1) placeholder = 'Select subjects...';
+      else if (native.name && native.name.indexOf('grade')!==-1) placeholder = 'Select grade levels...';
+      else if (native.name && (native.name.indexOf('availability')!==-1 || native.name.indexOf('period')!==-1)) placeholder = 'Select periods...';
+      ph.textContent = placeholder; tokens.appendChild(ph); }
     checked.forEach(o=>{
       const t = document.createElement('span'); t.className='ms-token'; t.textContent = o.text;
       const rem = document.createElement('button'); rem.type='button'; rem.className='ms-token-remove'; rem.setAttribute('aria-label','Remove'); rem.innerHTML='✕'; rem.addEventListener('click', function(){ deselect(o.value); });
@@ -64,24 +73,51 @@ function initContainer(container) {
     });
   }
 
+  // sync native <select> from list-item selections (not using checkboxes)
   function syncNativeFromList(){
-    const checks = Array.from(list.querySelectorAll('.ms-checkbox'));
-    checks.forEach(cb=>{
-      const val = cb.dataset.id;
-      const opt = native.querySelector('option[value="'+val+'"]');
-      if(opt) opt.selected = cb.checked;
+    // set native selected based on hidden ms-item-selected class or option state
+    Array.from(native.options).forEach(opt => {
+      const id = String(opt.value);
+      const item = list.querySelector('.ms-item[data-id="'+id+'"]');
+      if (item && item.classList.contains('ms-item-selected')) {
+        opt.selected = true;
+      } else {
+        // keep whatever is set, but ensure not-selected items are false
+        if (item && !item.classList.contains('ms-item-selected')) opt.selected = false;
+      }
+    });
+    renderTokens();
+  }
+
+  function syncListFromNative(){
+    // if native option is selected, hide the list item and mark selected
+    Array.from(list.querySelectorAll('.ms-item')).forEach(it => {
+      const id = it.dataset.id;
+      const opt = native.querySelector('option[value="'+id+'"]');
+      if (opt && opt.selected) {
+        it.style.display = 'none';
+        it.classList.add('ms-item-selected');
+      } else {
+        it.style.display = '';
+        it.classList.remove('ms-item-selected');
+      }
     });
     renderTokens();
   }
 
   function deselect(val){
-    const cb = list.querySelector('.ms-checkbox[data-id="'+val+'"]'); if(cb){ cb.checked = false; }
     const opt = native.querySelector('option[value="'+val+'"]'); if(opt) opt.selected = false;
+    // show the item again
+    const it = list.querySelector('.ms-item[data-id="'+val+'"]'); if(it){ it.style.display = ''; it.classList.remove('ms-item-selected'); }
+    // refresh tokens
     renderTokens();
+    updateSelectAllState();
   }
 
   // initialize tokens from native select
   renderTokens();
+  // ensure list checkboxes reflect native select initial state
+  try{ syncListFromNative(); } catch(e){}
 
   try { console.debug('[admin-teacher-form] rendered tokens for', native.name || native.id); } catch(e){}
 
@@ -90,20 +126,117 @@ function initContainer(container) {
 
   document.addEventListener('click', function(e){ if(!e.target.closest('.ms-container')) closeDropdown(); });
 
-  // checkbox change
-  list.addEventListener('change', function(e){ if(e.target.matches('.ms-checkbox')){ syncNativeFromList(); updateSelectAllState(); } });
-
-  // clicking item toggles checkbox
-  list.addEventListener('click', function(e){ const it = e.target.closest('.ms-item'); if(!it) return; const cb = it.querySelector('.ms-checkbox'); if(cb){ cb.checked = !cb.checked; cb.dispatchEvent(new Event('change')); } });
+  // clicking item selects it (list-only UI). Add token and hide item.
+  list.addEventListener('click', function(e){
+    const it = e.target.closest('.ms-item');
+    if(!it) return;
+    const id = it.dataset.id;
+    const opt = native.querySelector('option[value="'+id+'"]');
+    if (opt) {
+      opt.selected = true;
+      it.style.display = 'none';
+      it.classList.add('ms-item-selected');
+      renderTokens();
+      updateSelectAllState();
+    }
+  });
 
   // search
   if (search) search.addEventListener('input', function(){ const q = (this.value||'').toLowerCase(); Array.from(list.querySelectorAll('.ms-item')).forEach(it=>{ const txt = it.textContent.toLowerCase(); it.style.display = txt.indexOf(q) === -1 ? 'none' : 'flex'; }); updateSelectAllState(); });
 
   function updateSelectAllState(){ const all = Array.from(list.querySelectorAll('.ms-checkbox')).filter(cb=>cb.closest('.ms-item').style.display!=='none'); const checked = all.filter(cb=>cb.checked); if(selectAll) selectAll.checked = all.length>0 && checked.length===all.length; }
-  if (selectAll) selectAll.addEventListener('change', function(){ const visible = Array.from(list.querySelectorAll('.ms-item')).filter(it=>it.style.display!=='none'); visible.forEach(it=>{ const cb = it.querySelector('.ms-checkbox'); if(cb) cb.checked = selectAll.checked; }); syncNativeFromList(); });
+  if (selectAll) selectAll.addEventListener('change', function(){
+    const visible = Array.from(list.querySelectorAll('.ms-item')).filter(it=>it.style.display!=='none');
+    visible.forEach(it=>{
+      const id = it.dataset.id;
+      const opt = native.querySelector('option[value="'+id+'"]');
+      if (opt) opt.selected = selectAll.checked;
+      if (selectAll.checked) { it.style.display='none'; it.classList.add('ms-item-selected'); } else { it.style.display=''; it.classList.remove('ms-item-selected'); }
+    });
+    syncNativeFromList();
+  });
 
   // initialize select-all state
   updateSelectAllState();
+
+  // ensure native select is synced before parent form submits and submit via AJAX so the form stays open
+  const parentForm = container.closest('form');
+  if (parentForm && !parentForm.__ms_submit_inited) {
+    parentForm.__ms_submit_inited = true;
+    parentForm.addEventListener('submit', async function(e){
+      e.preventDefault();
+      try {
+        // Ensure all ms-container native <select>s reflect their UI state before submit.
+        Array.from(document.querySelectorAll('.ms-container')).forEach(c => {
+          try {
+            const n = c.querySelector('select[multiple]');
+            const l = c.querySelector('.ms-list');
+            if (!n || !l) return;
+            Array.from(n.options).forEach(opt => {
+              const id = String(opt.value);
+              const item = l.querySelector('.ms-item[data-id="'+id+'"]');
+              const cb = l.querySelector('.ms-checkbox[data-id="'+id+'"]');
+              if (item && item.classList.contains('ms-item-selected')) {
+                opt.selected = true;
+              } else if (cb) {
+                opt.selected = !!cb.checked;
+              } else {
+                opt.selected = false;
+              }
+            });
+          } catch (e) { /* ignore per-container errors */ }
+        });
+        console.debug && console.debug('[admin-teacher-form] synced all ms-container native selects before AJAX submit');
+
+        // prepare form data and send via fetch
+        const action = parentForm.getAttribute('action') || window.location.href;
+        const method = (parentForm.getAttribute('method') || 'POST').toUpperCase();
+        const formData = new FormData(parentForm);
+
+        // send as AJAX so server may return fragment or JSON; keep the form open on success
+        const resp = await fetch(action, { method: method, body: formData, credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+        if (!resp.ok) {
+          // try to show error message from response
+          let txt = await resp.text().catch(()=>null);
+          console.error('[admin-teacher-form] save failed', resp.status, txt);
+          alert('Save failed. See console for details.');
+          return;
+        }
+
+        const ctype = resp.headers.get('content-type') || '';
+        if (ctype.indexOf('application/json') !== -1) {
+          const data = await resp.json();
+          if (data.html) {
+            // replace detail pane content with returned fragment (keeps form visible)
+            const pane = document.getElementById('detail-pane'); if (pane) pane.innerHTML = data.html;
+          }
+          if (data.success) {
+            // show a transient saved indicator
+            showSavedIndicator(parentForm);
+          }
+          // update left list entry name if provided
+          if (data.teacher && data.teacher.id) {
+            const li = document.querySelector(`#teacher-list [data-id='${data.teacher.id}']`);
+            if (li) li.querySelector('.font-medium').textContent = data.teacher.name || li.querySelector('.font-medium').textContent;
+          }
+        } else {
+          // HTML response — replace fragment in detail pane but do not navigate away
+          const txt = await resp.text();
+          const pane = document.getElementById('detail-pane'); if (pane) pane.innerHTML = txt;
+          showSavedIndicator(parentForm);
+        }
+      } catch (err) { console.error('[admin-teacher-form] submit failed', err); alert('Save failed (client error). See console for details.'); }
+    });
+  }
+
+  // transient saved indicator helper
+  function showSavedIndicator(form){
+    try{
+      let el = form.querySelector('.ms-save-indicator');
+      if(!el){ el = document.createElement('div'); el.className='ms-save-indicator text-sm text-green-700 mt-2'; el.style.transition='opacity 0.2s'; form.appendChild(el); }
+      el.textContent = 'Saved'; el.style.opacity = '1'; setTimeout(()=>{ if(el) el.style.opacity='0'; }, 2000);
+    } catch(e){ }
+  }
 
   // keyboard: open on focus + key
   control.addEventListener('keydown', function(e){ if(e.key==='ArrowDown' || e.key==='Enter'){ e.preventDefault(); openDropdown(); if(search) search.focus(); } });
@@ -124,6 +257,8 @@ function populateSubjectsInto(container, subjects){
 
     const item = document.createElement('div'); item.className = 'ms-item'; item.setAttribute('data-id', String(s.id)); item.setAttribute('role','option'); item.setAttribute('aria-selected','false');
     const cb = document.createElement('input'); cb.type='checkbox'; cb.className='ms-checkbox'; cb.setAttribute('data-id', String(s.id));
+    // if the native option is pre-selected, mark checkbox checked
+    try { if (native.querySelector('option[value="'+String(s.id)+'"]') && native.querySelector('option[value="'+String(s.id)+'"]').selected) cb.checked = true; } catch(e) {}
     const label = document.createElement('div'); label.innerHTML = s.name + (s.short_code ? ' <small class="text-slate-400">('+s.short_code+')</small>' : '');
     item.appendChild(cb); item.appendChild(label);
     list.appendChild(item);

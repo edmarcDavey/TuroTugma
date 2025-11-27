@@ -31,14 +31,22 @@ class SectionController extends Controller
             'items' => 'nullable|array',
             'items.*.name' => 'required_with:items|string|max:191',
             'items.*.is_special' => 'nullable|boolean',
+            'items.*.track' => 'nullable|string|max:50',
         ]);
 
         $mode = $data['mode'] ?? 'append';
 
         // If names array provided, use it as authoritative list. Otherwise generate by count.
         if (!empty($data['items'])) {
-            // items contain objects with name and optional is_special
-            $names = array_map(function($it, $i){ return ['ordinal' => $i+1, 'name' => trim($it['name']), 'is_special' => !empty($it['is_special']) ? 1 : 0]; }, array_values($data['items']), array_keys($data['items']));
+            // items contain objects with name and optional is_special and optional track
+            $names = array_map(function($it, $i){
+                return [
+                    'ordinal' => $i+1,
+                    'name' => trim($it['name']),
+                    'is_special' => !empty($it['is_special']) ? 1 : 0,
+                    'track' => isset($it['track']) ? trim($it['track']) : null,
+                ];
+            }, array_values($data['items']), array_keys($data['items']));
         } elseif (!empty($data['names'])) {
             $names = array_map(function($n, $i){ return ['ordinal' => $i+1, 'name' => trim($n), 'is_special' => 0]; }, array_values($data['names']), array_keys($data['names']));
         } else {
@@ -58,6 +66,7 @@ class SectionController extends Controller
             foreach ($names as $n) {
                 $name = $n['name'];
                 $ordinal = $n['ordinal'] ?? null;
+                $track = $n['track'] ?? null;
 
                 // skip if exists
                 $exists = Section::where('grade_level_id', $gradeLevel->id)->where('name', $name)->exists();
@@ -69,6 +78,7 @@ class SectionController extends Controller
                     'ordinal' => $ordinal,
                     'code' => null,
                     'is_special' => isset($n['is_special']) ? (bool)$n['is_special'] : false,
+                    'track' => $track,
                 ]);
             }
         });

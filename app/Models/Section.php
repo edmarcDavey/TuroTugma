@@ -9,7 +9,7 @@ class Section extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['grade_level_id','name','code','ordinal','advisor_user_id','capacity','school_year','is_active','is_special','notes'];
+    protected $fillable = ['grade_level_id','name','code','ordinal','advisor_user_id','capacity','school_year','is_active','is_special','notes','track'];
 
     protected $casts = [
         'is_active' => 'boolean',

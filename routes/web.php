@@ -282,6 +282,10 @@ Route::middleware('auth')->prefix('admin/it')->name('admin.it.')->group(function
     Route::get('/scheduler/{run}/teachers-for-slot', [\App\Http\Controllers\Admin\SchedulingRunController::class, 'teachersForSlot'])
         ->whereNumber('run')
         ->name('scheduler.teachers.for_slot');
+    // bulk candidates for multiple slots (AJAX JSON)
+    Route::post('/scheduler/{run}/teachers-for-slots', [\App\Http\Controllers\Admin\SchedulingRunController::class, 'teachersForSlots'])
+        ->whereNumber('run')
+        ->name('scheduler.teachers.for_slots');
 
     // create a new schedule entry (used by inline cell creation)
     Route::post('/scheduler/{run}/entry/create', [\App\Http\Controllers\Admin\SchedulingRunController::class, 'createEntry'])

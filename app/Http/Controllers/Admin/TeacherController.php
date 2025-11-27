@@ -24,14 +24,14 @@ class TeacherController extends Controller
 
         $teachers = $query->paginate(10)->withQueryString();
         $subjects = Subject::orderBy('name')->get();
-        $gradeLevels = GradeLevel::orderBy('name')->get();
+        $gradeLevels = GradeLevel::orderBy('year')->get();
         return view('admin.it.teachers.index', compact('teachers','subjects','gradeLevels','q'));
     }
 
     public function create()
     {
         $subjects = Subject::orderBy('name')->get();
-        $gradeLevels = GradeLevel::orderBy('name')->get();
+        $gradeLevels = GradeLevel::orderBy('year')->get();
         return view('admin.it.teachers.create', compact('subjects','gradeLevels'));
     }
 
@@ -67,13 +67,21 @@ class TeacherController extends Controller
             $teacher->gradeLevels()->sync($data['grade_levels']);
         }
 
+        // If request is AJAX, return a JSON fragment so the client can keep the form open
+        if ($request->ajax() || $request->wantsJson()) {
+            $subjects = Subject::orderBy('name')->get();
+            $gradeLevels = GradeLevel::orderBy('year')->get();
+            $html = view('admin.it.teachers._form', compact('teacher','subjects','gradeLevels'))->render();
+            return response()->json([ 'success' => true, 'teacher' => $teacher, 'html' => $html ]);
+        }
+
         return redirect()->route('admin.it.teachers.index')->with('success','Teacher created');
     }
 
     public function edit(Teacher $teacher)
     {
         $subjects = Subject::orderBy('name')->get();
-        $gradeLevels = GradeLevel::orderBy('name')->get();
+        $gradeLevels = GradeLevel::orderBy('year')->get();
         return view('admin.it.teachers.edit', compact('teacher','subjects','gradeLevels'));
     }
 
@@ -81,7 +89,7 @@ class TeacherController extends Controller
     public function fragmentCreate()
     {
         $subjects = Subject::orderBy('name')->get();
-        $gradeLevels = GradeLevel::orderBy('name')->get();
+        $gradeLevels = GradeLevel::orderBy('year')->get();
         return view('admin.it.teachers._form', compact('subjects','gradeLevels'));
     }
 
@@ -89,7 +97,7 @@ class TeacherController extends Controller
     public function fragmentEdit(Teacher $teacher)
     {
         $subjects = Subject::orderBy('name')->get();
-        $gradeLevels = GradeLevel::orderBy('name')->get();
+        $gradeLevels = GradeLevel::orderBy('year')->get();
         return view('admin.it.teachers._form', compact('teacher','subjects','gradeLevels'));
     }
 
@@ -150,12 +158,22 @@ class TeacherController extends Controller
         $teacher->subjects()->sync($data['subjects'] ?? []);
         $teacher->gradeLevels()->sync($data['grade_levels'] ?? []);
 
+        if ($request->ajax() || $request->wantsJson()) {
+            $subjects = Subject::orderBy('name')->get();
+            $gradeLevels = GradeLevel::orderBy('year')->get();
+            $html = view('admin.it.teachers._form', compact('teacher','subjects','gradeLevels'))->render();
+            return response()->json([ 'success' => true, 'teacher' => $teacher, 'html' => $html ]);
+        }
+
         return redirect()->route('admin.it.teachers.index')->with('success','Teacher updated');
     }
 
     public function destroy(Teacher $teacher)
     {
         $teacher->delete();
+        if (request()->wantsJson() || request()->ajax()) {
+            return response()->json(['success' => true]);
+        }
         return redirect()->route('admin.it.teachers.index')->with('success','Teacher deleted');
     }
 }

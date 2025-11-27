@@ -28,6 +28,13 @@
             <button id="generateScheduleBtn" type="submit" class="px-3 py-1 bg-green-600 text-white rounded">Generate (auto-fill)</button>
           </form>
         </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div id="view-toggle" style="display:flex;gap:6px;align-items:center;">
+            <button id="viewToggleCompact" type="button" class="view-toggle-button px-2 py-1 border rounded bg-white text-sm">Compact</button>
+            <button id="viewToggleClass" type="button" class="view-toggle-button px-2 py-1 border rounded bg-white text-sm">Class schedule</button>
+            <button id="viewToggleTeacher" type="button" class="view-toggle-button px-2 py-1 border rounded bg-white text-sm">Teacher schedule</button>
+          </div>
+        </div>
       </div>
       <div style="flex:1 1 auto; min-height:0; overflow:hidden;">
         <div id="matrix-scroll" style="width:100%;height:auto;overflow:visible;padding-bottom:0;box-sizing:border-box;">
@@ -111,6 +118,9 @@
                 @endforeach
             </tbody>
           </table>
+          <!-- Non-destructive alternate views rendered from the compact matrix DOM -->
+          <div id="classView" style="display:none;padding:12px;background:#fafafa;border:1px solid #f0f0f0;margin-top:8px;border-radius:6px;"></div>
+          <div id="teacherView" style="display:none;padding:12px;background:#fafafa;border:1px solid #f0f0f0;margin-top:8px;border-radius:6px;"></div>
         </div>
       </div>
       <div id="matrix-bottom-generate" style="padding:8px 12px; border-top:1px solid #efefef; display:flex; justify-content:flex-end; align-items:center; gap:8px; background:#fff;">
@@ -907,6 +917,72 @@
     // keep page-level scrolling disabled so only the matrix scrolls
     window.addEventListener('resize', () => { setTimeout(() => { fitToScreen(); }, 120); });
     window.addEventListener('load', () => { setTimeout(()=>{ fitToScreen(); }, 200); });
+
+    // ----- Non-destructive alternate view renderers (read-only; built from the compact matrix DOM) -----
+    (function(){
+      function renderClassView(){
+        const out = document.getElementById('classView'); if(!out) return; out.innerHTML = '';
+        const rows = document.querySelectorAll('table tbody tr');
+        rows.forEach(tr => {
+          const header = tr.querySelector('td');
+          const title = header ? header.innerText.trim() : 'Section';
+          const container = document.createElement('div'); container.style.marginBottom = '10px'; container.style.paddingBottom='8px'; container.style.borderBottom='1px solid #eee';
+          const h = document.createElement('div'); h.style.fontWeight='700'; h.style.marginBottom='6px'; h.innerText = title; container.appendChild(h);
+          const cells = tr.querySelectorAll('td.section-cell');
+          cells.forEach(td => {
+            const p = td.getAttribute('data-period') || '?';
+            const subj = td.querySelector('.subject-text') ? td.querySelector('.subject-text').innerText.trim() : (td.querySelector('.cell-subject') ? (td.querySelector('.cell-subject').selectedOptions[0]?.text || '') : '');
+            const teach = td.querySelector('.teacher-text') ? td.querySelector('.teacher-text').innerText.trim() : (td.querySelector('.cell-teacher') ? (td.querySelector('.cell-teacher').selectedOptions[0]?.text || '') : '');
+            const row = document.createElement('div'); row.style.fontSize='13px'; row.innerHTML = `<strong>P${p}:</strong> ${subj || '<em>—</em>'} <span style="color:#475569;">— ${teach || '<em>Unassigned</em>'}</span>`;
+            container.appendChild(row);
+          });
+          out.appendChild(container);
+        });
+      }
+
+      function renderTeacherView(){
+        const out = document.getElementById('teacherView'); if(!out) return; out.innerHTML = '';
+        const map = {}; // teacherName -> [{section, period, subject}]
+        document.querySelectorAll('td.section-cell').forEach(td => {
+          const section = td.getAttribute('data-section-name') || td.getAttribute('data-section-id') || 'Section';
+          const period = td.getAttribute('data-period') || '?';
+          const subj = td.querySelector('.subject-text') ? td.querySelector('.subject-text').innerText.trim() : (td.querySelector('.cell-subject') ? (td.querySelector('.cell-subject').selectedOptions[0]?.text || '') : '');
+          const teach = td.querySelector('.teacher-text') ? td.querySelector('.teacher-text').innerText.trim() : (td.querySelector('.cell-teacher') ? (td.querySelector('.cell-teacher').selectedOptions[0]?.text || '') : '');
+          if(!teach || teach === '' || teach === 'Assign Teacher' || teach.toLowerCase().includes('unassigned')) return;
+          if(!map[teach]) map[teach] = [];
+          map[teach].push({ section: section, period: period, subject: subj });
+        });
+        // sort teacher names
+        Object.keys(map).sort().forEach(tn => {
+          const block = document.createElement('div'); block.style.marginBottom='12px';
+          const h = document.createElement('div'); h.style.fontWeight='700'; h.style.marginBottom='6px'; h.innerText = tn; block.appendChild(h);
+          map[tn].sort((a,b)=> (a.period||'').localeCompare(b.period||'')).forEach(item => {
+            const r = document.createElement('div'); r.innerHTML = `<strong>P${item.period}:</strong> ${item.subject || '<em>—</em>'} <span style="color:#475569">— ${item.section}</span>`; block.appendChild(r);
+          });
+          out.appendChild(block);
+        });
+        if(Object.keys(map).length === 0){ out.innerHTML = '<div class="text-sm text-slate-600">No assigned teachers found in current view.</div>'; }
+      }
+
+      // Bind toolbar buttons after DOM load to avoid timing issues
+      function bindViewButtons(){
+        const btnCompact = document.getElementById('viewToggleCompact');
+        const btnClass = document.getElementById('viewToggleClass');
+        const btnTeacher = document.getElementById('viewToggleTeacher');
+        const matrixScroll = document.getElementById('matrix-scroll');
+        const classView = document.getElementById('classView');
+        const teacherView = document.getElementById('teacherView');
+        if(btnCompact) btnCompact.addEventListener('click', () => { if(matrixScroll) matrixScroll.style.display = ''; if(classView) classView.style.display = 'none'; if(teacherView) teacherView.style.display = 'none'; setTimeout(fitToScreen,40); });
+        if(btnClass) btnClass.addEventListener('click', () => { if(matrixScroll) matrixScroll.style.display = 'none'; if(classView) classView.style.display = ''; if(teacherView) teacherView.style.display = 'none'; renderClassView(); setTimeout(fitToScreen,40); });
+        if(btnTeacher) btnTeacher.addEventListener('click', () => { if(matrixScroll) matrixScroll.style.display = 'none'; if(classView) classView.style.display = 'none'; if(teacherView) teacherView.style.display = ''; renderTeacherView(); setTimeout(fitToScreen,40); });
+      }
+
+      if(document.readyState === 'complete' || document.readyState === 'interactive'){
+        bindViewButtons();
+      } else {
+        window.addEventListener('load', bindViewButtons);
+      }
+    })();
   </script>
 
 @endsection
