@@ -27,13 +27,13 @@ class DatabaseSeeder extends Seeder
         // IT Coordinator
         \App\Models\User::updateOrCreate(
             ['email' => '300627-101'],
-            ['name' => 'IT Coordinator', 'password' => bcrypt('TuroTugma@2025/DNHS')]
+            ['name' => 'IT Coordinator', 'password' => bcrypt('TuroTugma@2025/DNHS'), 'role' => 'it_coordinator']
         );
 
         // Scheduler
         \App\Models\User::updateOrCreate(
             ['email' => '300627-201'],
-            ['name' => 'Scheduler', 'password' => bcrypt('TuroTugma@2025/DNHS')]
+            ['name' => 'Scheduler', 'password' => bcrypt('TuroTugma@2025/DNHS'), 'role' => 'scheduler']
         );
 
         // Ensure grade levels exist (Grade 7-12) for initial UI

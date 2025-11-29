@@ -7,23 +7,16 @@
         <x-auth-session-status class="mb-4" :status="session('status')" />
 
         <div class="bg-white shadow-md rounded-lg p-6">
-            <!-- Quick role selector (prefill ID for demo/testing) -->
-            <div class="mb-4">
-                <label for="role_select" class="block text-sm font-medium text-gray-700">Log in as</label>
-                <select id="role_select" class="mt-1 block w-full rounded-md border-gray-300 focus:ring-indigo-500 focus:border-indigo-500">
-                    <option value="it.coordinator@example.com" selected>IT Coordinator</option>
-                    <option value="scheduler@example.com">Scheduler</option>
-                </select>
-            </div>
+            <!-- Admin login: only provide ID and Password -->
 
             <form method="POST" action="{{ route('login') }}">
                 @csrf
 
-                <!-- ID (uses email backend field) -->
+                <!-- ID (single admin identifier) -->
                 <div>
-                    <x-input-label for="email" :value="__('ID')" />
-                    <x-text-input id="email" class="block mt-1 w-full" type="text" name="email" :value="old('email')" required autofocus autocomplete="username" />
-                    <x-input-error :messages="$errors->get('email')" class="mt-2" />
+                    <x-input-label for="id" :value="__('ID')" />
+                    <x-text-input id="id" class="block mt-1 w-full" type="text" name="id" :value="old('id')" required autofocus autocomplete="username" />
+                    <x-input-error :messages="$errors->get('id')" class="mt-2" />
                 </div>
 
                 <!-- Password -->
@@ -57,19 +50,10 @@
         <p class="text-center text-sm text-gray-600 mt-4">Not a TuroTugma Admin? <a href="{{ url('/') }}" class="underline">Return to Public Dashboard</a></p>
     </div>
     <script>
+        // Small usability: focus the ID field on load
         (function(){
-            function byId(id){return document.getElementById(id)}
-            var roleSelect = byId('role_select');
-            var idInput = byId('email');
-            var pwdInput = byId('password');
-
-            if(roleSelect){
-                roleSelect.addEventListener('change', function(){
-                    var val = this.value || '';
-                    if(idInput) idInput.value = val;
-                    if(pwdInput) pwdInput.focus();
-                });
-            }
+            var idInput = document.getElementById('id');
+            if(idInput) idInput.focus();
         })();
     </script>
 </x-guest-layout>

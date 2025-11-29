@@ -27,8 +27,8 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            // Accept site ID or email for the login identifier. The form field is still named "email"
-            'email' => ['required', 'string'],
+            // Login now accepts a single admin ID (field named "id") and password
+            'id' => ['required', 'string'],
             'password' => ['required', 'string'],
         ];
     }
@@ -42,11 +42,26 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
-            RateLimiter::hit($this->throttleKey());
+        // Only allow the single configured admin ID to attempt authentication.
+        $adminId = env('ADMIN_ID', '300627-101');
+        $inputId = (string) $this->string('id');
 
+
+        if ($inputId !== $adminId) {
+            RateLimiter::hit($this->throttleKey());
+            // rejected because input ID did not match configured admin ID
             throw ValidationException::withMessages([
-                'email' => trans('auth.failed'),
+                'id' => trans('auth.failed'),
+            ]);
+        }
+
+        // Attempt authentication using the admin's stored email field (the admin ID is stored in `email`).
+        $passwordPlain = (string) $this->string('password');
+        $attempt = Auth::attempt(['email' => $inputId, 'password' => $passwordPlain], $this->boolean('remember'));
+        if (! $attempt) {
+            RateLimiter::hit($this->throttleKey());
+            throw ValidationException::withMessages([
+                'id' => trans('auth.failed'),
             ]);
         }
 
@@ -81,6 +96,6 @@ class LoginRequest extends FormRequest
      */
     public function throttleKey(): string
     {
-        return Str::transliterate(Str::lower($this->string('email')).'|'.$this->ip());
+        return Str::transliterate(Str::lower($this->string('id')).'|'.$this->ip());
     }
 }
