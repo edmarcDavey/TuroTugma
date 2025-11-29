@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\GradeLevel;
 use App\Models\Section;
+use Illuminate\Http\Response;
 
 class SectionController extends Controller
 {
@@ -85,5 +86,78 @@ class SectionController extends Controller
 
         $sections = Section::where('grade_level_id', $gradeLevel->id)->orderBy('ordinal')->get();
         return response()->json(['sections' => $sections]);
+    }
+
+    /**
+     * Return sections for a grade as JSON (for the editor UI)
+     */
+    public function listForGrade(Request $request, GradeLevel $gradeLevel)
+    {
+        $this->authorizeAdmin();
+        // For Junior High we prefer to surface special sections first, then by ordinal.
+        $sections = Section::where('grade_level_id', $gradeLevel->id)
+            ->orderByDesc('is_special')
+            ->orderBy('ordinal')
+            ->get(['id','name','ordinal','is_special','track']);
+        return response()->json(['sections' => $sections]);
+    }
+
+    /**
+     * Create a single section for a grade (AJAX)
+     */
+    public function store(Request $request, GradeLevel $gradeLevel)
+    {
+        $this->authorizeAdmin();
+
+        $data = $request->validate([
+            'name' => 'required|string|max:191',
+            'is_special' => 'nullable|boolean',
+            'track' => 'nullable|string|max:50',
+            'ordinal' => 'nullable|integer',
+        ]);
+
+        $section = Section::create([
+            'grade_level_id' => $gradeLevel->id,
+            'name' => $data['name'],
+            'ordinal' => $data['ordinal'] ?? null,
+            'is_special' => !empty($data['is_special']) ? 1 : 0,
+            'track' => $data['track'] ?? null,
+        ]);
+
+        return response()->json(['section' => $section], Response::HTTP_CREATED);
+    }
+
+    /**
+     * Update a section
+     */
+    public function update(Request $request, Section $section)
+    {
+        $this->authorizeAdmin();
+
+        $data = $request->validate([
+            'name' => 'required|string|max:191',
+            'is_special' => 'nullable|boolean',
+            'track' => 'nullable|string|max:50',
+            'ordinal' => 'nullable|integer',
+        ]);
+
+        $section->update([
+            'name' => $data['name'],
+            'is_special' => !empty($data['is_special']) ? 1 : 0,
+            'track' => $data['track'] ?? null,
+            'ordinal' => $data['ordinal'] ?? $section->ordinal,
+        ]);
+
+        return response()->json(['section' => $section]);
+    }
+
+    /**
+     * Delete a section
+     */
+    public function destroy(Section $section)
+    {
+        $this->authorizeAdmin();
+        $section->delete();
+        return response()->json(['success' => true]);
     }
 }

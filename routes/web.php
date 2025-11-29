@@ -27,12 +27,12 @@ Route::middleware('auth')->group(function () {
 
 // IT Coordinator admin placeholders (protected by auth + simple role check)
 Route::middleware('auth')->prefix('admin/it')->name('admin.it.')->group(function () {
-    Route::get('/', function () {
-        if (Auth::user()->role !== 'it_coordinator') {
-            abort(403);
-        }
-        return view('admin.it.dashboard');
-    })->name('dashboard');
+    Route::get('/', [\App\Http\Controllers\Admin\OverviewController::class, 'index'])
+        ->name('dashboard');
+
+    // JSON endpoint for overview data (counts, analytics)
+    Route::get('/overview/data', [\App\Http\Controllers\Admin\OverviewController::class, 'data'])
+        ->name('overview.data');
 
     // Teachers resource (basic CRUD)
     Route::get('/teachers', function () {
@@ -109,17 +109,28 @@ Route::middleware('auth')->prefix('admin/it')->name('admin.it.')->group(function
 
     Route::get('/subjects/{subject}/edit', function ($subject) {
         if (Auth::user()->role !== 'it_coordinator') abort(403);
-        return app(\App\Http\Controllers\Admin\SubjectController::class)->edit($subject);
+           $s = \App\Models\Subject::findOrFail($subject);
+           return app(\App\Http\Controllers\Admin\SubjectController::class)->edit($s);
     })->name('subjects.edit');
 
     Route::put('/subjects/{subject}', function ($subject) {
         if (Auth::user()->role !== 'it_coordinator') abort(403);
-        return app(\App\Http\Controllers\Admin\SubjectController::class)->update(request(), $subject);
+           $s = \App\Models\Subject::findOrFail($subject);
+           return app(\App\Http\Controllers\Admin\SubjectController::class)->update(request(), $s);
     })->name('subjects.update');
 
     Route::delete('/subjects/{subject}', function ($subject) {
         if (Auth::user()->role !== 'it_coordinator') abort(403);
-        return app(\App\Http\Controllers\Admin\SubjectController::class)->destroy($subject);
+        try{
+            $s = \App\Models\Subject::findOrFail($subject);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $ex) {
+            // return JSON for AJAX callers
+            if(request()->wantsJson() || request()->ajax()){
+                return response()->json(['message' => 'Subject not found'], 404);
+            }
+            abort(404, 'Subject not found');
+        }
+        return app(\App\Http\Controllers\Admin\SubjectController::class)->destroy($s);
     })->name('subjects.destroy');
 
     // fragment routes for subjects
@@ -130,7 +141,8 @@ Route::middleware('auth')->prefix('admin/it')->name('admin.it.')->group(function
 
     Route::get('/subjects/{subject}/fragment', function ($subject) {
         if (Auth::user()->role !== 'it_coordinator') abort(403);
-        return app(\App\Http\Controllers\Admin\SubjectController::class)->fragmentEdit($subject);
+           $s = \App\Models\Subject::findOrFail($subject);
+           return app(\App\Http\Controllers\Admin\SubjectController::class)->fragmentEdit($s);
     })->name('subjects.fragment.edit');
 
     // Grade Levels & Sections routes (master/detail + AJAX preview & bulk-create)
@@ -153,7 +165,9 @@ Route::middleware('auth')->prefix('admin/it')->name('admin.it.')->group(function
     // AJAX toggle for subject <-> grade assignment (used by combined UI)
     Route::post('/subjects/{subject}/toggle-grade/{gradeLevel}', function ($subject, $gradeLevel) {
         if (Auth::user()->role !== 'it_coordinator') abort(403);
-        return app(\App\Http\Controllers\Admin\SubjectController::class)->toggleGrade(request(), $subject, $gradeLevel);
+           $s = \App\Models\Subject::findOrFail($subject);
+           $g = \App\Models\GradeLevel::findOrFail($gradeLevel);
+           return app(\App\Http\Controllers\Admin\SubjectController::class)->toggleGrade(request(), $s, $g);
     })->name('subjects.toggle-grade');
 
     Route::get('/grade-levels/{gradeLevel}/fragment', function ($gradeLevel) {
@@ -180,6 +194,32 @@ Route::middleware('auth')->prefix('admin/it')->name('admin.it.')->group(function
         $gl = \App\Models\GradeLevel::findOrFail($gradeLevel);
         return app(\App\Http\Controllers\Admin\SectionController::class)->bulkStore(request(), $gl);
     })->name('grade-levels.sections.bulk-create');
+
+    // List sections for a grade level (JSON) and create single section
+    Route::get('/grade-levels/{gradeLevel}/sections', function ($gradeLevel) {
+        if (Auth::user()->role !== 'it_coordinator') abort(403);
+        $gl = \App\Models\GradeLevel::findOrFail($gradeLevel);
+        return app(\App\Http\Controllers\Admin\SectionController::class)->listForGrade(request(), $gl);
+    })->name('grade-levels.sections.list');
+
+    Route::post('/grade-levels/{gradeLevel}/sections', function ($gradeLevel) {
+        if (Auth::user()->role !== 'it_coordinator') abort(403);
+        $gl = \App\Models\GradeLevel::findOrFail($gradeLevel);
+        return app(\App\Http\Controllers\Admin\SectionController::class)->store(request(), $gl);
+    })->name('grade-levels.sections.store');
+
+    // Individual section update/delete
+    Route::put('/sections/{section}', function ($section) {
+        if (Auth::user()->role !== 'it_coordinator') abort(403);
+        $s = \App\Models\Section::findOrFail($section);
+        return app(\App\Http\Controllers\Admin\SectionController::class)->update(request(), $s);
+    })->name('sections.update');
+
+    Route::delete('/sections/{section}', function ($section) {
+        if (Auth::user()->role !== 'it_coordinator') abort(403);
+        $s = \App\Models\Section::findOrFail($section);
+        return app(\App\Http\Controllers\Admin\SectionController::class)->destroy($s);
+    })->name('sections.destroy');
 
     // Preview generated sections for a grade level (AJAX)
     Route::get('/grade-levels/{gradeLevel}/preview-sections', function ($gradeLevel) {

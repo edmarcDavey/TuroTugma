@@ -8,9 +8,9 @@
 
     <!-- Tabs -->
     <div class="mb-4">
-        <div class="inline-flex rounded-md border bg-white">
-            <button type="button" id="tab-sections" class="px-4 py-2 text-sm font-medium border-r" aria-pressed="true" role="tab" aria-controls="panel-sections">Sections</button>
-            <button type="button" id="tab-subjects" class="px-4 py-2 text-sm font-medium" aria-pressed="false" role="tab" aria-controls="panel-subjects">Subjects</button>
+        <div class="inline-flex ss-tabs">
+            <button type="button" id="tab-sections" class="px-4 py-2 text-sm font-medium ss-tab" aria-pressed="true" role="tab" aria-controls="panel-sections">Sections</button>
+            <button type="button" id="tab-subjects" class="px-4 py-2 text-sm font-medium ss-tab" aria-pressed="false" role="tab" aria-controls="panel-subjects">Subjects</button>
         </div>
     </div>
 
@@ -113,16 +113,33 @@
                             </div>
                             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                                 @foreach(range(7,10) as $yr)
-                                    @php $grade = $gradeLevels->firstWhere('year',$yr); $secs = ($grade && $grade->sections) ? $grade->sections->sortBy('ordinal') : collect(); @endphp
+                                    @php $grade = $gradeLevels->firstWhere('year',$yr); 
+                                        $secs = collect();
+                                        if($grade && $grade->sections){
+                                            // For Junior High, put special sections first then order by ordinal
+                                            $secs = $grade->sections->sortBy(function($s){
+                                                $key = ($s->is_special ? 0 : 1) * 100000 + (($s->ordinal !== null) ? $s->ordinal : 99999);
+                                                return $key;
+                                            });
+                                        }
+                                    @endphp
                                     <div class="border rounded p-3 bg-gray-50">
-                                        <div class="flex items-center justify-between mb-2"><div class="font-medium">Grade {{ $yr }}</div><div class="text-xs text-slate-500">{{ $secs->count() }} item(s)</div></div>
+                                        <div class="flex items-center justify-between mb-2">
+                                            <div class="font-medium">Grade {{ $yr }}</div>
+                                            <div class="flex items-center gap-3">
+                                                <div class="text-xs text-slate-500">{{ $secs->count() }} item(s)</div>
+                                                @if($grade && $grade->id)
+                                                    <button type="button" class="text-sm text-indigo-600 grade-edit-btn" data-grade-id="{{ $grade->id }}" data-year="{{ $yr }}">Edit</button>
+                                                @endif
+                                            </div>
+                                        </div>
                                         @if($secs->count())
                                             <ul class="space-y-1">
                                                 @foreach($secs as $s)
-                                                    <li class="py-1">
+                                                    <li class="py-1" data-section-id="{{ $s->id }}">
                                                         <div class="flex items-center justify-between">
-                                                            <div class="font-medium">{{ $s->name }}</div>
-                                                            <div class="text-xs text-slate-500">{{ $s->track ?? ($s->is_special ? 'Special' : '') }}</div>
+                                                            <div class="font-medium section-name">{{ $s->name }}</div>
+                                                            <div class="text-xs text-slate-500 section-meta">{{ $s->track ?? ($s->is_special ? 'Special' : '') }}</div>
                                                         </div>
                                                     </li>
                                                 @endforeach
@@ -142,7 +159,13 @@
                             </div>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 @foreach(range(11,12) as $yr)
-                                    @php $grade = $gradeLevels->firstWhere('year',$yr); $secs = ($grade && $grade->sections) ? $grade->sections->sortBy('ordinal') : collect(); @endphp
+                                    @php $grade = $gradeLevels->firstWhere('year',$yr); 
+                                        $secs = collect();
+                                        if($grade && $grade->sections){
+                                            // For Senior High we keep ordinal ordering; SHS tracks will be shown in meta
+                                            $secs = $grade->sections->sortBy('ordinal');
+                                        }
+                                    @endphp
                                     <div class="border rounded p-3 bg-gray-50">
                                         <div class="flex items-center justify-between mb-2"><div class="font-medium">Grade {{ $yr }}</div><div class="text-xs text-slate-500">{{ $secs->count() }} item(s)</div></div>
                                         @if($secs->count())
@@ -177,21 +200,6 @@
             <div class="mb-4">
                 <form id="add-subject" class="space-y-3">
                     <div>
-                        <label class="block text-xs mb-1">Subject Name(s)</label>
-                        <textarea id="subject-name" name="name" rows="4" class="w-full border rounded px-2 py-1" placeholder="e.g. Mathematics\nScience\nEnglish (one per line)"></textarea>
-                        <div class="text-xs text-slate-500 mt-1">You may add multiple subjects at once by entering one subject per line. Commas are allowed inside titles.</div>
-                    </div>
-                    <div>
-                        <label class="block text-xs mb-1">Classification</label>
-                        <select id="subject-classification" name="classification" class="w-full border rounded px-2 py-1">
-                            <option value="abm">ABM Subjects</option>
-                            <option value="humss">HUMSS</option>
-                            <option value="stem">STEM</option>
-                            <option value="tvl">TVL</option>
-                            <option value="gas">GAS</option>
-                        </select>
-                    </div>
-                    <div>
                         <label class="block text-xs mb-1">Grades</label>
                         <div class="space-y-2">
                             <div class="flex items-center gap-3">
@@ -216,6 +224,26 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs mb-1">Classification</label>
+                        <select id="subject-classification" name="classification" class="w-full border rounded px-2 py-1">
+                            <option value="core">Core Subjects</option>
+                            <option value="special">Special Subjects</option>
+                            <option value="abm">ABM - Accountancy, Business and Management Strand</option>
+                            <option value="humss">HUMSS - Humanity and Social Science Strand</option>
+                            <option value="stem">STEM - Science, Technology, Engineering, and Mathematics Strand</option>
+                            <option value="tvl">TVL - Technology-Vocational-Livelihood Strand</option>
+                            <option value="gas">GAS - General Academic Strand</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs mb-1">Subject Name(s)</label>
+                        <div class="relative">
+                            <input id="subject-name" name="name" type="text" class="w-full border rounded px-2 py-1" placeholder="Type a subject name and press Enter">
+                            <div id="subject-tags" class="mt-2 flex flex-wrap gap-2"></div>
+                        </div>
+                        <div class="text-xs text-slate-500 mt-1">Type a subject and press Enter to add. Click the × on a tag to remove it.</div>
                     </div>
                     <div>
                         <button type="submit" class="bg-indigo-600 text-white px-3 py-1 rounded">Add Subject</button>
@@ -261,7 +289,15 @@
                                         <div id="junior-{{ $type }}" class="group-body px-3 py-2">
                                             <ul class="space-y-1">
                                                 @foreach($items as $sub)
-                                                    <li class="py-1"><div class="font-medium">{{ $sub->name }}</div></li>
+                                                    <li class="py-1" data-subject-id="{{ $sub->id }}">
+                                                        <div class="flex items-center justify-between">
+                                                            <div class="font-medium subject-name">{{ $sub->name }}</div>
+                                                            <div class="flex items-center gap-2">
+                                                                <button type="button" class="text-xs text-blue-600 subject-edit-btn" data-id="{{ $sub->id }}">Edit</button>
+                                                                <button type="button" class="text-xs text-red-600 subject-delete-btn" data-id="{{ $sub->id }}">Delete</button>
+                                                            </div>
+                                                        </div>
+                                                    </li>
                                                 @endforeach
                                             </ul>
                                         </div>
@@ -302,7 +338,15 @@
                                         <div id="senior-{{ $type }}" class="group-body px-3 py-2">
                                             <ul class="space-y-1">
                                                 @foreach($items as $sub)
-                                                    <li class="py-1"><div class="font-medium">{{ $sub->name }}</div></li>
+                                                    <li class="py-1" data-subject-id="{{ $sub->id }}">
+                                                        <div class="flex items-center justify-between">
+                                                            <div class="font-medium subject-name">{{ $sub->name }}</div>
+                                                            <div class="flex items-center gap-2">
+                                                                <button type="button" class="text-xs text-blue-600 subject-edit-btn" data-id="{{ $sub->id }}">Edit</button>
+                                                                <button type="button" class="text-xs text-red-600 subject-delete-btn" data-id="{{ $sub->id }}">Delete</button>
+                                                            </div>
+                                                        </div>
+                                                    </li>
                                                 @endforeach
                                             </ul>
                                         </div>
@@ -321,9 +365,43 @@
 
 @endsection
 
+    <!-- Grade Editor Modal -->
+    <div id="grade-modal" class="hidden fixed inset-0 z-50 items-center justify-center">
+        <div class="absolute inset-0 bg-black opacity-40"></div>
+        <div class="relative bg-white rounded shadow-lg w-full max-w-3xl mx-4 p-4" role="dialog" aria-modal="true" aria-labelledby="grade-modal-title">
+            <div class="flex items-center justify-between mb-3">
+                <h3 id="grade-modal-title" class="text-lg font-medium">Edit Grade Sections</h3>
+                <button type="button" id="grade-modal-close" class="text-gray-600 hover:text-gray-800">&times;</button>
+            </div>
+            <div id="grade-modal-body">Loading…</div>
+        </div>
+    </div>
+
+<!-- Edit Subject Modal (inserted into page content so fragment HTML can target it) -->
+<div id="subject-modal" class="hidden fixed inset-0 z-50 items-center justify-center">
+    <div class="absolute inset-0 bg-black opacity-40"></div>
+    <div class="relative bg-white rounded shadow-lg w-full max-w-2xl mx-4 p-4" role="dialog" aria-modal="true" aria-labelledby="subject-modal-title">
+        <div class="flex items-center justify-between mb-3">
+            <h3 id="subject-modal-title" class="text-lg font-medium">Edit Subject</h3>
+            <button type="button" id="subject-modal-close" class="text-gray-600 hover:text-gray-800">&times;</button>
+        </div>
+        <div id="subject-modal-body">Loading…</div>
+    </div>
+</div>
+
 @section('scripts')
 <!-- Toggle pill styles for Regular / Special -->
 <style>
+    /* Tabs: underline indicator and hover state to match the provided design */
+    .ss-tabs{ padding-bottom:8px; background:transparent; border:0; }
+    .ss-tabs .ss-tab{ position:relative; background:transparent; border:0; margin:0; color:#374151; cursor:pointer; padding:8px 16px; }
+    .ss-tabs .ss-tab:hover{ color:#3B4197; }
+    .ss-tabs .ss-tab:focus{ outline:0; }
+    /* underline indicator — centered and thin */
+    .ss-tabs .ss-tab::after{ content:''; position:absolute; left:22%; right:22%; bottom:0; height:3px; background:transparent; border-radius:2px; transition:background-color .12s ease, transform .12s ease; }
+    .ss-tabs .ss-tab[aria-pressed="true"]{ color:#3B4197; font-weight:600; }
+    .ss-tabs .ss-tab[aria-pressed="true"]::after{ background:#3B4197; }
+
     /* container for previous pill kept for backwards compat */
     .toggle-pill{ display:inline-flex; align-items:center; gap:1rem; border-radius:9999px; padding:6px 12px; cursor:pointer; user-select:none; border:1px solid #e6eef6; background:#f8fafc; }
 
@@ -918,22 +996,75 @@
         // Unified Add Subject form (handles both Junior and Senior submissions)
         const addSubjectForm = document.getElementById('add-subject');
         if(addSubjectForm){
+            // tag-style subject entry
+            const subjectInput = document.getElementById('subject-name');
+            const tagsContainer = document.getElementById('subject-tags');
+            let subjectNames = [];
+
+            function renderTags(){
+                tagsContainer.innerHTML = '';
+                subjectNames.forEach((nm, idx) => {
+                    const tag = document.createElement('span');
+                    tag.className = 'inline-flex items-center bg-gray-100 text-gray-800 px-2 py-0.5 rounded-full text-sm';
+                    tag.innerHTML = `<span class="mr-2">${escapeHtml(nm)}</span><button type="button" data-idx="${idx}" class="ml-1 text-gray-500 hover:text-gray-700">&times;</button>`;
+                    tagsContainer.appendChild(tag);
+                });
+                // attach remove handlers
+                Array.from(tagsContainer.querySelectorAll('button[data-idx]')).forEach(b => {
+                    b.addEventListener('click', function(){
+                        const i = Number(this.getAttribute('data-idx'));
+                        if(!isNaN(i)){
+                            subjectNames.splice(i,1);
+                            renderTags();
+                        }
+                    });
+                });
+            }
+
+            function escapeHtml(s){ return String(s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]; }); }
+
+            // add on Enter
+            subjectInput.addEventListener('keydown', function(ev){
+                if(ev.key === 'Enter'){
+                    ev.preventDefault();
+                    const val = (subjectInput.value || '').trim();
+                    if(!val) return;
+                    subjectNames.push(val);
+                    subjectInput.value = '';
+                    renderTags();
+                }
+            });
+
+            // also allow pasting newline-separated list
+            subjectInput.addEventListener('paste', function(ev){
+                const text = (ev.clipboardData || window.clipboardData).getData('text') || '';
+                if(text.indexOf('\n') !== -1){
+                    ev.preventDefault();
+                    const parts = text.split(/\r?\n+/).map(s=>s.trim()).filter(Boolean);
+                    subjectNames = subjectNames.concat(parts);
+                    subjectInput.value = '';
+                    renderTags();
+                }
+            });
+
             addSubjectForm.addEventListener('submit', async function(e){
                 e.preventDefault();
-                // allow multiple subject names (comma or newline separated)
-                const raw = document.getElementById('subject-name').value || '';
                 const classification = document.getElementById('subject-classification').value;
                 const grades = Array.from(addSubjectForm.querySelectorAll('input[name="grades[]"]:checked')).map(i=>i.value);
-                // split only on newlines so commas inside titles are preserved
-                const names = raw.split(/\r?\n+/).map(s=>s.trim()).filter(Boolean);
-                if(!names.length) return alert('Provide at least one subject name');
+
+                // if no names from tags, fallback to single input value
+                if(subjectNames.length === 0){
+                    const v = (subjectInput.value || '').trim();
+                    if(v) subjectNames.push(v);
+                }
+
+                if(!subjectNames.length) return alert('Provide at least one subject name');
                 if(!classification) return alert('Select a classification');
                 if(!grades.length) return alert('Select at least one grade');
 
                 const results = { created: 0, existing: 0, failed: 0 };
-                for(const nm of names){
+                for(const nm of subjectNames){
                     try{
-                        // map classification -> type and grades -> grade_levels for backend
                         const payload = { name: nm, type: classification, grade_levels: grades };
                         const resp = await postJSON(subjectStoreUrl, payload);
                         if(resp && resp.success){
@@ -948,9 +1079,7 @@
                     }
                 }
 
-                
-
-                // Show summary
+                // Show summary and reload
                 let msg = [];
                 if(results.created) msg.push(`${results.created} added`);
                 if(results.existing) msg.push(`${results.existing} already existed`);
@@ -998,6 +1127,62 @@
 
         gradeCheckboxes.forEach(cb => cb.addEventListener('change', updateGroupStates));
 
+        // Classification visibility rules:
+        // Core: always available
+        // Special: only when any JHS grade (7-10) selected
+        // Strand options (abm, humss, stem, tvl, gas): only when any SHS grade (11-12) selected
+        const classificationSelect = document.getElementById('subject-classification');
+        const addSubjectBtn = document.querySelector('#add-subject button[type="submit"]');
+
+        function hasJuniorSelected(){
+            return Array.from(document.querySelectorAll('input[name="grades[]"]:checked')).some(cb => {
+                const y = cb.getAttribute('data-year');
+                return y && Number(y) >= 7 && Number(y) <= 10;
+            });
+        }
+        function hasSeniorSelected(){
+            return Array.from(document.querySelectorAll('input[name="grades[]"]:checked')).some(cb => {
+                const y = cb.getAttribute('data-year');
+                return y && Number(y) >= 11 && Number(y) <= 12;
+            });
+        }
+
+        function updateClassificationOptions(){
+            if(!classificationSelect) return;
+            const junior = hasJuniorSelected();
+            const senior = hasSeniorSelected();
+
+            // iterate options and enable/disable accordingly
+            Array.from(classificationSelect.options).forEach(opt => {
+                const v = (opt.value || '').toLowerCase();
+                if(v === 'core'){ opt.disabled = false; }
+                else if(v === 'special'){ opt.disabled = !junior; }
+                else if(['abm','humss','stem','tvl','gas'].indexOf(v) !== -1){ opt.disabled = !senior; }
+                else { /* other custom types remain enabled */ opt.disabled = false; }
+            });
+
+            // if current selection is now disabled, fallback to 'core'
+            const cur = (classificationSelect.value || '').toLowerCase();
+            const curOpt = Array.from(classificationSelect.options).find(o => (o.value||'').toLowerCase() === cur);
+            if(curOpt && curOpt.disabled){
+                classificationSelect.value = 'core';
+                // brief alert to user
+                try{ alert('Classification was reset to Core because selected grades changed.'); }catch(e){}
+            }
+
+            // enable/disable submit based on at least one grade selected
+            const anyGrade = Array.from(document.querySelectorAll('input[name="grades[]"]:checked')).length > 0;
+            if(addSubjectBtn) addSubjectBtn.disabled = !anyGrade;
+        }
+
+        // hook into grade checkbox changes
+        document.querySelectorAll('input[name="grades[]"]').forEach(cb => cb.addEventListener('change', function(){ updateGroupStates(); updateClassificationOptions(); }));
+        if(selectJunior) selectJunior.addEventListener('change', updateClassificationOptions);
+        if(selectSenior) selectSenior.addEventListener('change', updateClassificationOptions);
+
+        // initial run
+        updateClassificationOptions();
+
         // Collapsible groups for subject classifications
         document.querySelectorAll('.group-toggle').forEach(btn => {
             const target = btn.dataset.target;
@@ -1012,6 +1197,309 @@
         });
 
         // No UI for creating default grade levels per user's preference.
+
+        // Edit and Delete handlers for subjects (delegated)
+        const subjectModal = document.getElementById('subject-modal');
+        const subjectModalBody = document.getElementById('subject-modal-body');
+        const subjectModalClose = document.getElementById('subject-modal-close');
+
+        function showModal(){
+            if(!subjectModal) return;
+            subjectModal.classList.remove('hidden');
+            subjectModal.classList.add('flex');
+        }
+        function hideModal(){
+            if(!subjectModal) return;
+            subjectModal.classList.remove('flex');
+            subjectModal.classList.add('hidden');
+            subjectModalBody.innerHTML = 'Loading…';
+        }
+
+        if(subjectModalClose){ subjectModalClose.addEventListener('click', hideModal); }
+        // click outside modal to close
+        if(subjectModal){ subjectModal.addEventListener('click', function(e){ if(e.target === subjectModal) hideModal(); }); }
+
+        // Open edit fragment in modal
+        async function openSubjectEdit(id){
+            try{
+                showModal();
+                const url = `/admin/it/subjects/${id}/fragment`;
+                const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                const html = await res.text();
+                subjectModalBody.innerHTML = html;
+
+                // Find form inside fragment and hijack submit
+                const form = subjectModalBody.querySelector('form');
+                if(form){
+                    form.addEventListener('submit', async function(ev){
+                        ev.preventDefault();
+                        const fd = new FormData(form);
+                        try{
+                            const resp = await fetch(form.action, { method: 'POST', headers: { 'X-CSRF-TOKEN': token }, body: fd });
+                            if(resp.ok){
+                                // update DOM for the subject's name (best-effort) and close modal
+                                const nameInput = form.querySelector('input[name="name"]');
+                                const newName = nameInput ? nameInput.value.trim() : null;
+                                const li = document.querySelector('li[data-subject-id="' + id + '"]');
+                                if(li && newName){
+                                    const nmEl = li.querySelector('.subject-name'); if(nmEl) nmEl.textContent = newName;
+                                }
+                                hideModal();
+                            } else {
+                                // replace modal body with server-returned HTML (validation errors)
+                                const text = await resp.text();
+                                subjectModalBody.innerHTML = text;
+                            }
+                        } catch(err){ console.error('update subject error', err); alert('Network error while updating subject'); }
+                    });
+                }
+            } catch(err){ console.error('open fragment error', err); subjectModalBody.innerHTML = '<div class="text-red-600">Failed to load form</div>'; }
+        }
+
+        // Delegated clicks for edit/delete
+        document.addEventListener('click', async function(e){
+            const editBtn = e.target.closest ? e.target.closest('.subject-edit-btn') : null;
+            if(editBtn){
+                const id = editBtn.getAttribute('data-id');
+                if(!id) return;
+                // Inline rename: replace the subject name with an input + Save/Cancel
+                const li = document.querySelector('li[data-subject-id="' + id + '"]');
+                if(!li) return;
+                // avoid creating multiple editors
+                if(li.classList.contains('editing')) return;
+                li.classList.add('editing');
+                const nameEl = li.querySelector('.subject-name');
+                const original = nameEl ? nameEl.textContent.trim() : '';
+                // create input and controls
+                const input = document.createElement('input');
+                input.type = 'text'; input.value = original; input.className = 'border rounded px-2 py-1 w-72';
+                const saveBtn = document.createElement('button'); saveBtn.type = 'button'; saveBtn.className = 'ml-2 px-2 py-1 bg-[#3b4197] text-white rounded text-sm'; saveBtn.textContent = 'Save';
+                const cancelBtn = document.createElement('button'); cancelBtn.type = 'button'; cancelBtn.className = 'ml-2 px-2 py-1 border rounded text-sm'; cancelBtn.textContent = 'Cancel';
+                // replace contents
+                const left = li.querySelector('.subject-name');
+                const right = li.querySelector('div.flex.items-center') || li.querySelector('div.flex.items-center.gap-2');
+                if(left) left.style.display = 'none';
+                if(right) right.style.display = 'none';
+                const editContainer = document.createElement('div'); editContainer.className = 'flex items-center gap-2';
+                editContainer.appendChild(input); editContainer.appendChild(saveBtn); editContainer.appendChild(cancelBtn);
+                li.appendChild(editContainer);
+                input.focus(); input.select();
+
+                cancelBtn.addEventListener('click', function(){
+                    editContainer.remove();
+                    if(left) left.style.display = '';
+                    if(right) right.style.display = '';
+                    li.classList.remove('editing');
+                });
+
+                saveBtn.addEventListener('click', async function(){
+                    const newName = (input.value || '').trim();
+                    if(!newName) return alert('Name cannot be empty');
+                    saveBtn.disabled = true; saveBtn.textContent = 'Saving…';
+                    try{
+                        const url = `/admin/it/subjects/${id}`;
+                        const res = await fetch(url, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token, 'Accept': 'application/json' }, body: JSON.stringify({ name: newName }) });
+                        if(res.ok){
+                            // update DOM
+                            const nmEl = li.querySelector('.subject-name'); if(nmEl) nmEl.textContent = newName;
+                            editContainer.remove();
+                            if(left) left.style.display = '';
+                            if(right) right.style.display = '';
+                            li.classList.remove('editing');
+                        } else {
+                            const json = await res.json().catch(()=>null);
+                            alert((json && json.message) ? json.message : 'Failed to update subject');
+                            saveBtn.disabled = false; saveBtn.textContent = 'Save';
+                        }
+                    } catch(err){ console.error('inline update error', err); alert('Network error while saving'); saveBtn.disabled = false; saveBtn.textContent = 'Save'; }
+                });
+
+                return;
+            }
+            const delBtn = e.target.closest ? e.target.closest('.subject-delete-btn') : null;
+            if(delBtn){
+                const id = delBtn.getAttribute('data-id');
+                if(!id) return;
+                if(!confirm('Delete this subject? This cannot be undone.')) return;
+                try{
+                    const url = `/admin/it/subjects/${id}`;
+                    const resp = await fetch(url, { method: 'DELETE', headers: { 'X-CSRF-TOKEN': token, 'Accept': 'application/json' } });
+                    if(resp.ok){
+                        // remove list item
+                        const li = document.querySelector('li[data-subject-id="' + id + '"]');
+                        if(li) li.parentNode.removeChild(li);
+                    } else {
+                        const json = await resp.json().catch(()=>null);
+                        alert((json && json.message) ? json.message : 'Failed to delete subject');
+                    }
+                } catch(err){ console.error('delete error', err); alert('Network error while deleting'); }
+                return;
+            }
+        });
+
+        // Grade editor: open modal, list/create/update/delete sections
+        const gradeModal = document.getElementById('grade-modal');
+        const gradeModalBody = document.getElementById('grade-modal-body');
+        const gradeModalClose = document.getElementById('grade-modal-close');
+
+        function showGradeModal(){ if(!gradeModal) return; gradeModal.classList.remove('hidden'); gradeModal.classList.add('flex'); }
+        function hideGradeModal(){ if(!gradeModal) return; gradeModal.classList.remove('flex'); gradeModal.classList.add('hidden'); gradeModalBody.innerHTML = 'Loading…'; }
+        if(gradeModalClose) gradeModalClose.addEventListener('click', hideGradeModal);
+        if(gradeModal) gradeModal.addEventListener('click', function(e){ if(e.target === gradeModal) hideGradeModal(); });
+
+        async function openGradeEditor(gradeId, year){
+            showGradeModal();
+            try{
+                const url = `/admin/it/grade-levels/${gradeId}/sections`;
+                const res = await fetch(url, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } });
+                const json = await res.json();
+                const sections = Array.isArray(json.sections) ? json.sections : [];
+                renderGradeEditor(gradeId, year, sections);
+            } catch(err){ console.error('openGradeEditor error', err); gradeModalBody.innerHTML = '<div class="text-red-600">Failed to load sections</div>'; }
+        }
+
+        function renderGradeEditor(gradeId, year, sections){
+            gradeModalBody.innerHTML = '';
+            const container = document.createElement('div');
+            const header = document.createElement('div'); header.className = 'mb-3 flex items-center justify-between';
+            header.innerHTML = `<div class="font-medium">Grade ${year} — Manage sections</div>`;
+            container.appendChild(header);
+
+            const list = document.createElement('div'); list.className = 'space-y-2';
+            sections.forEach(s => list.appendChild(makeSectionRow(gradeId, year, s)));
+
+            const addBtn = document.createElement('button'); addBtn.type='button'; addBtn.className='mt-3 px-3 py-1 bg-green-600 text-white rounded'; addBtn.textContent='Add Section';
+            addBtn.addEventListener('click', function(){ list.appendChild(makeSectionRow(gradeId, year, null)); });
+
+            container.appendChild(list);
+            container.appendChild(addBtn);
+
+            // Controls: single Save All and Close
+            const controls = document.createElement('div'); controls.className = 'mt-3 flex items-center gap-2 justify-end';
+            const saveAllBtn = document.createElement('button'); saveAllBtn.type = 'button'; saveAllBtn.className = 'px-3 py-1 bg-[#3b4197] text-white rounded'; saveAllBtn.textContent = 'Save All';
+            const closeBtn = document.createElement('button'); closeBtn.type = 'button'; closeBtn.className = 'ml-2 px-3 py-1 border rounded text-sm'; closeBtn.textContent = 'Close';
+            controls.appendChild(saveAllBtn); controls.appendChild(closeBtn);
+            container.appendChild(controls);
+
+            // Close handler
+            closeBtn.addEventListener('click', function(){ hideGradeModal(); });
+
+            // Batch save handler
+            saveAllBtn.addEventListener('click', async function(){
+                if(!confirm('Apply all changes for this grade?')) return;
+                saveAllBtn.disabled = true; saveAllBtn.textContent = 'Saving…';
+                const rows = Array.from(list.children);
+                const promises = rows.map(row => (async () => {
+                    try{
+                        const nameInput = row.querySelector('input[type="text"]');
+                        const name = nameInput ? (nameInput.value||'').trim() : '';
+                        if(!name) return { success: false, message: 'Empty name', row };
+                        const isJHS = Number(year) < 11;
+                        let payload = { name };
+                        if(isJHS){ const chk = row.querySelector('input[type="checkbox"]'); payload.is_special = chk && chk.checked ? 1 : 0; }
+                        else { const sel = row.querySelector('select'); payload.track = sel ? (sel.value || null) : null; }
+
+                        const sid = row.getAttribute('data-section-id');
+                        if(sid){
+                            const resp = await fetch(`/admin/it/sections/${sid}`, { method: 'PUT', headers: { 'Content-Type':'application/json','X-CSRF-TOKEN': token, 'Accept':'application/json' }, body: JSON.stringify(payload) });
+                            if(!resp.ok){ const j = await resp.json().catch(()=>null); return { success:false, message: (j && j.message) ? j.message : 'Update failed', row }; }
+                            const j = await resp.json(); return { success:true, section: j.section, row };
+                        } else {
+                            const resp = await fetch(`/admin/it/grade-levels/${gradeId}/sections`, { method: 'POST', headers: { 'Content-Type':'application/json','X-CSRF-TOKEN': token, 'Accept':'application/json' }, body: JSON.stringify(payload) });
+                            if(!resp.ok){ const j = await resp.json().catch(()=>null); return { success:false, message: (j && j.message) ? j.message : 'Create failed', row }; }
+                            const j = await resp.json(); return { success:true, section: j.section, row };
+                        }
+                    }catch(err){ return { success:false, message: err.message || 'Network error', row }; }
+                })());
+                const results = await Promise.all(promises);
+                const failed = results.filter(r => !r.success);
+                // On success: if created sections, add to main list; if updated, update main list text/meta and reposition JHS specials
+                results.filter(r => r.success && r.section).forEach(r => {
+                    const sec = r.section;
+                    const row = r.row;
+                    // ensure row has data-section-id
+                    if(sec.id) row.setAttribute('data-section-id', sec.id);
+                    // update main list: find list container for grade
+                    try{
+                        const gradePanel = document.querySelector('[data-grade-id="'+gradeId+'"]');
+                        if(gradePanel){ const listUl = gradePanel.closest('.border').querySelector('ul');
+                            if(listUl){
+                                let mainLi = document.querySelector('[data-section-id="'+sec.id+'"]');
+                                if(!mainLi){
+                                    mainLi = document.createElement('li'); mainLi.className='py-1'; mainLi.setAttribute('data-section-id', sec.id);
+                                    mainLi.innerHTML = `<div class="flex items-center justify-between"><div class="font-medium section-name">${esc(sec.name)}</div><div class="text-xs text-slate-500 section-meta">${sec.track ? esc(sec.track) : (sec.is_special ? 'Special' : '')}</div></div>`;
+                                    if(Number(year) < 11 && sec.is_special){ listUl.insertBefore(mainLi, listUl.firstChild); } else { listUl.appendChild(mainLi); }
+                                } else {
+                                    const nEl = mainLi.querySelector('.section-name'); if(nEl) nEl.textContent = sec.name;
+                                    const mEl = mainLi.querySelector('.section-meta'); if(mEl) mEl.textContent = sec.track ? sec.track : (sec.is_special ? 'Special' : '');
+                                    // reposition for JHS
+                                    if(Number(year) < 11){ const parentUl = mainLi.closest('ul'); if(parentUl){ if(sec.is_special){ const firstNonSpecial = Array.from(parentUl.querySelectorAll('li')).find(li => { const meta = li.querySelector('.section-meta'); return !(meta && meta.textContent.trim() === 'Special'); }); if(firstNonSpecial) parentUl.insertBefore(mainLi, firstNonSpecial); else parentUl.insertBefore(mainLi, parentUl.firstChild); } else { // move after last special
+                                                    const lis = Array.from(parentUl.querySelectorAll('li'));
+                                                    let insertAfter = null; for(let i=0;i<lis.length;i++){ const li = lis[i]; const meta = li.querySelector('.section-meta'); if(meta && meta.textContent.trim() === 'Special'){ insertAfter = li; } }
+                                                    if(insertAfter && insertAfter !== mainLi) insertAfter.parentNode.insertBefore(mainLi, insertAfter.nextSibling);
+                                                } } }
+                                }
+                            }
+                        }
+                    }catch(e){ console.error('update main list error', e); }
+                });
+
+                saveAllBtn.disabled = false; saveAllBtn.textContent = 'Save All';
+                if(failed.length){
+                    alert('Some rows failed to save. Please check and try again.');
+                } else {
+                    // everything saved — refresh to ensure server-side ordering and counts are consistent
+                    location.reload();
+                }
+            });
+
+            gradeModalBody.appendChild(container);
+        }
+
+        function makeSectionRow(gradeId, year, s){
+            const row = document.createElement('div'); row.className = 'flex items-center gap-2';
+            const nameInput = document.createElement('input'); nameInput.type='text'; nameInput.className='border rounded px-2 py-1 flex-1'; nameInput.value = s ? (s.name || '') : '';
+            row.appendChild(nameInput);
+
+            if(Number(year) < 11){
+                const chk = document.createElement('input'); chk.type='checkbox'; chk.className='ml-2'; chk.checked = s ? !!s.is_special : false;
+                const lbl = document.createElement('label'); lbl.className='text-sm ml-2'; lbl.appendChild(chk); lbl.insertAdjacentText('beforeend',' Special');
+                row.appendChild(lbl);
+            } else {
+                const sel = document.createElement('select'); sel.className='border rounded px-2 py-1'; sel.innerHTML = `<option value="">— Track —</option>`;
+                SHS_TRACK_OPTIONS.forEach(t => { const o = document.createElement('option'); o.value = t; o.textContent = t; if(s && s.track === t) o.selected = true; sel.appendChild(o); });
+                row.appendChild(sel);
+            }
+
+            // Add a delete/remove button: Delete for persisted sections, Remove for new rows
+            const delBtn = document.createElement('button'); delBtn.type='button'; delBtn.className='ml-2 px-2 py-1 border rounded text-sm text-red-600'; delBtn.textContent = s && s.id ? 'Delete' : 'Remove';
+            row.appendChild(delBtn);
+
+            if(s && s.id){
+                // mark row with section id so batch save can detect persisted rows
+                row.setAttribute('data-section-id', s.id);
+                delBtn.addEventListener('click', async function(){
+                    if(!confirm('Delete section?')) return;
+                    try{
+                        const resp = await fetch(`/admin/it/sections/${s.id}`, { method:'DELETE', headers: {'X-CSRF-TOKEN': token, 'Accept':'application/json'} });
+                        if(resp.ok){ row.remove(); const mainLi = document.querySelector('[data-section-id="'+s.id+'"]'); if(mainLi) mainLi.remove(); }
+                        else { const j = await resp.json().catch(()=>null); alert((j && j.message) ? j.message : 'Failed'); }
+                    }catch(err){ console.error(err); alert('Network error'); }
+                });
+            } else {
+                delBtn.addEventListener('click', function(){ row.remove(); });
+            }
+
+            return row;
+        }
+
+        function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+        // Delegated grade-edit button handler
+        document.addEventListener('click', function(e){
+            const gbtn = e.target.closest ? e.target.closest('.grade-edit-btn') : null;
+            if(gbtn){ const gid = gbtn.getAttribute('data-grade-id'); const yr = gbtn.getAttribute('data-year'); if(gid) openGradeEditor(gid, yr); }
+        });
     })();
 </script>
 @endsection

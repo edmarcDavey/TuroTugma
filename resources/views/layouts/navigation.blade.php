@@ -10,7 +10,7 @@
 				<a href="{{ url('/about') }}" class="text-gray-700 hover:text-[#3b4197] font-semibold">About Us</a>
 				@auth
 					@if(auth()->user()->role === 'it_coordinator')
-						<a href="{{ route('admin.it.dashboard') }}" class="text-gray-700 hover:text-[#3b4197] font-semibold">IT Coordinator</a>
+						<a href="{{ route('admin.it.dashboard') }}" class="text-gray-700 hover:text-[#3b4197] font-semibold">Admin</a>
 					@endif
 				@endauth
 			</div>

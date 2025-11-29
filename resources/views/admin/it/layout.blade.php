@@ -4,13 +4,13 @@
     <meta charset="utf-8">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>IT Coordinator - @yield('title', 'Dashboard')</title>
+    <title>Admin - @yield('title', 'Dashboard')</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
   </head>
   <body class="bg-white text-slate-800 min-h-screen">
     <div class="flex">
       <aside class="w-64 p-6 border-r bg-slate-50 min-h-screen">
-        <a href="{{ route('admin.it.dashboard') }}" class="text-xl font-bold text-[#3b4197]">IT Coordinator</a>
+        <a href="{{ route('admin.it.dashboard') }}" class="text-xl font-bold text-[#3b4197]">Admin</a>
         <nav class="mt-6 space-y-3 text-base">
           <a href="{{ route('admin.it.dashboard') }}" class="block text-slate-700 hover:text-[#3b4197]">Overview</a>
           <a href="{{ route('admin.it.subjects-sections') }}" class="block text-slate-700 hover:text-[#3b4197]">Sections and Subjects</a>
