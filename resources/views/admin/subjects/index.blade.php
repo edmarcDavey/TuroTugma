@@ -9,6 +9,11 @@
     <p class="text-sm mt-1">This is a visual mockup showing the new structure. Buttons/forms are non-functional until backend is ready.</p>
   </div>
 
+  <div class="mb-6 p-4 bg-amber-50 border-l-4 border-amber-500 text-amber-900">
+    <p class="font-semibold">⏳ Senior High Coming Soon</p>
+    <p class="text-sm mt-1">Senior High (Grade 11-12) subject management will be available in the future. Currently, only Junior High (Grade 7-10) subjects can be managed.</p>
+  </div>
+
   <!-- Filter & Action Bar -->
   <div class="mb-4 flex items-center justify-between gap-4">
     <div class="flex items-center gap-3">

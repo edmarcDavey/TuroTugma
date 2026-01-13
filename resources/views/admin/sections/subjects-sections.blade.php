@@ -65,40 +65,15 @@
                             </div>
                         </div>
 
-                        <!-- Senior High builder -->
-                        <div class="border rounded p-4">
+                        <!-- Senior High builder - Coming Soon -->
+                        <div class="border rounded p-4 bg-amber-50">
                             <div class="flex items-center justify-between mb-3">
                                 <div class="font-medium">Senior High School</div>
                                 <div class="text-sm text-slate-500">Grades 11 &ndash; 12</div>
                             </div>
-                            <div class="space-y-3">
-                                @foreach(range(11,12) as $yr)
-                                    @php
-                                        $grade = $gradeLevels->firstWhere('year', $yr);
-                                        $name = $grade->name ?? 'Grade '.$yr;
-                                        $gid = $grade->id ?? '';
-                                        $theme = $grade->section_naming ?? '';
-                                        $planned = $grade->section_naming_options['planned_sections'] ?? 0;
-                                        $themeKeys = array_keys($allThemes ?: []);
-                                        $selectedThemeKey = $theme ?: (count($themeKeys) ? $themeKeys[array_rand($themeKeys)] : '');
-                                    @endphp
-                                    <div class="grid grid-cols-1 md:grid-cols-4 gap-3 items-center py-2 border-b">
-                                        <div class="md:col-span-1 font-medium">{{ $name }}</div>
-                                        <div>
-                                            <select name="theme" data-year="{{ $yr }}" data-grade-id="{{ $gid }}" class="w-full border rounded px-2 py-1">
-                                                @foreach($allThemes as $tkey => $t)
-                                                    <option value="{{ $tkey }}" data-label="{{ $t['label'] }}" {{ ($tkey === $selectedThemeKey) ? 'selected' : '' }}>{{ $t['label'] }}</option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <input name="count" data-year="{{ $yr }}" data-grade-id="{{ $gid }}" type="number" min="0" class="w-full border rounded px-2 py-1" value="{{ $planned }}">
-                                        </div>
-                                        <div class="md:col-span-4 mt-2">
-                                            <div class="preview-area" data-year="{{ $yr }}" data-grade-id="{{ $gid }}"></div>
-                                        </div>
-                                    </div>
-                                @endforeach
+                            <div class="py-4 text-center text-amber-800">
+                                <p class="font-semibold">⏳ Coming Soon</p>
+                                <p class="text-sm mt-2">Senior High section management will be available in the future.</p>
                             </div>
                         </div>
 
@@ -195,13 +170,20 @@
 
         <!-- Subjects panel -->
         <div id="panel-subjects" class="hidden bg-white border rounded p-4" role="tabpanel" aria-labelledby="tab-subjects">
+            <div class="mb-4 p-4 bg-amber-50 border-l-4 border-amber-500 text-amber-900">
+                <p class="font-semibold">⏳ Senior High Coming Soon</p>
+                <p class="text-sm mt-1">Senior High (Grade 11-12) subject management will be available in the future. Currently, only Junior High (Grade 7-10) subjects can be managed.</p>
+            </div>
+
             <!-- Filter & Action Bar -->
             <div class="mb-4 flex items-center justify-between gap-4 flex-wrap">
                 <div class="flex items-center gap-3 flex-wrap">
                     <select id="filter-grade" class="px-3 py-2 border rounded text-sm">
                         <option value="">All Levels</option>
                         @foreach($gradeLevels as $gl)
-                            <option value="{{ $gl->id }}">{{ $gl->name }}</option>
+                            @if(in_array($gl->name, ['Grade 7', 'Grade 8', 'Grade 9', 'Grade 10']))
+                                <option value="{{ $gl->id }}">{{ $gl->name }}</option>
+                            @endif
                         @endforeach
                     </select>
                     <select id="filter-strand" class="px-3 py-2 border rounded text-sm">
@@ -295,14 +277,30 @@
                             </div>
                             <div class="md:col-span-2">
                                 <label class="block text-sm font-medium text-slate-700 mb-2">Grade Levels *</label>
-                                <div class="grid grid-cols-2 gap-2">
-                                    @foreach($gradeLevels as $gl)
-                                        <label class="inline-flex items-center">
-                                            <input type="checkbox" name="grade_levels[]" value="{{ $gl->id }}" class="mr-2">
+                                <div class="flex flex-col gap-2">
+                                    @php
+                                        $juniorHighGrades = $gradeLevels->filter(function($gl) {
+                                            return in_array($gl->name, ['Grade 7', 'Grade 8', 'Grade 9', 'Grade 10']);
+                                        });
+                                        $juniorHighIds = $juniorHighGrades->pluck('id')->toArray();
+                                    @endphp
+                                    
+                                    <label class="inline-flex items-center">
+                                        <input type="checkbox" id="junior-high-checkbox" data-grade-ids="{{ json_encode($juniorHighIds) }}" class="mr-2">
+                                        <span class="text-sm">Junior High (Grade 7-10)</span>
+                                    </label>
+                                    
+                                    @foreach($gradeLevels->whereIn('name', ['Grade 11', 'Grade 12']) as $gl)
+                                        <label class="inline-flex items-center opacity-50 cursor-not-allowed">
+                                            <input type="checkbox" name="grade_levels[]" value="{{ $gl->id }}" class="mr-2" disabled>
                                             <span class="text-sm">{{ $gl->name }}</span>
+                                            <span class="text-xs text-amber-600 ml-1">(Coming Soon)</span>
                                         </label>
                                     @endforeach
                                 </div>
+                                
+                                <!-- Hidden inputs for Junior High grades -->
+                                <div id="junior-high-inputs"></div>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1">Strand (Senior High only)</label>
@@ -1529,6 +1527,8 @@
                 modalTitle.textContent = 'Add Subject';
                 subjectForm.reset();
                 document.getElementById('subject-id').value = '';
+                if (juniorHighCheckbox) juniorHighCheckbox.checked = false;
+                if (juniorHighInputsContainer) juniorHighInputsContainer.innerHTML = '';
                 openModal();
             });
         }
@@ -1536,6 +1536,7 @@
         // Close modal
         function closeModal() {
             subjectModal.classList.add('hidden');
+            subjectModal.style.display = 'none';
             subjectForm.reset();
         }
 
@@ -1546,6 +1547,27 @@
 
         if (btnCloseModal) btnCloseModal.addEventListener('click', closeModal);
         if (btnCancelModal) btnCancelModal.addEventListener('click', closeModal);
+
+        // Handle Junior High checkbox
+        const juniorHighCheckbox = document.getElementById('junior-high-checkbox');
+        const juniorHighInputsContainer = document.getElementById('junior-high-inputs');
+        
+        if (juniorHighCheckbox) {
+            juniorHighCheckbox.addEventListener('change', function() {
+                const gradeIds = JSON.parse(this.getAttribute('data-grade-ids'));
+                juniorHighInputsContainer.innerHTML = '';
+                
+                if (this.checked) {
+                    gradeIds.forEach(id => {
+                        const input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = 'grade_levels[]';
+                        input.value = id;
+                        juniorHighInputsContainer.appendChild(input);
+                    });
+                }
+            });
+        }
 
         // Edit subject
         document.addEventListener('click', async function(e) {
@@ -1567,9 +1589,24 @@
                     document.getElementById('subject-type').value = s.type || '';
                     document.getElementById('subject-hours').value = s.hours_per_week || '';
 
-                    // Check grade levels
-                    document.querySelectorAll('input[name="grade_levels[]"]').forEach(cb => {
-                        cb.checked = s.grade_levels && s.grade_levels.includes(parseInt(cb.value));
+                    // Check Junior High checkbox if any Junior High grades are selected
+                    const juniorHighCheckbox = document.getElementById('junior-high-checkbox');
+                    if (juniorHighCheckbox) {
+                        if (juniorHighInputsContainer) juniorHighInputsContainer.innerHTML = '';
+                        const juniorHighIds = JSON.parse(juniorHighCheckbox.getAttribute('data-grade-ids'));
+                        const hasJuniorHigh = s.grade_levels && juniorHighIds.some(id => s.grade_levels.includes(id));
+                        juniorHighCheckbox.checked = hasJuniorHigh;
+                        
+                        // Trigger change to create hidden inputs
+                        if (hasJuniorHigh) juniorHighCheckbox.dispatchEvent(new Event('change'));
+                        else if (juniorHighInputsContainer) juniorHighInputsContainer.innerHTML = '';
+                    }
+
+                    // Check individual grade levels (for Grade 11 and 12 when enabled)
+                    document.querySelectorAll('input[name="grade_levels[]"]:not([disabled])').forEach(cb => {
+                        if (!cb.id || cb.id !== 'junior-high-checkbox') {
+                            cb.checked = s.grade_levels && s.grade_levels.includes(parseInt(cb.value));
+                        }
                     });
 
                     openModal();

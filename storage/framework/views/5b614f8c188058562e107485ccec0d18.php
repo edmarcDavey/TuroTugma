@@ -65,40 +65,15 @@
                             </div>
                         </div>
 
-                        <!-- Senior High builder -->
-                        <div class="border rounded p-4">
+                        <!-- Senior High builder - Coming Soon -->
+                        <div class="border rounded p-4 bg-amber-50">
                             <div class="flex items-center justify-between mb-3">
                                 <div class="font-medium">Senior High School</div>
                                 <div class="text-sm text-slate-500">Grades 11 &ndash; 12</div>
                             </div>
-                            <div class="space-y-3">
-                                <?php $__currentLoopData = range(11,12); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $yr): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                    <?php
-                                        $grade = $gradeLevels->firstWhere('year', $yr);
-                                        $name = $grade->name ?? 'Grade '.$yr;
-                                        $gid = $grade->id ?? '';
-                                        $theme = $grade->section_naming ?? '';
-                                        $planned = $grade->section_naming_options['planned_sections'] ?? 0;
-                                        $themeKeys = array_keys($allThemes ?: []);
-                                        $selectedThemeKey = $theme ?: (count($themeKeys) ? $themeKeys[array_rand($themeKeys)] : '');
-                                    ?>
-                                    <div class="grid grid-cols-1 md:grid-cols-4 gap-3 items-center py-2 border-b">
-                                        <div class="md:col-span-1 font-medium"><?php echo e($name); ?></div>
-                                        <div>
-                                            <select name="theme" data-year="<?php echo e($yr); ?>" data-grade-id="<?php echo e($gid); ?>" class="w-full border rounded px-2 py-1">
-                                                <?php $__currentLoopData = $allThemes; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $tkey => $t): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                                    <option value="<?php echo e($tkey); ?>" data-label="<?php echo e($t['label']); ?>" <?php echo e(($tkey === $selectedThemeKey) ? 'selected' : ''); ?>><?php echo e($t['label']); ?></option>
-                                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <input name="count" data-year="<?php echo e($yr); ?>" data-grade-id="<?php echo e($gid); ?>" type="number" min="0" class="w-full border rounded px-2 py-1" value="<?php echo e($planned); ?>">
-                                        </div>
-                                        <div class="md:col-span-4 mt-2">
-                                            <div class="preview-area" data-year="<?php echo e($yr); ?>" data-grade-id="<?php echo e($gid); ?>"></div>
-                                        </div>
-                                    </div>
-                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                            <div class="py-4 text-center text-amber-800">
+                                <p class="font-semibold">⏳ Coming Soon</p>
+                                <p class="text-sm mt-2">Senior High section management will be available in the future.</p>
                             </div>
                         </div>
 
@@ -195,13 +170,20 @@
 
         <!-- Subjects panel -->
         <div id="panel-subjects" class="hidden bg-white border rounded p-4" role="tabpanel" aria-labelledby="tab-subjects">
+            <div class="mb-4 p-4 bg-amber-50 border-l-4 border-amber-500 text-amber-900">
+                <p class="font-semibold">⏳ Senior High Coming Soon</p>
+                <p class="text-sm mt-1">Senior High (Grade 11-12) subject management will be available in the future. Currently, only Junior High (Grade 7-10) subjects can be managed.</p>
+            </div>
+
             <!-- Filter & Action Bar -->
             <div class="mb-4 flex items-center justify-between gap-4 flex-wrap">
                 <div class="flex items-center gap-3 flex-wrap">
                     <select id="filter-grade" class="px-3 py-2 border rounded text-sm">
                         <option value="">All Levels</option>
                         <?php $__currentLoopData = $gradeLevels; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $gl): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                            <option value="<?php echo e($gl->id); ?>"><?php echo e($gl->name); ?></option>
+                            <?php if(in_array($gl->name, ['Grade 7', 'Grade 8', 'Grade 9', 'Grade 10'])): ?>
+                                <option value="<?php echo e($gl->id); ?>"><?php echo e($gl->name); ?></option>
+                            <?php endif; ?>
                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                     </select>
                     <select id="filter-strand" class="px-3 py-2 border rounded text-sm">
@@ -295,14 +277,30 @@
                             </div>
                             <div class="md:col-span-2">
                                 <label class="block text-sm font-medium text-slate-700 mb-2">Grade Levels *</label>
-                                <div class="grid grid-cols-2 gap-2">
-                                    <?php $__currentLoopData = $gradeLevels; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $gl): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                        <label class="inline-flex items-center">
-                                            <input type="checkbox" name="grade_levels[]" value="<?php echo e($gl->id); ?>" class="mr-2">
+                                <div class="flex flex-col gap-2">
+                                    <?php
+                                        $juniorHighGrades = $gradeLevels->filter(function($gl) {
+                                            return in_array($gl->name, ['Grade 7', 'Grade 8', 'Grade 9', 'Grade 10']);
+                                        });
+                                        $juniorHighIds = $juniorHighGrades->pluck('id')->toArray();
+                                    ?>
+                                    
+                                    <label class="inline-flex items-center">
+                                        <input type="checkbox" id="junior-high-checkbox" data-grade-ids="<?php echo e(json_encode($juniorHighIds)); ?>" class="mr-2">
+                                        <span class="text-sm">Junior High (Grade 7-10)</span>
+                                    </label>
+                                    
+                                    <?php $__currentLoopData = $gradeLevels->whereIn('name', ['Grade 11', 'Grade 12']); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $gl): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                        <label class="inline-flex items-center opacity-50 cursor-not-allowed">
+                                            <input type="checkbox" name="grade_levels[]" value="<?php echo e($gl->id); ?>" class="mr-2" disabled>
                                             <span class="text-sm"><?php echo e($gl->name); ?></span>
+                                            <span class="text-xs text-amber-600 ml-1">(Coming Soon)</span>
                                         </label>
                                     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                 </div>
+                                
+                                <!-- Hidden inputs for Junior High grades -->
+                                <div id="junior-high-inputs"></div>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1">Strand (Senior High only)</label>
@@ -1529,6 +1527,8 @@
                 modalTitle.textContent = 'Add Subject';
                 subjectForm.reset();
                 document.getElementById('subject-id').value = '';
+                if (juniorHighCheckbox) juniorHighCheckbox.checked = false;
+                if (juniorHighInputsContainer) juniorHighInputsContainer.innerHTML = '';
                 openModal();
             });
         }
@@ -1536,6 +1536,7 @@
         // Close modal
         function closeModal() {
             subjectModal.classList.add('hidden');
+            subjectModal.style.display = 'none';
             subjectForm.reset();
         }
 
@@ -1546,6 +1547,27 @@
 
         if (btnCloseModal) btnCloseModal.addEventListener('click', closeModal);
         if (btnCancelModal) btnCancelModal.addEventListener('click', closeModal);
+
+        // Handle Junior High checkbox
+        const juniorHighCheckbox = document.getElementById('junior-high-checkbox');
+        const juniorHighInputsContainer = document.getElementById('junior-high-inputs');
+        
+        if (juniorHighCheckbox) {
+            juniorHighCheckbox.addEventListener('change', function() {
+                const gradeIds = JSON.parse(this.getAttribute('data-grade-ids'));
+                juniorHighInputsContainer.innerHTML = '';
+                
+                if (this.checked) {
+                    gradeIds.forEach(id => {
+                        const input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = 'grade_levels[]';
+                        input.value = id;
+                        juniorHighInputsContainer.appendChild(input);
+                    });
+                }
+            });
+        }
 
         // Edit subject
         document.addEventListener('click', async function(e) {
@@ -1567,9 +1589,24 @@
                     document.getElementById('subject-type').value = s.type || '';
                     document.getElementById('subject-hours').value = s.hours_per_week || '';
 
-                    // Check grade levels
-                    document.querySelectorAll('input[name="grade_levels[]"]').forEach(cb => {
-                        cb.checked = s.grade_levels && s.grade_levels.includes(parseInt(cb.value));
+                    // Check Junior High checkbox if any Junior High grades are selected
+                    const juniorHighCheckbox = document.getElementById('junior-high-checkbox');
+                    if (juniorHighCheckbox) {
+                        if (juniorHighInputsContainer) juniorHighInputsContainer.innerHTML = '';
+                        const juniorHighIds = JSON.parse(juniorHighCheckbox.getAttribute('data-grade-ids'));
+                        const hasJuniorHigh = s.grade_levels && juniorHighIds.some(id => s.grade_levels.includes(id));
+                        juniorHighCheckbox.checked = hasJuniorHigh;
+                        
+                        // Trigger change to create hidden inputs
+                        if (hasJuniorHigh) juniorHighCheckbox.dispatchEvent(new Event('change'));
+                        else if (juniorHighInputsContainer) juniorHighInputsContainer.innerHTML = '';
+                    }
+
+                    // Check individual grade levels (for Grade 11 and 12 when enabled)
+                    document.querySelectorAll('input[name="grade_levels[]"]:not([disabled])').forEach(cb => {
+                        if (!cb.id || cb.id !== 'junior-high-checkbox') {
+                            cb.checked = s.grade_levels && s.grade_levels.includes(parseInt(cb.value));
+                        }
                     });
 
                     openModal();
