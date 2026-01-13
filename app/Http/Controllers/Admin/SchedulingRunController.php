@@ -30,7 +30,10 @@ class SchedulingRunController extends Controller
         // load grade levels and their sections
         $gradeLevels = GradeLevel::with('sections')->orderBy('id')->get();
 
-        return view('admin.it.scheduler.show', compact('run','gradeLevels','entriesBySection','days','maxPeriod'));
+        // teachers list for the Per Teacher tab
+        $teachers = Teacher::orderBy('name')->get(['id','name']);
+
+        return view('admin.it.scheduler.show', compact('run','gradeLevels','entriesBySection','days','maxPeriod','teachers'));
     }
 
     public function teacherSchedule($runId, $teacherId)
@@ -74,8 +77,23 @@ class SchedulingRunController extends Controller
             @set_time_limit(0);
         }
         @ini_set('max_execution_time', '0');
-        // simple parameters — periods only (matrix view is period-based, no day dimension)
-        $periods = range(1,9);
+        // read run meta for periods and available days
+        $meta = $run->meta ?? [];
+        $periodObjs = $meta['periods'] ?? null;
+        // synthesize if not present: use periods_per_day to create uniform period objects
+        if (!is_array($periodObjs)) {
+            $pps = isset($meta['periods_per_day']) ? (int)$meta['periods_per_day'] : 9;
+            $periodObjs = [];
+            for ($i = 1; $i <= $pps; $i++) {
+                $periodObjs[] = ['index' => $i, 'label' => (string)$i, 'start' => null, 'end' => null, 'duration' => null, 'is_break' => false];
+            }
+        }
+        // ordered list of all period indexes and teachable (non-break) indexes
+        $allPeriodIndexes = array_map(fn($p) => (int)($p['index'] ?? 0), $periodObjs);
+        $teachableIndexes = array_map(fn($p) => (int)($p['index'] ?? 0), array_filter($periodObjs, fn($p) => empty($p['is_break'])));
+
+        // available days (1=Mon..7=Sun)
+        $availableDays = $meta['available_days'] ?? [1,2,3,4,5];
 
         // clear existing entries for the run
         ScheduleEntry::where('scheduling_run_id', $run->id)->delete();
@@ -126,10 +144,45 @@ class SchedulingRunController extends Controller
                 $desiredSubjects = 9;
             }
 
-            // build slots as periods only (day will be set to 1 for storage compatibility)
+            // build slots for each available day and period using session templates
+            // Session templates are stored in run meta under `sessions` (regular/shorten).
+            // Choose the template per-day using `meta['shorten_days']` when `shorten_on` is enabled.
             $slots = [];
-            foreach ($periods as $pp) {
-                $slots[] = ['day' => 1, 'period' => $pp];
+            $sessionsMeta = $meta['sessions'] ?? [];
+            $shortenOn = !empty($meta['shorten_on']);
+            $shortenDays = is_array($meta['shorten_days']) ? $meta['shorten_days'] : ($meta['shorten_days'] ? [$meta['shorten_days']] : []);
+            $regularDays = is_array($meta['regular_days']) ? $meta['regular_days'] : (isset($meta['regular_days']) && $meta['regular_days'] ? [$meta['regular_days']] : []);
+
+            foreach ($availableDays as $d) {
+                // decide which session template to use for this day
+                // Priority:
+                // 1) explicit `regular_days` (if present) — those days use regular, others use shorten
+                // 2) if `regular_days` not present and `shorten_on` is enabled, use `shorten_days` to mark shorten days
+                // 3) fallback to meta['default_session'] or 'regular'
+                if (!empty($regularDays)) {
+                    $sessionType = in_array((int)$d, $regularDays) ? 'regular' : 'shorten';
+                } elseif ($shortenOn && !empty($shortenDays)) {
+                    $sessionType = in_array((int)$d, $shortenDays) ? 'shorten' : 'regular';
+                } else {
+                    $sessionType = $meta['default_session'] ?? 'regular';
+                }
+                // fallback order: chosen session -> regular -> meta.periods -> synthesized $periodObjs
+                if (!empty($sessionsMeta[$sessionType]) && is_array($sessionsMeta[$sessionType])) {
+                    $template = $sessionsMeta[$sessionType];
+                } elseif (!empty($sessionsMeta['regular']) && is_array($sessionsMeta['regular'])) {
+                    $template = $sessionsMeta['regular'];
+                } elseif (!empty($meta['periods']) && is_array($meta['periods'])) {
+                    $template = $meta['periods'];
+                } else {
+                    $template = $periodObjs;
+                }
+
+                foreach ($template as $pObj) {
+                    $pp = (int) ($pObj['index'] ?? 0);
+                    $isBreak = !empty($pObj['is_break']);
+                    // store pointer to session type for debugging/inspection
+                    $slots[] = ['day' => (int)$d, 'period' => $pp, 'is_break' => $isBreak, 'session' => $sessionType];
+                }
             }
 
             // prepare subject list and candidates per subject
@@ -221,10 +274,9 @@ class SchedulingRunController extends Controller
                 continue; // next section
             }
 
-            // select unique periods for the selected subjects (no duplicate subjects per section)
+            // select unique slots (day+period) for the selected subjects (no duplicate subjects per section)
             $totalSlots = count($slots);
             $selectedCount = count($selectedSubjects);
-            // if selected subjects exceed available slots, trim
             if ($selectedCount > $totalSlots) {
                 $selectedSubjects = array_slice($selectedSubjects, 0, $totalSlots);
                 $selectedCount = count($selectedSubjects);
@@ -233,19 +285,21 @@ class SchedulingRunController extends Controller
             // Exception: allow JHS special sections to use P9 so they can have 9 distinct subjects.
             $fixedEmptyPeriod = 9;
             if ($stageKey === 'jhs' && isset($section->is_special) && $section->is_special) {
-                // allow using period 9 for special junior-high sections
                 $fixedEmptyPeriod = null;
             }
-            // randomly pick $selectedCount distinct periods from available periods (exclude fixed empty if set)
-            $periodPool = array_map(fn($s) => $s['period'], $slots);
-            $availablePeriods = $fixedEmptyPeriod === null ? array_values($periodPool) : array_values(array_filter($periodPool, fn($p) => $p !== $fixedEmptyPeriod));
-            shuffle($availablePeriods);
-            $assignedPeriods = array_slice($availablePeriods, 0, $selectedCount);
-            // shuffle subjects to randomize mapping to periods
+            // build pool of available slots that are teachable and not the fixed empty period
+            $availableSlots = array_values(array_filter($slots, function($s) use ($fixedEmptyPeriod) {
+                if (!empty($s['is_break'])) return false;
+                if ($fixedEmptyPeriod !== null && isset($s['period']) && $s['period'] == $fixedEmptyPeriod) return false;
+                return true;
+            }));
+            shuffle($availableSlots);
+            $assignedSlots = array_slice($availableSlots, 0, $selectedCount);
             shuffle($selectedSubjects);
-            $subjectByPeriod = [];
-            foreach ($assignedPeriods as $i => $p) {
-                $subjectByPeriod[$p] = $selectedSubjects[$i] ?? null;
+            $subjectBySlot = [];
+            foreach ($assignedSlots as $idx => $slotAssigned) {
+                $key = $slotAssigned['day'] . ':' . $slotAssigned['period'];
+                $subjectBySlot[$key] = $selectedSubjects[$idx] ?? null;
             }
 
             // track teacher loads to balance assignments
@@ -275,35 +329,41 @@ class SchedulingRunController extends Controller
             };
 
             // create entries: assign selected subjects to their chosen periods; leave other periods empty
-            foreach ($slots as $slot) {
-                $p = $slot['period'];
-                $sid = $subjectByPeriod[$p] ?? null;
-                $chosenTeacherId = null;
-                if ($sid) {
-                    $cands = $subjectCandidates[$sid] ?? collect();
-                    $available = $cands->filter(function($t) use ($p, $isTeacherAvailableAt) {
-                        return $isTeacherAvailableAt($t, $p);
-                    });
-                    if ($available->count()) {
-                        $chosen = null; $min = PHP_INT_MAX;
-                        foreach ($available as $tch) {
-                            $load = $teacherLoads[$tch->id] ?? 0;
-                            if ($load < $min) { $min = $load; $chosen = $tch; }
+                foreach ($slots as $slot) {
+                    $p = $slot['period'];
+                    $slotKey = $slot['day'] . ':' . $p;
+                    // if this slot is a break, leave empty
+                    if (!empty($slot['is_break'])) {
+                        $sid = null; $chosenTeacherId = null;
+                    } else {
+                        $sid = $subjectBySlot[$slotKey] ?? null;
+                        $chosenTeacherId = null;
+                        if ($sid) {
+                            $cands = $subjectCandidates[$sid] ?? collect();
+                            $available = $cands->filter(function($t) use ($p, $isTeacherAvailableAt) {
+                                return $isTeacherAvailableAt($t, $p);
+                            });
+                            if ($available->count()) {
+                                $chosen = null; $min = PHP_INT_MAX;
+                                foreach ($available as $tch) {
+                                    $load = $teacherLoads[$tch->id] ?? 0;
+                                    if ($load < $min) { $min = $load; $chosen = $tch; }
+                                }
+                                if ($chosen) { $chosenTeacherId = $chosen->id; $teacherLoads[$chosenTeacherId] = ($teacherLoads[$chosenTeacherId] ?? 0) + 1; }
+                            }
                         }
-                        if ($chosen) { $chosenTeacherId = $chosen->id; $teacherLoads[$chosenTeacherId] = ($teacherLoads[$chosenTeacherId] ?? 0) + 1; }
                     }
-                }
 
-                ScheduleEntry::create([
-                    'scheduling_run_id' => $run->id,
-                    'section_id' => $section->id,
-                    'day' => $slot['day'],
-                    'period' => $p,
-                    'subject_id' => $sid,
-                    'teacher_id' => $chosenTeacherId,
-                    'conflict' => null,
-                ]);
-            }
+                    ScheduleEntry::create([
+                        'scheduling_run_id' => $run->id,
+                        'section_id' => $section->id,
+                        'day' => $slot['day'],
+                        'period' => $p,
+                        'subject_id' => $sid,
+                        'teacher_id' => $chosenTeacherId,
+                        'conflict' => null,
+                    ]);
+                }
         }
 
         // run validation to detect conflicts and annotate entries

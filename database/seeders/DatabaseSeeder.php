@@ -38,5 +38,7 @@ class DatabaseSeeder extends Seeder
 
         // Ensure grade levels exist (Grade 7-12) for initial UI
         $this->call(\Database\Seeders\InitialGradeLevelsSeeder::class);
+        // Seed Filipino teachers and assignments
+        $this->call(\Database\Seeders\FilipinoTeachersSeeder::class);
     }
 }

@@ -1,386 +1,99 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Auth;
 
-// Public landing page (no auth required)
-Route::get('/', function () {
-    return view('landing');
-});
+// Public landing and simple pages
+Route::get('/', fn() => view('landing'));
+Route::get('/dashboard', fn() => view('dashboard'));
+Route::get('/features', fn() => view('features'));
+Route::get('/about', fn() => view('about'));
 
-// Dashboard placeholder for 'Get Started' (no auth for scaffold)
-Route::get('/dashboard', function () {
-    return view('dashboard');
-});
+// Include authentication routes (login, register, password, etc.)
+require __DIR__ . '/auth.php';
 
 // Role-specific dashboards (require auth)
 Route::middleware('auth')->group(function () {
-    // redirect legacy route to the new admin it dashboard (admin layout uses left-side panel)
-    Route::get('/dashboard/it', function () {
-        return redirect()->route('admin.it.dashboard');
-    })->name('dashboard.it');
-
-    Route::get('/dashboard/scheduler', function () {
-        return view('dashboard_scheduler');
-    })->name('dashboard.scheduler');
+    Route::get('/dashboard/it', fn() => redirect()->route('admin.dashboard'))->name('dashboard.it');
 });
 
-// IT Coordinator admin placeholders (protected by auth + simple role check)
-Route::middleware('auth')->prefix('admin/it')->name('admin.it.')->group(function () {
-    Route::get('/', [\App\Http\Controllers\Admin\OverviewController::class, 'index'])
-        ->name('dashboard');
+// Admin routes for IT coordinator
+Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/', [\App\Http\Controllers\Admin\OverviewController::class, 'index'])->name('dashboard');
+    Route::get('/overview/data', [\App\Http\Controllers\Admin\OverviewController::class, 'data'])->name('overview.data');
 
-    // JSON endpoint for overview data (counts, analytics)
-    Route::get('/overview/data', [\App\Http\Controllers\Admin\OverviewController::class, 'data'])
-        ->name('overview.data');
+    // Teachers
+    Route::get('/teachers', [\App\Http\Controllers\Admin\TeacherController::class, 'index'])->name('teachers.index');
+    Route::get('/teachers/create', [\App\Http\Controllers\Admin\TeacherController::class, 'create'])->name('teachers.create');
+    Route::post('/teachers', [\App\Http\Controllers\Admin\TeacherController::class, 'store'])->name('teachers.store');
+    Route::get('/teachers/{teacher}/edit', [\App\Http\Controllers\Admin\TeacherController::class, 'edit'])->name('teachers.edit');
+    Route::put('/teachers/{teacher}', [\App\Http\Controllers\Admin\TeacherController::class, 'update'])->name('teachers.update');
+    Route::delete('/teachers/{teacher}', [\App\Http\Controllers\Admin\TeacherController::class, 'destroy'])->name('teachers.destroy');
 
-    // Teachers resource (basic CRUD)
-    Route::get('/teachers', function () {
-        if (Auth::user()->role !== 'it_coordinator') abort(403);
-        return app(\App\Http\Controllers\Admin\TeacherController::class)->index(request());
-    })->name('teachers.index');
+    // Teachers bulk actions
+    Route::get('/teachers/export', [\App\Http\Controllers\Admin\TeacherController::class, 'export'])->name('teachers.export');
+    Route::post('/teachers/import', [\App\Http\Controllers\Admin\TeacherController::class, 'import'])->name('teachers.import');
+    Route::get('/teachers/download-template', [\App\Http\Controllers\Admin\TeacherController::class, 'downloadTemplate'])->name('teachers.download-template');
 
-    Route::get('/teachers/create', function () {
-        if (Auth::user()->role !== 'it_coordinator') abort(403);
-        return app(\App\Http\Controllers\Admin\TeacherController::class)->create();
-    })->name('teachers.create');
+    // Teachers fragments
+    Route::get('/teachers/fragment', [\App\Http\Controllers\Admin\TeacherController::class, 'fragmentCreate'])->name('teachers.fragment.create');
+    Route::get('/teachers/list', [\App\Http\Controllers\Admin\TeacherController::class, 'listFragment'])->name('teachers.list');
+    Route::get('/teachers/subjects.json', [\App\Http\Controllers\Admin\TeacherController::class, 'subjectsJson'])->name('teachers.subjects.json');
+    Route::get('/teachers/{teacher}/fragment', [\App\Http\Controllers\Admin\TeacherController::class, 'fragmentEdit'])->name('teachers.fragment.edit');
 
-    Route::post('/teachers', function () {
-        if (Auth::user()->role !== 'it_coordinator') abort(403);
-        return app(\App\Http\Controllers\Admin\TeacherController::class)->store(request());
-    })->name('teachers.store');
+    // Subjects
+    Route::get('/subjects', [\App\Http\Controllers\Admin\SubjectController::class, 'index'])->name('subjects.index');
+    Route::get('/subjects/create', [\App\Http\Controllers\Admin\SubjectController::class, 'create'])->name('subjects.create');
+    Route::get('/subjects/{subject}', [\App\Http\Controllers\Admin\SubjectController::class, 'show'])->whereNumber('subject')->name('subjects.show');
+    Route::post('/subjects', [\App\Http\Controllers\Admin\SubjectController::class, 'store'])->name('subjects.store');
+    Route::get('/subjects/{subject}/edit', [\App\Http\Controllers\Admin\SubjectController::class, 'edit'])->name('subjects.edit');
+    Route::put('/subjects/{subject}', [\App\Http\Controllers\Admin\SubjectController::class, 'update'])->name('subjects.update');
+    Route::delete('/subjects/{subject}', [\App\Http\Controllers\Admin\SubjectController::class, 'destroy'])->name('subjects.destroy');
+    Route::get('/subjects/fragment', [\App\Http\Controllers\Admin\SubjectController::class, 'fragmentCreate'])->name('subjects.fragment.create');
+    Route::get('/subjects/{subject}/fragment', [\App\Http\Controllers\Admin\SubjectController::class, 'fragmentEdit'])->name('subjects.fragment.edit');
 
-    Route::get('/teachers/{teacher}/edit', function ($teacher) {
-        if (Auth::user()->role !== 'it_coordinator') abort(403);
-        $t = \App\Models\Teacher::findOrFail($teacher);
-        return app(\App\Http\Controllers\Admin\TeacherController::class)->edit($t);
-    })->name('teachers.edit');
+    // Grade levels & sections (essential endpoints)
+    Route::get('/grade-levels', [\App\Http\Controllers\Admin\GradeLevelController::class, 'index'])->name('grade-levels.index');
+    Route::post('/grade-levels', [\App\Http\Controllers\Admin\GradeLevelController::class, 'store'])->name('grade-levels.store');
+    Route::patch('/grade-levels/{gradeLevel}', [\App\Http\Controllers\Admin\GradeLevelController::class, 'update'])->name('grade-levels.update');
+    Route::get('/grade-levels/{gradeLevel}/sections', [\App\Http\Controllers\Admin\SectionController::class, 'listForGrade'])->name('grade-levels.sections.index');
+    Route::post('/grade-levels/{gradeLevel}/sections', [\App\Http\Controllers\Admin\SectionController::class, 'store'])->name('grade-levels.sections.store');
+    Route::put('/sections/{section}', [\App\Http\Controllers\Admin\SectionController::class, 'update'])->name('sections.update');
+    Route::delete('/sections/{section}', [\App\Http\Controllers\Admin\SectionController::class, 'destroy'])->name('sections.destroy');
+    Route::post('/grade-levels/preview', [\App\Http\Controllers\Admin\GradeLevelController::class, 'previewAnonymous'])->name('grade-levels.preview');
+    Route::get('/grade-levels/{gradeLevel}/preview-sections', [\App\Http\Controllers\Admin\GradeLevelController::class, 'previewSections'])->name('grade-levels.preview-sections');
 
-    Route::put('/teachers/{teacher}', function ($teacher) {
-        if (Auth::user()->role !== 'it_coordinator') abort(403);
-        $t = \App\Models\Teacher::findOrFail($teacher);
-        return app(\App\Http\Controllers\Admin\TeacherController::class)->update(request(), $t);
-    })->name('teachers.update');
-
-    Route::delete('/teachers/{teacher}', function ($teacher) {
-        if (Auth::user()->role !== 'it_coordinator') abort(403);
-        $t = \App\Models\Teacher::findOrFail($teacher);
-        return app(\App\Http\Controllers\Admin\TeacherController::class)->destroy($t);
-    })->name('teachers.destroy');
-
-    // Fragments for master-detail AJAX loading
-    Route::get('/teachers/fragment', function () {
-        if (Auth::user()->role !== 'it_coordinator') abort(403);
-        return app(\App\Http\Controllers\Admin\TeacherController::class)->fragmentCreate();
-    })->name('teachers.fragment.create');
-
-    // Fragment that returns list items for infinite scroll (JSON)
-    Route::get('/teachers/list', function () {
-        if (Auth::user()->role !== 'it_coordinator') abort(403);
-        return app(\App\Http\Controllers\Admin\TeacherController::class)->listFragment(request());
-    })->name('teachers.list');
-
-    // Subjects JSON for teacher form fallback
-    Route::get('/teachers/subjects.json', function () {
-        if (Auth::user()->role !== 'it_coordinator') abort(403);
-        return app(\App\Http\Controllers\Admin\TeacherController::class)->subjectsJson();
-    })->name('teachers.subjects.json');
-
-    Route::get('/teachers/{teacher}/fragment', function ($teacher) {
-        if (Auth::user()->role !== 'it_coordinator') abort(403);
-        $t = \App\Models\Teacher::findOrFail($teacher);
-        return app(\App\Http\Controllers\Admin\TeacherController::class)->fragmentEdit($t);
-    })->name('teachers.fragment.edit');
-
-    Route::get('/subjects', function () {
-        if (Auth::user()->role !== 'it_coordinator') abort(403);
-        return app(\App\Http\Controllers\Admin\SubjectController::class)->index();
-    })->name('subjects.index');
-
-    Route::get('/subjects/create', function () {
-        if (Auth::user()->role !== 'it_coordinator') abort(403);
-        return app(\App\Http\Controllers\Admin\SubjectController::class)->create();
-    })->name('subjects.create');
-
-    Route::post('/subjects', function () {
-        if (Auth::user()->role !== 'it_coordinator') abort(403);
-        return app(\App\Http\Controllers\Admin\SubjectController::class)->store(request());
-    })->name('subjects.store');
-
-    Route::get('/subjects/{subject}/edit', function ($subject) {
-        if (Auth::user()->role !== 'it_coordinator') abort(403);
-           $s = \App\Models\Subject::findOrFail($subject);
-           return app(\App\Http\Controllers\Admin\SubjectController::class)->edit($s);
-    })->name('subjects.edit');
-
-    Route::put('/subjects/{subject}', function ($subject) {
-        if (Auth::user()->role !== 'it_coordinator') abort(403);
-           $s = \App\Models\Subject::findOrFail($subject);
-           return app(\App\Http\Controllers\Admin\SubjectController::class)->update(request(), $s);
-    })->name('subjects.update');
-
-    Route::delete('/subjects/{subject}', function ($subject) {
-        if (Auth::user()->role !== 'it_coordinator') abort(403);
-        try{
-            $s = \App\Models\Subject::findOrFail($subject);
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $ex) {
-            // return JSON for AJAX callers
-            if(request()->wantsJson() || request()->ajax()){
-                return response()->json(['message' => 'Subject not found'], 404);
-            }
-            abort(404, 'Subject not found');
-        }
-        return app(\App\Http\Controllers\Admin\SubjectController::class)->destroy($s);
-    })->name('subjects.destroy');
-
-    // fragment routes for subjects
-    Route::get('/subjects/fragment', function () {
-        if (Auth::user()->role !== 'it_coordinator') abort(403);
-        return app(\App\Http\Controllers\Admin\SubjectController::class)->fragmentCreate();
-    })->name('subjects.fragment.create');
-
-    Route::get('/subjects/{subject}/fragment', function ($subject) {
-        if (Auth::user()->role !== 'it_coordinator') abort(403);
-           $s = \App\Models\Subject::findOrFail($subject);
-           return app(\App\Http\Controllers\Admin\SubjectController::class)->fragmentEdit($s);
-    })->name('subjects.fragment.edit');
-
-    // Grade Levels & Sections routes (master/detail + AJAX preview & bulk-create)
-    Route::get('/grade-levels', function () {
-        if (Auth::user()->role !== 'it_coordinator') abort(403);
-        return app(\App\Http\Controllers\Admin\GradeLevelController::class)->index();
-    })->name('grade-levels.index');
-
-    Route::get('/grade-levels/create', function () {
-        if (Auth::user()->role !== 'it_coordinator') abort(403);
-        return app(\App\Http\Controllers\Admin\GradeLevelController::class)->fragmentCreate();
-    })->name('grade-levels.create');
-
-    // fragment routes for grade-levels (master-detail)
-    Route::get('/grade-levels/fragment', function () {
-        if (Auth::user()->role !== 'it_coordinator') abort(403);
-        return app(\App\Http\Controllers\Admin\GradeLevelController::class)->fragmentCreate();
-    })->name('grade-levels.fragment.create');
-
-    // AJAX toggle for subject <-> grade assignment (used by combined UI)
-    Route::post('/subjects/{subject}/toggle-grade/{gradeLevel}', function ($subject, $gradeLevel) {
-        if (Auth::user()->role !== 'it_coordinator') abort(403);
-           $s = \App\Models\Subject::findOrFail($subject);
-           $g = \App\Models\GradeLevel::findOrFail($gradeLevel);
-           return app(\App\Http\Controllers\Admin\SubjectController::class)->toggleGrade(request(), $s, $g);
-    })->name('subjects.toggle-grade');
-
-    Route::get('/grade-levels/{gradeLevel}/fragment', function ($gradeLevel) {
-        if (Auth::user()->role !== 'it_coordinator') abort(403);
-        return app(\App\Http\Controllers\Admin\GradeLevelController::class)->fragmentEdit($gradeLevel);
-    })->name('grade-levels.fragment.edit');
-
-    Route::post('/grade-levels', function () {
-        if (Auth::user()->role !== 'it_coordinator') abort(403);
-        return app(\App\Http\Controllers\Admin\GradeLevelController::class)->store(request());
-    })->name('grade-levels.store');
-
-    
-
-    // Update grade level (persist section naming, options, and school stage)
-    Route::patch('/grade-levels/{gradeLevel}', function ($gradeLevel) {
-        if (Auth::user()->role !== 'it_coordinator') abort(403);
-        return app(\App\Http\Controllers\Admin\GradeLevelController::class)->update(request(), $gradeLevel);
-    })->name('grade-levels.update');
-
-    // Bulk create sections for a grade level
-    Route::post('/grade-levels/{gradeLevel}/sections/bulk-create', function ($gradeLevel) {
-        if (Auth::user()->role !== 'it_coordinator') abort(403);
-        $gl = \App\Models\GradeLevel::findOrFail($gradeLevel);
-        return app(\App\Http\Controllers\Admin\SectionController::class)->bulkStore(request(), $gl);
-    })->name('grade-levels.sections.bulk-create');
-
-    // List sections for a grade level (JSON) and create single section
-    Route::get('/grade-levels/{gradeLevel}/sections', function ($gradeLevel) {
-        if (Auth::user()->role !== 'it_coordinator') abort(403);
-        $gl = \App\Models\GradeLevel::findOrFail($gradeLevel);
-        return app(\App\Http\Controllers\Admin\SectionController::class)->listForGrade(request(), $gl);
-    })->name('grade-levels.sections.list');
-
-    Route::post('/grade-levels/{gradeLevel}/sections', function ($gradeLevel) {
-        if (Auth::user()->role !== 'it_coordinator') abort(403);
-        $gl = \App\Models\GradeLevel::findOrFail($gradeLevel);
-        return app(\App\Http\Controllers\Admin\SectionController::class)->store(request(), $gl);
-    })->name('grade-levels.sections.store');
-
-    // Individual section update/delete
-    Route::put('/sections/{section}', function ($section) {
-        if (Auth::user()->role !== 'it_coordinator') abort(403);
-        $s = \App\Models\Section::findOrFail($section);
-        return app(\App\Http\Controllers\Admin\SectionController::class)->update(request(), $s);
-    })->name('sections.update');
-
-    Route::delete('/sections/{section}', function ($section) {
-        if (Auth::user()->role !== 'it_coordinator') abort(403);
-        $s = \App\Models\Section::findOrFail($section);
-        return app(\App\Http\Controllers\Admin\SectionController::class)->destroy($s);
-    })->name('sections.destroy');
-
-    // Preview generated sections for a grade level (AJAX)
-    Route::get('/grade-levels/{gradeLevel}/preview-sections', function ($gradeLevel) {
-        if (Auth::user()->role !== 'it_coordinator') abort(403);
-        $gl = \App\Models\GradeLevel::findOrFail($gradeLevel);
-        return app(\App\Http\Controllers\Admin\GradeLevelController::class)->previewSections(request(), $gl);
-    })->name('grade-levels.preview-sections');
-
-    // Preview generated sections from inline inputs (no existing grade required)
-    Route::post('/grade-levels/preview', function () {
-        if (Auth::user()->role !== 'it_coordinator') abort(403);
-        return app(\App\Http\Controllers\Admin\GradeLevelController::class)->previewAnonymous(request());
-    })->name('grade-levels.preview');
-
-    // Grade levels management removed per admin configuration (forms/views deleted)
-
-    Route::get('/rooms', function () {
-        if (Auth::user()->role !== 'it_coordinator') abort(403);
-        return view('admin.it.rooms.index');
-    })->name('rooms.index');
-
-    Route::get('/scheduling', function () {
-        if (Auth::user()->role !== 'it_coordinator') abort(403);
-        return view('admin.it.scheduling.index');
-    })->name('scheduling.index');
-
-        // Consolidated Subjects & Sections page (navigation target)
-        Route::get('/subjects-sections', function () {
-            if (Auth::user()->role !== 'it_coordinator') abort(403);
+    // Consolidated subjects & sections page
+    Route::get('/subjects-sections', function () {
         $gradeLevels = \App\Models\GradeLevel::with('sections')->orderBy('name')->get();
-        $subjects = \App\Models\Subject::with('gradeLevels')->orderBy('name')->get();
-        // compute once in the controller/route and pass to the view so Blade does not query the model
+        $subjects = \App\Models\Subject::with('gradeLevels', 'strand')->orderBy('name')->get();
+        $strands = \App\Models\Strand::orderBy('name')->get();
         $hasSections = \App\Models\Section::exists();
-            return view('admin.it.subjects-sections', compact('gradeLevels','subjects','hasSections'));
+        return view('admin.sections.subjects-sections', compact('gradeLevels','subjects','strands','hasSections'));
     })->name('subjects-sections');
 
-    // Scheduling workspace: list runs and create draft runs (index/store left as closures)
-    Route::get('/scheduler', function () {
-        if (Auth::user()->role !== 'it_coordinator') abort(403);
-        // Redirect users straight to the interactive matrix for the latest run.
-        $run = \App\Models\SchedulingRun::orderBy('created_at', 'desc')->first();
-        if (! $run) {
-            // create a draft run if none exist
-            $run = \App\Models\SchedulingRun::create([
-                'name' => 'Draft ' . now()->format('Y-m-d H:i'),
-                'created_by' => Auth::id(),
-                'meta' => null,
-            ]);
-        }
-        return redirect()->route('admin.it.scheduler.matrix', ['run' => $run->id]);
-    })->name('scheduler.run');
+    // Exports & logs
+    Route::get('/exports', fn() => view('admin.exports'))->name('exports');
+    Route::get('/logs', fn() => view('admin.logs'))->name('logs');
 
-    Route::post('/scheduler', function () {
-        if (Auth::user()->role !== 'it_coordinator') abort(403);
-        $run = \App\Models\SchedulingRun::create([
-            'name' => 'Draft ' . now()->format('Y-m-d H:i'),
-            'created_by' => Auth::id(),
-            'meta' => null,
-        ]);
-        return redirect()->route('admin.it.scheduler.run');
-    })->name('scheduler.store');
+    // Scheduler (namespaced under admin.scheduler)
+    Route::prefix('scheduler')->name('scheduler.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\SchedulingRunController::class, 'index'])->name('index');
+        Route::post('/', [\App\Http\Controllers\Admin\SchedulingRunController::class, 'store'])->name('store');
+        Route::get('/{run}', [\App\Http\Controllers\Admin\SchedulingRunController::class, 'show'])->whereNumber('run')->name('show');
+        Route::get('/{run}/matrix', [\App\Http\Controllers\Admin\SchedulingRunController::class, 'matrix'])->whereNumber('run')->name('matrix');
+        Route::post('/{run}/generate', [\App\Http\Controllers\Admin\SchedulingRunController::class, 'generate'])->whereNumber('run')->name('generate');
+        Route::get('/{run}/generate/status', [\App\Http\Controllers\Admin\SchedulingRunController::class, 'generateStatus'])->whereNumber('run')->name('generate.status');
+        // Additional scheduler endpoints can be added here as needed
+    });
 
-    // Show a scheduling run (detailed per-section schedules)
-    Route::get('/scheduler/{run}', [\App\Http\Controllers\Admin\SchedulingRunController::class, 'show'])
-        ->whereNumber('run')
-        ->name('scheduler.show');
-
-    // Per-teacher schedule for a run
-    Route::get('/scheduler/{run}/teacher/{teacher}', [\App\Http\Controllers\Admin\SchedulingRunController::class, 'teacherSchedule'])
-        ->whereNumber('run')
-        ->whereNumber('teacher')
-        ->name('scheduler.teacher');
-
-    // Substitutions and absences view
-    Route::get('/scheduler/{run}/substitutions', [\App\Http\Controllers\Admin\SchedulingRunController::class, 'substitutions'])
-        ->whereNumber('run')
-        ->name('scheduler.substitutions');
-
-    // generate populate entries for a run (POST)
-    Route::post('/scheduler/{run}/generate', [\App\Http\Controllers\Admin\SchedulingRunController::class, 'generate'])
-        ->whereNumber('run')
-        ->name('scheduler.generate');
-
-    // async generate status (AJAX polling)
-    Route::get('/scheduler/{run}/generate/status', [\App\Http\Controllers\Admin\SchedulingRunController::class, 'generateStatus'])
-        ->whereNumber('run')
-        ->name('scheduler.generate.status');
-
-    // compact matrix view (class / teacher toggle) — single-page compact print-friendly
-    Route::get('/scheduler/{run}/matrix', [\App\Http\Controllers\Admin\SchedulingRunController::class, 'matrix'])
-        ->whereNumber('run')
-        ->name('scheduler.matrix');
-
-    // subjects by stage (AJAX JSON)
-    Route::get('/scheduler/{run}/subjects/{stage}', [\App\Http\Controllers\Admin\SchedulingRunController::class, 'subjectsByStage'])
-        ->whereNumber('run')
-        ->name('scheduler.subjects.stage');
-
-    // teachers candidates for a slot (AJAX JSON)
-    Route::get('/scheduler/{run}/teachers-for-slot', [\App\Http\Controllers\Admin\SchedulingRunController::class, 'teachersForSlot'])
-        ->whereNumber('run')
-        ->name('scheduler.teachers.for_slot');
-    // bulk candidates for multiple slots (AJAX JSON)
-    Route::post('/scheduler/{run}/teachers-for-slots', [\App\Http\Controllers\Admin\SchedulingRunController::class, 'teachersForSlots'])
-        ->whereNumber('run')
-        ->name('scheduler.teachers.for_slots');
-
-    // create a new schedule entry (used by inline cell creation)
-    Route::post('/scheduler/{run}/entry/create', [\App\Http\Controllers\Admin\SchedulingRunController::class, 'createEntry'])
-        ->whereNumber('run')
-        ->name('scheduler.entry.create');
-
-    // assign/update a schedule entry (AJAX)
-    Route::post('/scheduler/{run}/entry/{entry}/assign', [\App\Http\Controllers\Admin\SchedulingRunController::class, 'assignEntry'])
-        ->whereNumber('run')
-        ->whereNumber('entry')
-        ->name('scheduler.entry.assign');
-
-    // suggest substitutes for a teacher's timetable slots
-    Route::get('/scheduler/{run}/teacher/{teacher}/substitutes', [\App\Http\Controllers\Admin\SchedulingRunController::class, 'suggestSubstitutes'])
-        ->whereNumber('run')
-        ->whereNumber('teacher')
-        ->name('scheduler.teacher.substitutes');
-
-    // Suggest substitutes for a specific schedule entry (AJAX JSON)
-    Route::get('/scheduler/{run}/entry/{entry}/substitutes', [\App\Http\Controllers\Admin\SchedulingRunController::class, 'suggestSubstitutesForEntry'])
-        ->whereNumber('run')
-        ->whereNumber('entry')
-        ->name('scheduler.entry.substitutes');
-
-    // Apply a substitute to a schedule entry (POST)
-    Route::post('/scheduler/{run}/entry/{entry}/apply-substitute', [\App\Http\Controllers\Admin\SchedulingRunController::class, 'applySubstitute'])
-        ->whereNumber('run')
-        ->whereNumber('entry')
-        ->name('scheduler.entry.apply_substitute');
-
-    // Return a schedule entry as JSON (including conflicts) for modal detail
-    Route::get('/scheduler/{run}/entry/{entry}', [\App\Http\Controllers\Admin\SchedulingRunController::class, 'getEntry'])
-        ->whereNumber('run')
-        ->whereNumber('entry')
-        ->name('scheduler.entry.get');
-
-    Route::get('/exports', function () {
-        if (Auth::user()->role !== 'it_coordinator') abort(403);
-        return view('admin.it.exports');
-    })->name('exports');
-
-    Route::get('/logs', function () {
-        if (Auth::user()->role !== 'it_coordinator') abort(403);
-        return view('admin.it.logs');
-    })->name('logs');
+    // Schedule Maker placeholders (nav group: Schedule Maker -> Scheduler, Settings)
+    Route::prefix('schedule-maker')->name('schedule-maker.')->group(function () {
+        Route::get('/scheduler', fn() => view('admin.schedule-maker.scheduler'))->name('scheduler');
+        Route::get('/settings', [\App\Http\Controllers\Admin\SchedulingConfigController::class, 'index'])->name('settings');
+        Route::post('/settings', [\App\Http\Controllers\Admin\SchedulingConfigController::class, 'store'])->name('settings.save');
+        Route::post('/settings/qualifications', [\App\Http\Controllers\Admin\SchedulingConfigController::class, 'saveQualifications'])->name('settings.save-qualifications');
+        Route::post('/settings/sections', [\App\Http\Controllers\Admin\SchedulingConfigController::class, 'saveSections'])->name('settings.save-sections');
+        Route::post('/settings/constraints', [\App\Http\Controllers\Admin\SchedulingConfigController::class, 'saveConstraints'])->name('settings.save-constraints');
+        Route::get('/settings/teachers-by-type/{type}', [\App\Http\Controllers\Admin\SchedulingConfigController::class, 'getTeachersByType'])->name('settings.teachers-by-type');
+    });
 });
-
-// Simple pages for Features and About
-Route::get('/features', function () {
-    return view('features');
-});
-
-Route::get('/about', function () {
-    return view('about');
-});
-
-// Include authentication routes (login, register, password, etc.)
-require __DIR__.'/auth.php';

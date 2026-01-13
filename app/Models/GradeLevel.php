@@ -34,6 +34,11 @@ class GradeLevel extends Model
         return $this->belongsToMany(Teacher::class, 'teacher_gradelevel');
     }
 
+    public function subjects()
+    {
+        return $this->belongsToMany(Subject::class, 'subject_gradelevel');
+    }
+
     public function sections()
     {
         return $this->hasMany(\App\Models\Section::class)->orderBy('ordinal');

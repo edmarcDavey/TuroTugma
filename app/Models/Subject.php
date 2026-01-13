@@ -9,7 +9,12 @@ class Subject extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['code','name','type','category','track','stage'];
+    protected $fillable = ['code','name','type','category','track','stage','units','strand_id','hours_per_week'];
+
+    public function strand()
+    {
+        return $this->belongsTo(Strand::class);
+    }
 
     public function teachers()
     {

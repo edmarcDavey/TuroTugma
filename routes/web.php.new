@@ -1,0 +1,9 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
+
+// Minimal admin routes backup file (not active)
+// This file is a safe copy in case you want to reference route layout.
+
+Route::get('/dummy', function(){ return 'ok'; });

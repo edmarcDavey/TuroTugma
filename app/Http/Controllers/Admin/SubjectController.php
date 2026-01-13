@@ -16,13 +16,29 @@ class SubjectController extends Controller
     public function index()
     {
         $subjects = Subject::with('gradeLevels')->orderBy('name')->paginate(20);
-        return view('admin.it.subjects.index', compact('subjects'));
+        return view('admin.subjects.index', compact('subjects'));
     }
 
     public function create()
     {
         $gradeLevels = GradeLevel::orderBy('name')->get();
-        return view('admin.it.subjects.create', compact('gradeLevels'));
+        return view('admin.subjects.create', compact('gradeLevels'));
+    }
+
+    public function show(Subject $subject)
+    {
+        $subject->load('gradeLevels', 'strand');
+        return response()->json([
+            'subject' => [
+                'id' => $subject->id,
+                'name' => $subject->name,
+                'code' => $subject->code,
+                'type' => $subject->type,
+                'strand_id' => $subject->strand_id,
+                'hours_per_week' => $subject->hours_per_week,
+                'grade_levels' => $subject->gradeLevels->pluck('id')->toArray(),
+            ]
+        ]);
     }
 
     public function store(Request $request)
@@ -31,50 +47,31 @@ class SubjectController extends Controller
             'code' => 'nullable|string|max:32',
             'name' => 'required|string|max:255',
             'type' => 'nullable|string|max:64',
+            'strand_id' => 'nullable|exists:strands,id',
+            'hours_per_week' => 'nullable|integer|min:1|max:20',
             'grade_levels' => 'nullable|array',
             'description' => 'nullable|string',
         ]);
 
-        // Normalize name for comparison (case-insensitive) and attempt to find existing
-        $searchName = Str::lower(trim($data['name']));
-        $type = $data['type'] ?? null;
+        $subject = Subject::create([
+            'code' => $data['code'] ?? null,
+            'name' => $data['name'],
+            'type' => $data['type'] ?? null,
+            'strand_id' => $data['strand_id'] ?? null,
+            'hours_per_week' => $data['hours_per_week'] ?? null,
+        ]);
 
-        // Match by name only (case-insensitive) to avoid redundant entries across different types
-        $existing = Subject::whereRaw('LOWER(name) = ?', [$searchName])->first();
-
-        if ($existing) {
-            // merge grade levels if provided
-            if (!empty($data['grade_levels'])) {
-                $validIds = GradeLevel::whereIn('id', $data['grade_levels'])->pluck('id')->toArray();
-                $current = $existing->gradeLevels()->pluck('id')->toArray();
-                $merged = array_values(array_unique(array_merge($current, $validIds)));
-                $existing->gradeLevels()->sync($merged);
-            }
-
-            if ($request->ajax() || $request->wantsJson()) {
-                return response()->json(['success' => true, 'created' => false, 'subject' => $existing], 200);
-            }
-
-            return redirect()->route('admin.it.subjects.index')->with('info','Subject already exists');
-        }
-
-        $subject = Subject::create($data);
         if (!empty($data['grade_levels'])) {
-            $validIds = GradeLevel::whereIn('id', $data['grade_levels'])->pluck('id')->toArray();
-            $subject->gradeLevels()->sync($validIds);
+            $subject->gradeLevels()->sync($data['grade_levels']);
         }
 
-        if ($request->ajax() || $request->wantsJson()) {
-            return response()->json(['success' => true, 'created' => true, 'subject' => $subject], 201);
-        }
-
-        return redirect()->route('admin.it.subjects.index')->with('success','Subject created');
+        return response()->json(['success' => true, 'subject' => $subject->load('gradeLevels', 'strand')]);
     }
 
     public function edit(Subject $subject)
     {
         $gradeLevels = GradeLevel::orderBy('name')->get();
-        return view('admin.it.subjects.edit', compact('subject','gradeLevels'));
+        return view('admin.subjects.edit', compact('subject','gradeLevels'));
     }
 
     public function update(Request $request, Subject $subject)
@@ -83,37 +80,53 @@ class SubjectController extends Controller
             'code' => 'nullable|string|max:32',
             'name' => 'required|string|max:255',
             'type' => 'nullable|string|max:64',
+            'strand_id' => 'nullable|exists:strands,id',
+            'hours_per_week' => 'nullable|integer|min:1|max:20',
             'grade_levels' => 'nullable|array',
             'description' => 'nullable|string',
         ]);
 
-        $subject->update($data);
-        $subject->gradeLevels()->sync($data['grade_levels'] ?? []);
+        $subject->update([
+            'code' => $data['code'] ?? null,
+            'name' => $data['name'],
+            'type' => $data['type'] ?? null,
+            'strand_id' => $data['strand_id'] ?? null,
+            'hours_per_week' => $data['hours_per_week'] ?? null,
+        ]);
 
-        if ($request->ajax() || $request->wantsJson()) {
-            return response()->json(['success' => true, 'subject' => $subject], 200);
+        if (isset($data['grade_levels'])) {
+            $subject->gradeLevels()->sync($data['grade_levels']);
         }
 
-        return redirect()->route('admin.it.subjects.index')->with('success','Subject updated');
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json(['success' => true, 'subject' => $subject->load('gradeLevels', 'strand')]);
+        }
+
+        return redirect()->route('admin.subjects.index')->with('success','Subject updated');
     }
 
-    public function destroy(Subject $subject)
+    public function destroy(Request $request, Subject $subject)
     {
         $subject->delete();
-        return redirect()->route('admin.it.subjects.index')->with('success','Subject deleted');
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json(['success' => true, 'message' => 'Subject deleted']);
+        }
+
+        return redirect()->route('admin.subjects.index')->with('success','Subject deleted');
     }
 
     // fragment endpoints for master-detail
     public function fragmentCreate()
     {
         $gradeLevels = GradeLevel::orderBy('name')->get();
-        return view('admin.it.subjects._form', compact('gradeLevels'));
+        return view('admin.subjects._form', compact('gradeLevels'));
     }
 
     public function fragmentEdit(Subject $subject)
     {
         $gradeLevels = GradeLevel::orderBy('name')->get();
-        return view('admin.it.subjects._form', compact('subject','gradeLevels'));
+        return view('admin.subjects._form', compact('subject','gradeLevels'));
     }
 
     /**

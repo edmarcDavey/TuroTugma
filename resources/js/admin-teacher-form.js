@@ -133,6 +133,13 @@ function initContainer(container) {
     const id = it.dataset.id;
     const opt = native.querySelector('option[value="'+id+'"]');
     if (opt) {
+      // enforce max 3 selections
+      const currentlySelected = Array.from(native.options).filter(o=>o.selected).length;
+      if (currentlySelected >= 3) {
+        if (typeof showToast === 'function') showToast('You can select up to 3 items', 'error');
+        else alert('You can select up to 3 items');
+        return;
+      }
       opt.selected = true;
       it.style.display = 'none';
       it.classList.add('ms-item-selected');
@@ -146,13 +153,24 @@ function initContainer(container) {
 
   function updateSelectAllState(){ const all = Array.from(list.querySelectorAll('.ms-checkbox')).filter(cb=>cb.closest('.ms-item').style.display!=='none'); const checked = all.filter(cb=>cb.checked); if(selectAll) selectAll.checked = all.length>0 && checked.length===all.length; }
   if (selectAll) selectAll.addEventListener('change', function(){
+    // when selecting all, only select up to 3 visible items
     const visible = Array.from(list.querySelectorAll('.ms-item')).filter(it=>it.style.display!=='none');
-    visible.forEach(it=>{
-      const id = it.dataset.id;
-      const opt = native.querySelector('option[value="'+id+'"]');
-      if (opt) opt.selected = selectAll.checked;
-      if (selectAll.checked) { it.style.display='none'; it.classList.add('ms-item-selected'); } else { it.style.display=''; it.classList.remove('ms-item-selected'); }
-    });
+    if (selectAll.checked) {
+      let count = 0;
+      visible.forEach(it=>{
+        const id = it.dataset.id;
+        const opt = native.querySelector('option[value="'+id+'"]');
+        if (opt && count < 3) { opt.selected = true; it.style.display='none'; it.classList.add('ms-item-selected'); count++; }
+        else { if (opt) opt.selected = false; it.style.display=''; it.classList.remove('ms-item-selected'); }
+      });
+    } else {
+      visible.forEach(it=>{
+        const id = it.dataset.id;
+        const opt = native.querySelector('option[value="'+id+'"]');
+        if (opt) opt.selected = false;
+        it.style.display=''; it.classList.remove('ms-item-selected');
+      });
+    }
     syncNativeFromList();
   });
 
