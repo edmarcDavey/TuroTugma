@@ -45,4 +45,4 @@
         </div>
     </body>
 </html>
-<?php /**PATH C:\xampp\htdocs\TuroTugma\resources\views/layouts/app.blade.php ENDPATH**/ ?>
+<?php /**PATH C:\Users\Admin\TuroTugma\resources\views/layouts/app.blade.php ENDPATH**/ ?>

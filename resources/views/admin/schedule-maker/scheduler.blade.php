@@ -74,204 +74,41 @@
 
             <!-- Schedule Grid Table -->
             <div class="overflow-x-auto border rounded-lg">
-              <table class="w-full text-sm">
+              <table class="w-full table-fixed text-[13px]">
                 <thead class="bg-slate-100 border-b">
-                  <tr>
-                    <th class="px-4 py-2 text-left font-bold text-slate-700 w-40">Section</th>
-                    <th class="px-4 py-2 text-center font-bold text-slate-700 bg-blue-50">P1<br/><span class="text-xs font-normal period-time" data-regular="7:30" data-shortened="7:30">7:30</span></th>
-                    <th class="px-4 py-2 text-center font-bold text-slate-700">P2<br/><span class="text-xs font-normal period-time" data-regular="8:30" data-shortened="8:20">8:30</span></th>
-                    <th class="px-4 py-2 text-center font-bold text-slate-700 bg-blue-50">P3<br/><span class="text-xs font-normal period-time" data-regular="9:30" data-shortened="9:10">9:30</span></th>
-                    <th class="px-4 py-2 text-center font-bold text-slate-700">P4<br/><span class="text-xs font-normal period-time" data-regular="10:30" data-shortened="10:10">10:30</span></th>
-                    <th class="px-4 py-2 text-center font-bold text-slate-700 bg-blue-50">P5<br/><span class="text-xs font-normal period-time" data-regular="11:30" data-shortened="11:00">11:30</span></th>
-                    <th class="px-4 py-2 text-center font-bold text-slate-700">P6<br/><span class="text-xs font-normal period-time" data-regular="1:00" data-shortened="12:50">1:00</span></th>
-                    <th class="px-4 py-2 text-center font-bold text-slate-700 bg-blue-50">P7<br/><span class="text-xs font-normal period-time" data-regular="2:00" data-shortened="1:40">2:00</span></th>
-                    <th class="px-4 py-2 text-center font-bold text-slate-700">P8<br/><span class="text-xs font-normal period-time" data-regular="3:00" data-shortened="2:30">3:00</span></th>
-                    <th class="px-4 py-2 text-center font-bold text-slate-700 bg-blue-50">P9<br/><span class="text-xs font-normal period-time" data-regular="4:00" data-shortened="3:20">4:00</span></th>
+                  <tr class="text-xs">
+                    <th class="px-2 py-1 text-left font-bold text-slate-700 w-40">Section</th>
+                    <th class="px-2 py-1 text-center font-bold text-slate-700 bg-blue-50">P1<br/><span class="text-[10px] font-normal period-time" data-regular="7:30" data-shortened="7:30">7:30</span></th>
+                    <th class="px-2 py-1 text-center font-bold text-slate-700">P2<br/><span class="text-[10px] font-normal period-time" data-regular="8:30" data-shortened="8:20">8:30</span></th>
+                    <th class="px-2 py-1 text-center font-bold text-slate-700 bg-blue-50">P3<br/><span class="text-[10px] font-normal period-time" data-regular="9:30" data-shortened="9:10">9:30</span></th>
+                    <th class="px-2 py-1 text-center font-bold text-slate-700">P4<br/><span class="text-[10px] font-normal period-time" data-regular="10:30" data-shortened="10:10">10:30</span></th>
+                    <th class="px-2 py-1 text-center font-bold text-slate-700 bg-blue-50">P5<br/><span class="text-[10px] font-normal period-time" data-regular="11:30" data-shortened="11:00">11:30</span></th>
+                    <th class="px-2 py-1 text-center font-bold text-slate-700">P6<br/><span class="text-[10px] font-normal period-time" data-regular="1:00" data-shortened="12:50">1:00</span></th>
+                    <th class="px-2 py-1 text-center font-bold text-slate-700 bg-blue-50">P7<br/><span class="text-[10px] font-normal period-time" data-regular="2:00" data-shortened="1:40">2:00</span></th>
+                    <th class="px-2 py-1 text-center font-bold text-slate-700">P8<br/><span class="text-[10px] font-normal period-time" data-regular="3:00" data-shortened="2:30">3:00</span></th>
+                    <th class="px-2 py-1 text-center font-bold text-slate-700 bg-blue-50">P9<br/><span class="text-[10px] font-normal period-time" data-regular="4:00" data-shortened="3:20">4:00</span></th>
                   </tr>
                 </thead>
                 <tbody>
-                  <!-- Row -->
-                  <tr class="border-b hover:bg-blue-50">
-                    <td class="px-4 py-3 font-semibold text-slate-900">Grade 7-Rizal</td>
-                    <td class="px-4 py-3 text-center">
-                      <div class="text-xs p-1">
-                        <div class="text-blue-600 font-bold">Math</div>
-                        <div class="text-black">Mr. Cruz</div>
-                        <div class="text-xs text-slate-600">[Adviser]</div>
-                      </div>
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                      <div class="text-xs p-1">
-                        <div class="text-blue-600 font-bold">English</div>
-                        <div class="text-black">Ms. Santos</div>
-                      </div>
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                      <div class="text-xs p-1">
-                        <div class="text-blue-600 font-bold">Science</div>
-                        <div class="text-black">Mr. Reyes</div>
-                      </div>
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                      <div class="text-xs p-1">
-                        <div class="text-blue-600 font-bold">Filipino</div>
-                        <div class="text-black">Ms. Garcia</div>
-                      </div>
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                      <div class="text-xs p-1">
-                        <div class="text-blue-600 font-bold">Soc. Stud.</div>
-                        <div class="text-black">Mr. Lopez</div>
-                      </div>
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                      <div class="text-xs p-1">
-                        <div class="text-blue-600 font-bold">PE</div>
-                        <div class="text-black">Mr. Santos</div>
-                      </div>
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                      <div class="text-xs p-1">
-                        <div class="text-blue-600 font-bold">Values</div>
-                        <div class="text-black">Ms. Ramos</div>
-                      </div>
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                      <div class="text-xs p-1">
-                        <div class="text-blue-600 font-bold">TLE</div>
-                        <div class="text-black">Mr. Navarro</div>
-                      </div>
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                      <div class="bg-slate-100 text-slate-600 text-xs font-bold p-1 rounded italic">
-                        Unassigned
-                      </div>
-                    </td>
-                  </tr>
-                  <!-- Row -->
-                  <tr class="border-b hover:bg-blue-50">
-                    <td class="px-4 py-3 font-semibold text-slate-900">Grade 7-Bonifacio</td>
-                    <td class="px-4 py-3 text-center">
-                      <div class="text-xs p-1">
-                        <div class="text-blue-600 font-bold">Math</div>
-                        <div class="text-black">Ms. Ramos</div>
-                        <div class="text-xs text-slate-600">[Adviser]</div>
-                      </div>
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                      <div class="text-xs p-1">
-                        <div class="text-blue-600 font-bold">English</div>
-                        <div class="text-black">Mr. Lopez</div>
-                      </div>
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                      <div class="text-xs p-1">
-                        <div class="text-blue-600 font-bold">Science</div>
-                        <div class="text-black">Ms. Navarro</div>
-                      </div>
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                      <div class="text-xs p-1">
-                        <div class="text-blue-600 font-bold">Filipino</div>
-                        <div class="text-black">Mr. Gonzales</div>
-                      </div>
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                      <div class="bg-red-100 text-red-800 text-xs font-bold p-1 rounded">
-                        ⚠️ Conflict
-                      </div>
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                      <div class="text-xs p-1">
-                        <div class="text-blue-600 font-bold">PE</div>
-                        <div class="text-black">Ms. Torres</div>
-                      </div>
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                      <div class="text-xs p-1">
-                        <div class="text-blue-600 font-bold">Values</div>
-                        <div class="text-black">Mr. Silva</div>
-                      </div>
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                      <div class="text-xs p-1">
-                        <div class="text-blue-600 font-bold">TLE</div>
-                        <div class="text-black">Ms. Cruz</div>
-                      </div>
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                      <div class="bg-slate-100 text-slate-600 text-xs font-bold p-1 rounded italic">
-                        Unassigned
-                      </div>
-                    </td>
-                  </tr>
-                  <!-- Row -->
-                  <tr class="border-b hover:bg-blue-50">
-                    <td class="px-4 py-3 font-semibold text-slate-900">Grade 8-Aguinaldo</td>
-                    <td class="px-4 py-3 text-center">
-                      <div class="text-xs p-1">
-                        <div class="text-blue-600 font-bold">Math</div>
-                        <div class="text-black">Mr. Fernandez</div>
-                        <div class="text-xs text-slate-600">[Adviser]</div>
-                      </div>
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                      <div class="text-xs p-1">
-                        <div class="text-blue-600 font-bold">English</div>
-                        <div class="text-black">Ms. Mendoza</div>
-                      </div>
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                      <div class="text-xs p-1">
-                        <div class="text-blue-600 font-bold">Science</div>
-                        <div class="text-black">Mr. Torres</div>
-                      </div>
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                      <div class="text-xs p-1">
-                        <div class="text-blue-600 font-bold">Filipino</div>
-                        <div class="text-black">Ms. Silva</div>
-                      </div>
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                      <div class="text-xs p-1">
-                        <div class="text-blue-600 font-bold">Soc. Stud.</div>
-                        <div class="text-black">Mr. Santos</div>
-                      </div>
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                      <div class="text-xs p-1">
-                        <div class="text-blue-600 font-bold">PE</div>
-                        <div class="text-black">Ms. Garcia</div>
-                      </div>
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                      <div class="text-xs p-1">
-                        <div class="text-blue-600 font-bold">Values</div>
-                        <div class="text-black">Mr. Reyes</div>
-                      </div>
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                      <div class="text-xs p-1">
-                        <div class="text-blue-600 font-bold">TLE</div>
-                        <div class="text-black">Mr. Cruz</div>
-                      </div>
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                      <div class="bg-slate-100 text-slate-600 text-xs font-bold p-1 rounded italic">
-                        Unassigned
-                      </div>
-                    </td>
-                  </tr>
+                  @foreach($sections as $section)
+                    <tr class="border-b hover:bg-blue-50" data-level="{{ $section->gradeLevel->school_stage }}" data-grade="{{ $section->gradeLevel->year }}">
+                      <td class="px-2 py-2 sm:px-3 sm:py-3 font-semibold text-slate-900 text-sm">{{ $section->gradeLevel->name }} - {{ $section->name }}</td>
+
+                      @for($p = 1; $p <= 9; $p++)
+                        <td class="px-2 py-2 text-center">
+                          <div class="bg-slate-100 text-slate-600 text-[10px] font-semibold py-1 px-2 rounded inline-block">
+                            Unassigned
+                          </div>
+                        </td>
+                      @endfor
+                    </tr>
+                  @endforeach
                 </tbody>
               </table>
             </div>
 
-            <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded text-sm text-blue-800">
-              ℹ️ <strong>Showing 3 of 32 sections.</strong> Scroll down to see more | 
-              <span class="text-green-700 font-bold">✓ 25 assigned</span> | 
-              <span class="text-red-700 font-bold">❌ 8 unassigned</span> | 
-              <span class="text-orange-700 font-bold">⚠️ 3 conflicts</span>
+            <div class="mt-4 p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-800">
+              ℹ️ <strong><span id="sectionsCount">{{ $sections->count() }}</span> sections shown.</strong>
             </div>
           </div>
 
@@ -543,6 +380,28 @@ document.addEventListener('DOMContentLoaded', function() {
   const schoolLevelFilter = document.getElementById('schoolLevelFilter');
   const gradeLevelFilter = document.getElementById('gradeLevelFilter');
   
+  function updateVisibleSections() {
+    const selectedLevel = schoolLevelFilter.value; // 'all', 'jh', 'sh'
+    const selectedGrade = gradeLevelFilter.value; // 'all' or numeric string
+    const rows = document.querySelectorAll('table tbody tr[data-level]');
+    let visibleCount = 0;
+
+    rows.forEach(row => {
+      const rowLevel = row.dataset.level === 'junior' ? 'jh' : (row.dataset.level === 'senior' ? 'sh' : row.dataset.level);
+      const rowGrade = row.dataset.grade;
+      let show = true;
+
+      if (selectedLevel !== 'all' && rowLevel !== selectedLevel) show = false;
+      if (selectedGrade !== 'all' && rowGrade !== selectedGrade) show = false;
+
+      row.style.display = show ? '' : 'none';
+      if (show) visibleCount++;
+    });
+
+    const countEl = document.getElementById('sectionsCount');
+    if (countEl) countEl.textContent = visibleCount;
+  }
+  
   // Handle session type changes (Regular vs Shortened)
   sessionTypeFilter.addEventListener('change', function() {
     const sessionType = this.value;
@@ -578,8 +437,19 @@ document.addEventListener('DOMContentLoaded', function() {
         option.style.display = 'none';
       }
     });
+
+    // Update visible rows based on new filter
+    updateVisibleSections();
+  });
+
+  // Update when grade filter changes
+  gradeLevelFilter.addEventListener('change', function() {
+    updateVisibleSections();
   });
   
+  // Initialize filtered view
+  updateVisibleSections();
+
   // Handle tab switching
   const tabButtons = document.querySelectorAll('.tab-button');
   const tabContents = document.querySelectorAll('.tab-content');

@@ -88,7 +88,19 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
 
     // Schedule Maker placeholders (nav group: Schedule Maker -> Scheduler, Settings)
     Route::prefix('schedule-maker')->name('schedule-maker.')->group(function () {
-        Route::get('/scheduler', fn() => view('admin.schedule-maker.scheduler'))->name('scheduler');
+        // Show scheduler view and pass Junior High sections for the Master Schedule table
+        Route::get('/scheduler', function () {
+            $sections = \App\Models\Section::with('gradeLevel','advisor')
+                ->whereHas('gradeLevel', function ($q) {
+                    $q->where('school_stage', 'junior');
+                })
+                ->orderBy('grade_level_id')
+                ->orderBy('ordinal')
+                ->get();
+
+            return view('admin.schedule-maker.scheduler', compact('sections'));
+        })->name('scheduler');
+
         Route::get('/settings', [\App\Http\Controllers\Admin\SchedulingConfigController::class, 'index'])->name('settings');
         Route::post('/settings', [\App\Http\Controllers\Admin\SchedulingConfigController::class, 'store'])->name('settings.save');
         Route::post('/settings/qualifications', [\App\Http\Controllers\Admin\SchedulingConfigController::class, 'saveQualifications'])->name('settings.save-qualifications');

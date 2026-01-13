@@ -5,4 +5,4 @@
     <div class="mt-1 text-xs text-slate-400"><?php echo e($description); ?></div>
   <?php endif; ?>
 </div>
-<?php /**PATH C:\xampp\htdocs\TuroTugma\resources\views/components/admin/metric-card.blade.php ENDPATH**/ ?>
+<?php /**PATH C:\Users\Admin\TuroTugma\resources\views/components/admin/metric-card.blade.php ENDPATH**/ ?>
