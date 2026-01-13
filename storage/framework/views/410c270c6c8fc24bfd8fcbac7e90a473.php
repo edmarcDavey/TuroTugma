@@ -18,4 +18,4 @@
 	</div>
 </nav>
 
-<?php /**PATH C:\xampp\htdocs\TuroTugma\resources\views/layouts/navigation.blade.php ENDPATH**/ ?>
+<?php /**PATH C:\Users\Admin\TuroTugma\resources\views/layouts/navigation.blade.php ENDPATH**/ ?>
