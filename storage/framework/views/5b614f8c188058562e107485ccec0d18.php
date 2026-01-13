@@ -180,13 +180,15 @@
                 <div class="flex items-center gap-3 flex-wrap">
                     <select id="filter-grade" class="px-3 py-2 border rounded text-sm">
                         <option value="">All Levels</option>
+                        <option value="junior-high">Junior High (Grade 7-10)</option>
+                        <option value="senior-high" disabled>Senior High (Coming Soon)</option>
                         <?php $__currentLoopData = $gradeLevels; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $gl): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                            <?php if(in_array($gl->name, ['Grade 7', 'Grade 8', 'Grade 9', 'Grade 10'])): ?>
-                                <option value="<?php echo e($gl->id); ?>"><?php echo e($gl->name); ?></option>
+                            <?php if(in_array($gl->name, ['Grade 11', 'Grade 12'])): ?>
+                                <option value="<?php echo e($gl->id); ?>" disabled><?php echo e($gl->name); ?> (Coming Soon)</option>
                             <?php endif; ?>
                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                     </select>
-                    <select id="filter-strand" class="px-3 py-2 border rounded text-sm">
+                    <select id="filter-strand" class="px-3 py-2 border rounded text-sm opacity-50 cursor-not-allowed" disabled>
                         <option value="">All Strands</option>
                         <?php $__currentLoopData = $strands; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $st): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                             <option value="<?php echo e($st->id); ?>"><?php echo e($st->name); ?></option>
@@ -212,7 +214,6 @@
                         <tr>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase">Subject Name</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase">Code</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase">Grade Level</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase">Strand</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase">Type</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase">Hours/Week</th>
@@ -224,7 +225,6 @@
                             <tr class="hover:bg-slate-50" data-subject-id="<?php echo e($subj->id); ?>" data-grade-ids="<?php echo e($subj->gradeLevels->pluck('id')->join(',')); ?>" data-strand-id="<?php echo e($subj->strand_id ?? ''); ?>" data-type="<?php echo e($subj->type); ?>">
                                 <td class="px-4 py-3 font-medium text-slate-900"><?php echo e($subj->name); ?></td>
                                 <td class="px-4 py-3 text-sm text-slate-600"><?php echo e($subj->code ?? '—'); ?></td>
-                                <td class="px-4 py-3 text-sm text-slate-600"><?php echo e($subj->gradeLevels->pluck('name')->join(', ')); ?></td>
                                 <td class="px-4 py-3 text-sm">
                                     <?php if($subj->strand): ?>
                                         <span class="px-2 py-1 text-xs font-semibold rounded bg-purple-100 text-purple-800"><?php echo e($subj->strand->name); ?></span>
@@ -292,7 +292,7 @@
                                     
                                     <?php $__currentLoopData = $gradeLevels->whereIn('name', ['Grade 11', 'Grade 12']); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $gl): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                         <label class="inline-flex items-center opacity-50 cursor-not-allowed">
-                                            <input type="checkbox" name="grade_levels[]" value="<?php echo e($gl->id); ?>" class="mr-2" disabled>
+                                            <input type="checkbox" name="grade_levels[]" value="<?php echo e($gl->id); ?>" class="mr-2" disabled data-shs="1">
                                             <span class="text-sm"><?php echo e($gl->name); ?></span>
                                             <span class="text-xs text-amber-600 ml-1">(Coming Soon)</span>
                                         </label>
@@ -304,7 +304,7 @@
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1">Strand (Senior High only)</label>
-                                <select id="subject-strand" name="strand_id" class="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-[#3b4197]">
+                                <select id="subject-strand" name="strand_id" class="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-[#3b4197] opacity-50 cursor-not-allowed" disabled>
                                     <option value="">None</option>
                                     <?php $__currentLoopData = $strands; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $st): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                         <option value="<?php echo e($st->id); ?>"><?php echo e($st->name); ?></option>
@@ -409,6 +409,23 @@
         const toggleBase = '/admin/subjects';
 
         const SHS_TRACK_OPTIONS = ['STEM','ABM','HUMSS','TVL','GAS'];
+
+        // Restore active tab from sessionStorage
+        window.addEventListener('load', function() {
+            const savedTab = sessionStorage.getItem('activeTab');
+            if (savedTab) {
+                const tabBtn = document.getElementById(savedTab);
+                if (tabBtn) {
+                    document.querySelectorAll('.ss-tab').forEach(t => t.setAttribute('aria-pressed', 'false'));
+                    tabBtn.setAttribute('aria-pressed', 'true');
+                    document.querySelectorAll('[role="tabpanel"]').forEach(p => p.classList.add('hidden'));
+                    const panelId = tabBtn.getAttribute('aria-controls');
+                    const panel = document.getElementById(panelId);
+                    if (panel) panel.classList.remove('hidden');
+                    sessionStorage.removeItem('activeTab');
+                }
+            }
+        });
 
         function getInputsForGrade(gradeId, container=null){
             container = container || document;
@@ -1478,14 +1495,20 @@
         const btnAddSubject = document.getElementById('btn-add-subject');
         const btnCloseModal = document.getElementById('close-modal');
         const btnCancelModal = document.getElementById('cancel-modal');
+        const subjectStrand = document.getElementById('subject-strand');
 
         // Filter functionality
         const filterGrade = document.getElementById('filter-grade');
         const filterStrand = document.getElementById('filter-strand');
         const filterType = document.getElementById('filter-type');
 
+        // Get all Junior High grade IDs for filtering
+        const juniorHighGradeIds = Array.from(document.querySelectorAll('input[id="junior-high-checkbox"]')).length > 0 
+            ? JSON.parse(document.querySelector('input[id="junior-high-checkbox"]')?.getAttribute('data-grade-ids') || '[]')
+            : [];
+
         function applyFilters() {
-            const gradeId = filterGrade.value;
+            const gradeFilter = filterGrade.value;
             const strandId = filterStrand.value;
             const type = filterType.value;
 
@@ -1493,9 +1516,15 @@
             rows.forEach(row => {
                 let show = true;
                 
-                if (gradeId) {
-                    const gradeIds = row.dataset.gradeIds.split(',');
-                    show = show && gradeIds.includes(gradeId);
+                if (gradeFilter) {
+                    const gradeIds = row.dataset.gradeIds.split(',').filter(id => id);
+                    if (gradeFilter === 'junior-high') {
+                        // Show if row has ANY Junior High grade
+                        show = show && gradeIds.length > 0;
+                    } else {
+                        // Show if row has the specific grade ID
+                        show = show && gradeIds.includes(gradeFilter);
+                    }
                 }
                 
                 if (strandId) {
@@ -1517,7 +1546,27 @@
             }
         }
 
-        if (filterGrade) filterGrade.addEventListener('change', applyFilters);
+        // Update strand filter visibility based on grade selection
+        function updateStrandFilterState() {
+            if (!filterStrand) return;
+            const gradeFilter = filterGrade.value;
+            const isSH = gradeFilter === 'senior-high' || (gradeFilter && parseInt(gradeFilter) > 10);
+            if (isSH) {
+                filterStrand.disabled = false;
+                filterStrand.classList.remove('opacity-50', 'cursor-not-allowed');
+            } else {
+                filterStrand.value = '';
+                filterStrand.disabled = true;
+                filterStrand.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+        }
+
+        if (filterGrade) {
+            filterGrade.addEventListener('change', () => {
+                updateStrandFilterState();
+                applyFilters();
+            });
+        }
         if (filterStrand) filterStrand.addEventListener('change', applyFilters);
         if (filterType) filterType.addEventListener('change', applyFilters);
 
@@ -1529,6 +1578,7 @@
                 document.getElementById('subject-id').value = '';
                 if (juniorHighCheckbox) juniorHighCheckbox.checked = false;
                 if (juniorHighInputsContainer) juniorHighInputsContainer.innerHTML = '';
+                updateStrandLock();
                 openModal();
             });
         }
@@ -1548,10 +1598,24 @@
         if (btnCloseModal) btnCloseModal.addEventListener('click', closeModal);
         if (btnCancelModal) btnCancelModal.addEventListener('click', closeModal);
 
-        // Handle Junior High checkbox
+        // Handle Junior High checkbox and strand lock (SHS only)
         const juniorHighCheckbox = document.getElementById('junior-high-checkbox');
         const juniorHighInputsContainer = document.getElementById('junior-high-inputs');
-        
+
+        function updateStrandLock() {
+            if (!subjectStrand) return;
+            const shChecks = document.querySelectorAll('input[name="grade_levels[]"][data-shs="1"]');
+            const anySH = Array.from(shChecks).some(cb => cb.checked && !cb.disabled);
+            if (anySH) {
+                subjectStrand.disabled = false;
+                subjectStrand.classList.remove('opacity-50','cursor-not-allowed');
+            } else {
+                subjectStrand.value = '';
+                subjectStrand.disabled = true;
+                subjectStrand.classList.add('opacity-50','cursor-not-allowed');
+            }
+        }
+
         if (juniorHighCheckbox) {
             juniorHighCheckbox.addEventListener('change', function() {
                 const gradeIds = JSON.parse(this.getAttribute('data-grade-ids'));
@@ -1566,8 +1630,14 @@
                         juniorHighInputsContainer.appendChild(input);
                     });
                 }
+                updateStrandLock();
             });
         }
+
+        // Senior High checkboxes (future use) toggle strand state
+        document.querySelectorAll('input[name="grade_levels[]"][data-shs="1"]').forEach(cb => {
+            cb.addEventListener('change', updateStrandLock);
+        });
 
         // Edit subject
         document.addEventListener('click', async function(e) {
@@ -1585,7 +1655,7 @@
                     document.getElementById('subject-id').value = s.id;
                     document.getElementById('subject-name-input').value = s.name || '';
                     document.getElementById('subject-code').value = s.code || '';
-                    document.getElementById('subject-strand').value = s.strand_id || '';
+                    if (subjectStrand) subjectStrand.value = s.strand_id || '';
                     document.getElementById('subject-type').value = s.type || '';
                     document.getElementById('subject-hours').value = s.hours_per_week || '';
 
@@ -1601,6 +1671,9 @@
                         if (hasJuniorHigh) juniorHighCheckbox.dispatchEvent(new Event('change'));
                         else if (juniorHighInputsContainer) juniorHighInputsContainer.innerHTML = '';
                     }
+
+                    // Update strand lock based on SHS selection (or absence)
+                    updateStrandLock();
 
                     // Check individual grade levels (for Grade 11 and 12 when enabled)
                     document.querySelectorAll('input[name="grade_levels[]"]:not([disabled])').forEach(cb => {
@@ -1666,7 +1739,7 @@
                 const data = {
                     name: formData.get('name'),
                     code: formData.get('code'),
-                    strand_id: formData.get('strand_id') || null,
+                    strand_id: subjectStrand && !subjectStrand.disabled ? (formData.get('strand_id') || null) : null,
                     type: formData.get('type'),
                     hours_per_week: formData.get('hours_per_week'),
                     grade_levels: formData.getAll('grade_levels[]')
@@ -1690,6 +1763,9 @@
 
                     if (resp.ok) {
                         closeModal();
+                        // Store active tab before reload
+                        const activeTab = document.querySelector('.ss-tab[aria-pressed="true"]')?.id || 'tab-sections';
+                        sessionStorage.setItem('activeTab', activeTab);
                         // Reload page to refresh the table
                         window.location.reload();
                     } else {

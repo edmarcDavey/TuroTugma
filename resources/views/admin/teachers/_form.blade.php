@@ -108,19 +108,7 @@
         <p class="text-xs text-slate-500 mt-1">Keep it short — a brief note about additional duties (optional).</p>
       </div>
 
-      <div class="bg-blue-50 border-2 border-blue-200 rounded-md p-3">
-    <label for="advisory" class="block text-sm font-medium text-blue-900">📌 Class Advisory Assignment</label>
-    <select id="advisory" name="advisory" class="mt-2 block w-full border border-blue-300 rounded-md p-2 h-11 bg-white box-border">
-          <option value="">-- Not an Adviser --</option>
-          @foreach($sections as $section)
-            <option value="{{ $section->id }}" @if(old('advisory', $teacher->advisory ?? '') == $section->id) selected @endif>{{ $section->name }}</option>
-          @endforeach
-        </select>
-    <p class="text-xs text-blue-700 mt-1">👥 Assign this teacher as the class adviser for a specific section.</p>
-      </div>
-    </div>
-
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">      <div>
+      <div>
   <label for="avail-control" class="block text-sm font-medium">Unavailable Periods</label>
       <input type="hidden" id="advisory-input" name="advisory" value="{{ old('advisory', $teacher->advisory ?? '') }}">
 
