@@ -80,7 +80,7 @@
 
   <div>
     <label for="phone" class="block text-sm font-medium">Phone / Contact <span class="text-red-600">*</span></label>
-    <input id="phone" name="phone" required value="<?php echo e(old('phone', $teacher->phone ?? '')); ?>" class="mt-1 block w-full border border-gray-300 rounded-md p-2 h-11 bg-white box-border" />
+    <input id="phone" name="contact" required value="<?php echo e(old('contact', $teacher->contact ?? '')); ?>" class="mt-1 block w-full border border-gray-300 rounded-md p-2 h-11 bg-white box-border" />
   </div>
     </div>
 
@@ -261,15 +261,48 @@
     function initTeacherFormEnforcements(){
       const phone = document.getElementById('phone');
       if (phone) {
-        phone.setAttribute('inputmode', 'numeric');
-        phone.setAttribute('pattern', '[0-9]*');
-        // enforce numeric by filtering non-digits on input
+        phone.setAttribute('inputmode', 'tel');
+        // Allow only digits and + symbol at start
         phone.addEventListener('input', function(){
           const pos = this.selectionStart;
-          const newVal = this.value.replace(/\D+/g, '');
+          // Allow + only at the beginning, followed by digits
+          let newVal = this.value;
+          if (newVal.startsWith('+')) {
+            newVal = '+' + newVal.slice(1).replace(/\D+/g, '');
+          } else {
+            newVal = newVal.replace(/\D+/g, '');
+          }
           if (this.value !== newVal) {
             this.value = newVal;
-            try { this.setSelectionRange(pos-1, pos-1); } catch(e){}
+            try { this.setSelectionRange(pos, pos); } catch(e){}
+          }
+        });
+      }
+      
+      // Normalize phone number before form submission
+      const form = document.getElementById('teacher-form');
+      if (form && phone) {
+        form.addEventListener('submit', function(e) {
+          const phoneValue = phone.value.trim();
+          if (phoneValue) {
+            // Normalize to +639XXXXXXXXX format
+            let normalized = phoneValue;
+            
+            if (/^9\d{9}$/.test(phoneValue)) {
+              // Format: 9XXXXXXXXX (10 digits)
+              normalized = '+63' + phoneValue;
+            } else if (/^09\d{9}$/.test(phoneValue)) {
+              // Format: 09XXXXXXXXX (11 digits)
+              normalized = '+63' + phoneValue.slice(1);
+            } else if (/^63\d{10}$/.test(phoneValue)) {
+              // Format: 63XXXXXXXXXX (12 digits)
+              normalized = '+' + phoneValue;
+            } else if (/^\+63\d{10}$/.test(phoneValue)) {
+              // Already in correct format
+              normalized = phoneValue;
+            }
+            
+            phone.value = normalized;
           }
         });
       }
@@ -340,8 +373,20 @@
         const emailInput = document.getElementById('email');
         if (!emailInput.value.trim()) issues.push('Email is required');
         
-        const phoneInput = document.getElementById('contact');
-        if (!phoneInput.value.trim()) issues.push('Phone is required');
+        const phoneInput = document.getElementById('phone');
+        const phoneValue = phoneInput.value.trim();
+        if (!phoneValue) {
+          issues.push('Phone is required');
+        } else {
+          // Validate Philippine phone formats
+          const isValid = /^9\d{9}$/.test(phoneValue) ||        // 9XXXXXXXXX (10 digits)
+                         /^09\d{9}$/.test(phoneValue) ||       // 09XXXXXXXXX (11 digits)
+                         /^63\d{10}$/.test(phoneValue) ||      // 63XXXXXXXXXX (12 digits)
+                         /^\+63\d{10}$/.test(phoneValue);      // +63XXXXXXXXXX (13 chars)
+          if (!isValid) {
+            issues.push('Phone must be a valid Philippine number (e.g., 09XXXXXXXXX or +639XXXXXXXXX)');
+          }
+        }
         
         // Check relationships
         const subjectsNative = document.getElementById('subjects-native');
@@ -371,12 +416,152 @@
         field.addEventListener('change', validateForm);
       });
       
-      // Initial validation
-      validateForm();
+      // Don't validate on page load - only on user interaction or submit
     }
 
     // run validation immediately
     try { initValidation(); } catch(e){ console.error('initValidation failed', e); }
+    
+    // Initialize multi-select dropdowns (subjects, grade levels, availability)
+    function initMultiSelects() {
+      // Subject expertise dropdown
+      const subjectsControl = document.getElementById('subjects-control');
+      const subjectsDropdown = subjectsControl?.parentElement.querySelector('.ms-dropdown');
+      const subjectsToggle = document.getElementById('ms-toggle');
+      const subjectsNative = document.getElementById('subjects-native');
+      const subjectsTokens = document.getElementById('ms-tokens');
+      const subjectsSearch = subjectsControl?.parentElement.querySelector('.ms-search input');
+      
+      if (subjectsToggle && subjectsDropdown) {
+        subjectsToggle.addEventListener('click', (e) => {
+          e.preventDefault();
+          subjectsDropdown.style.display = subjectsDropdown.style.display === 'none' ? 'block' : 'none';
+          if (subjectsSearch) subjectsSearch.focus();
+        });
+      }
+      
+      // Grade levels dropdown
+      const gradeControl = document.getElementById('grade-control');
+      const gradeDropdown = gradeControl?.parentElement.querySelector('.ms-dropdown');
+      const gradeToggle = document.getElementById('grade-toggle');
+      const gradeNative = document.getElementById('grade-levels-native');
+      const gradeTokens = document.getElementById('grade-tokens');
+      const gradeSearch = gradeControl?.parentElement.querySelector('.ms-search input');
+      
+      if (gradeToggle && gradeDropdown) {
+        gradeToggle.addEventListener('click', (e) => {
+          e.preventDefault();
+          gradeDropdown.style.display = gradeDropdown.style.display === 'none' ? 'block' : 'none';
+          if (gradeSearch) gradeSearch.focus();
+        });
+      }
+      
+      // Availability periods dropdown
+      const availControl = document.getElementById('avail-control');
+      const availDropdown = availControl?.parentElement.querySelector('.ms-dropdown');
+      const availToggle = document.getElementById('avail-toggle');
+      const availNative = document.getElementById('availability-native');
+      
+      if (availToggle && availDropdown) {
+        availToggle.addEventListener('click', (e) => {
+          e.preventDefault();
+          availDropdown.style.display = availDropdown.style.display === 'none' ? 'block' : 'none';
+        });
+      }
+      
+      // Update tokens display for subjects
+      function updateSubjectsDisplay() {
+        if (!subjectsTokens || !subjectsNative) return;
+        const selected = Array.from(subjectsNative.options).filter(o => o.selected);
+        subjectsTokens.innerHTML = selected.map(o => `
+          <div class="ms-token">
+            ${o.text}
+            <button type="button" data-value="${o.value}" class="remove-token">✕</button>
+          </div>
+        `).join('');
+      }
+      
+      // Update tokens display for grades
+      function updateGradesDisplay() {
+        if (!gradeTokens || !gradeNative) return;
+        const selected = Array.from(gradeNative.options).filter(o => o.selected);
+        gradeTokens.innerHTML = selected.map(o => `
+          <div class="ms-token">
+            ${o.text}
+            <button type="button" data-value="${o.value}" class="remove-token">✕</button>
+          </div>
+        `).join('');
+      }
+      
+      // Subject checkbox changes
+      if (subjectsControl) {
+        subjectsControl.addEventListener('change', (e) => {
+          if (e.target.classList.contains('ms-checkbox')) {
+            const id = e.target.dataset.id;
+            const option = Array.from(subjectsNative.options).find(o => o.value === id);
+            if (option) option.selected = e.target.checked;
+            updateSubjectsDisplay();
+          }
+        });
+      }
+      
+      // Grade checkbox changes
+      if (gradeControl) {
+        gradeControl.addEventListener('change', (e) => {
+          if (e.target.classList.contains('ms-checkbox')) {
+            const id = e.target.dataset.id;
+            const option = Array.from(gradeNative.options).find(o => o.value === id);
+            if (option) option.selected = e.target.checked;
+            updateGradesDisplay();
+          } else if (e.target.id === 'grade-select-all') {
+            Array.from(gradeNative.options).forEach(o => o.selected = e.target.checked);
+            gradeControl.querySelectorAll('.ms-checkbox').forEach(cb => cb.checked = e.target.checked);
+            updateGradesDisplay();
+          }
+        });
+      }
+      
+      // Close dropdowns on outside click
+      document.addEventListener('click', (e) => {
+        if (subjectsControl && !subjectsControl.parentElement.contains(e.target) && subjectsDropdown) {
+          subjectsDropdown.style.display = 'none';
+        }
+        if (gradeControl && !gradeControl.parentElement.contains(e.target) && gradeDropdown) {
+          gradeDropdown.style.display = 'none';
+        }
+        if (availControl && !availControl.parentElement.contains(e.target) && availDropdown) {
+          availDropdown.style.display = 'none';
+        }
+      });
+      
+      // Search filter for subjects
+      if (subjectsSearch && subjectsControl) {
+        subjectsSearch.addEventListener('input', (e) => {
+          const term = e.target.value.toLowerCase();
+          subjectsControl.parentElement.querySelectorAll('.ms-item').forEach(item => {
+            const text = item.textContent.toLowerCase();
+            item.style.display = text.includes(term) ? '' : 'none';
+          });
+        });
+      }
+      
+      // Search filter for grades
+      if (gradeSearch && gradeControl) {
+        gradeSearch.addEventListener('input', (e) => {
+          const term = e.target.value.toLowerCase();
+          gradeControl.parentElement.querySelectorAll('.ms-item').forEach(item => {
+            const text = item.textContent.toLowerCase();
+            item.style.display = text.includes(term) ? '' : 'none';
+          });
+        });
+      }
+      
+      // Initial display
+      updateSubjectsDisplay();
+      updateGradesDisplay();
+    }
+    
+    try { initMultiSelects(); } catch(e){ console.error('initMultiSelects failed', e); }
     
     // run immediately
     try { initTeacherFormEnforcements(); } catch(e){ console.error('initTeacherFormEnforcements failed', e); }

@@ -147,14 +147,27 @@ class TeacherController extends Controller
             'course_minor' => 'nullable|string|max:255',
             'number_handled_per_week' => 'nullable|integer|min:0|max:8',
             'advisory' => 'nullable|string|max:255',
-            'email' => 'nullable|email',
-            'contact' => 'nullable|string|max:64',
+            'email' => 'required|email',
+            'contact' => ['required', 'string', 'regex:/^(9\d{9}|09\d{9}|63\d{10}|\+63\d{10})$/'],
             'max_load_per_week' => 'nullable|integer|min:0',
             'max_load_per_day' => 'nullable|integer|min:0',
             'subjects' => 'required|array|min:1',
             'grade_levels' => 'required|array|min:1',
             'availability' => 'nullable|array',
         ]);
+        
+        // Normalize phone number to +639XXXXXXXXX format
+        if (isset($data['contact'])) {
+            $phone = $data['contact'];
+            if (preg_match('/^9\d{9}$/', $phone)) {
+                $data['contact'] = '+63' . $phone;
+            } elseif (preg_match('/^09\d{9}$/', $phone)) {
+                $data['contact'] = '+63' . substr($phone, 1);
+            } elseif (preg_match('/^63\d{10}$/', $phone)) {
+                $data['contact'] = '+' . $phone;
+            }
+            // If already +63XXXXXXXXXX, leave as is
+        }
 
         $teacher = Teacher::create($data);
 
@@ -283,14 +296,27 @@ class TeacherController extends Controller
             'course_minor' => 'nullable|string|max:255',
             'number_handled_per_week' => 'nullable|integer|min:0|max:8',
             'advisory' => 'nullable|string|max:255',
-            'email' => 'nullable|email',
-            'contact' => 'nullable|string|max:64',
+            'email' => 'required|email',
+            'contact' => ['required', 'string', 'regex:/^(9\d{9}|09\d{9}|63\d{10}|\+63\d{10})$/'],
             'max_load_per_week' => 'nullable|integer|min:0',
             'max_load_per_day' => 'nullable|integer|min:0',
             'subjects' => 'required|array|min:1',
             'grade_levels' => 'required|array|min:1',
             'availability' => 'nullable|array',
         ]);
+        
+        // Normalize phone number to +639XXXXXXXXX format
+        if (isset($data['contact'])) {
+            $phone = $data['contact'];
+            if (preg_match('/^9\d{9}$/', $phone)) {
+                $data['contact'] = '+63' . $phone;
+            } elseif (preg_match('/^09\d{9}$/', $phone)) {
+                $data['contact'] = '+63' . substr($phone, 1);
+            } elseif (preg_match('/^63\d{10}$/', $phone)) {
+                $data['contact'] = '+' . $phone;
+            }
+            // If already +63XXXXXXXXXX, leave as is
+        }
 
         $teacher->update($data);
         $teacher->subjects()->sync($data['subjects'] ?? []);
