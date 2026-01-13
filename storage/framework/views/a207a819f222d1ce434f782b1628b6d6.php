@@ -4,8 +4,26 @@
 <?php $__env->startSection('heading','Schedule Maker — Scheduler'); ?>
 
 <?php $__env->startSection('content'); ?>
+<style>
+  /* Hide dropdown arrows */
+  .subject-dropdown, .teacher-dropdown {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: none;
+  }
+</style>
+
 <div class="min-h-screen bg-white p-6">
   <div class="max-w-full mx-auto">
+
+    
+    <script>
+      window.schedulerData = {
+        subjects: <?php echo json_encode($subjects, 15, 512) ?>,
+        teachers: <?php echo json_encode($teachers, 15, 512) ?>
+      };
+    </script>
 
     <!-- Main Content: Full Width Schedule -->
     <!-- Tabs Navigation -->
@@ -65,7 +83,7 @@
               <div class="flex-1"></div>
               
               <button class="px-4 py-2 bg-blue-600 text-white rounded text-sm font-semibold hover:bg-blue-700">
-                🔄 Refresh
+                ✨ Autofill
               </button>
               <button class="px-4 py-2 bg-slate-200 text-slate-700 rounded text-sm font-semibold hover:bg-slate-300">
                 📥 Export
@@ -90,179 +108,27 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <!-- Row -->
+                  <?php $__currentLoopData = $sections; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $section): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                  <!-- Row for <?php echo e($section->name); ?> -->
                   <tr class="border-b hover:bg-blue-50">
-                    <td class="px-4 py-3 font-semibold text-slate-900">Grade 7-Rizal</td>
-                    <td class="px-4 py-3 text-center">
-                      <div class="text-xs p-1">
-                        <div class="text-blue-600 font-bold">Math</div>
-                        <div class="text-black">Mr. Cruz</div>
-                        <div class="text-xs text-slate-600">[Adviser]</div>
+                    <td class="px-4 py-3 font-semibold text-slate-900"><?php echo e($section->grade_level_id + 6); ?>-<?php echo e($section->name); ?></td>
+                    <?php for($period = 1; $period <= 9; $period++): ?>
+                    <td class="px-4 py-3 text-center schedule-cell" data-section="<?php echo e($section->name); ?>" data-period="<?php echo e($period); ?>">
+                      <div class="p-1">
+                        <select class="subject-dropdown w-full px-1 py-1 text-xs border border-slate-300 rounded mb-1">
+                          <option value="">Select Subject</option>
+                          <?php $__currentLoopData = $subjects; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $subject): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <option value="<?php echo e($subject->id); ?>"><?php echo e($subject->name); ?></option>
+                          <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                        </select>
+                        <select class="teacher-dropdown w-full px-1 py-1 text-xs border border-slate-300 rounded">
+                          <option value="">Assign Teacher</option>
+                        </select>
                       </div>
                     </td>
-                    <td class="px-4 py-3 text-center">
-                      <div class="text-xs p-1">
-                        <div class="text-blue-600 font-bold">English</div>
-                        <div class="text-black">Ms. Santos</div>
-                      </div>
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                      <div class="text-xs p-1">
-                        <div class="text-blue-600 font-bold">Science</div>
-                        <div class="text-black">Mr. Reyes</div>
-                      </div>
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                      <div class="text-xs p-1">
-                        <div class="text-blue-600 font-bold">Filipino</div>
-                        <div class="text-black">Ms. Garcia</div>
-                      </div>
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                      <div class="text-xs p-1">
-                        <div class="text-blue-600 font-bold">Soc. Stud.</div>
-                        <div class="text-black">Mr. Lopez</div>
-                      </div>
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                      <div class="text-xs p-1">
-                        <div class="text-blue-600 font-bold">PE</div>
-                        <div class="text-black">Mr. Santos</div>
-                      </div>
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                      <div class="text-xs p-1">
-                        <div class="text-blue-600 font-bold">Values</div>
-                        <div class="text-black">Ms. Ramos</div>
-                      </div>
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                      <div class="text-xs p-1">
-                        <div class="text-blue-600 font-bold">TLE</div>
-                        <div class="text-black">Mr. Navarro</div>
-                      </div>
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                      <div class="bg-slate-100 text-slate-600 text-xs font-bold p-1 rounded italic">
-                        Unassigned
-                      </div>
-                    </td>
+                    <?php endfor; ?>
                   </tr>
-                  <!-- Row -->
-                  <tr class="border-b hover:bg-blue-50">
-                    <td class="px-4 py-3 font-semibold text-slate-900">Grade 7-Bonifacio</td>
-                    <td class="px-4 py-3 text-center">
-                      <div class="text-xs p-1">
-                        <div class="text-blue-600 font-bold">Math</div>
-                        <div class="text-black">Ms. Ramos</div>
-                        <div class="text-xs text-slate-600">[Adviser]</div>
-                      </div>
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                      <div class="text-xs p-1">
-                        <div class="text-blue-600 font-bold">English</div>
-                        <div class="text-black">Mr. Lopez</div>
-                      </div>
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                      <div class="text-xs p-1">
-                        <div class="text-blue-600 font-bold">Science</div>
-                        <div class="text-black">Ms. Navarro</div>
-                      </div>
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                      <div class="text-xs p-1">
-                        <div class="text-blue-600 font-bold">Filipino</div>
-                        <div class="text-black">Mr. Gonzales</div>
-                      </div>
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                      <div class="bg-red-100 text-red-800 text-xs font-bold p-1 rounded">
-                        ⚠️ Conflict
-                      </div>
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                      <div class="text-xs p-1">
-                        <div class="text-blue-600 font-bold">PE</div>
-                        <div class="text-black">Ms. Torres</div>
-                      </div>
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                      <div class="text-xs p-1">
-                        <div class="text-blue-600 font-bold">Values</div>
-                        <div class="text-black">Mr. Silva</div>
-                      </div>
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                      <div class="text-xs p-1">
-                        <div class="text-blue-600 font-bold">TLE</div>
-                        <div class="text-black">Ms. Cruz</div>
-                      </div>
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                      <div class="bg-slate-100 text-slate-600 text-xs font-bold p-1 rounded italic">
-                        Unassigned
-                      </div>
-                    </td>
-                  </tr>
-                  <!-- Row -->
-                  <tr class="border-b hover:bg-blue-50">
-                    <td class="px-4 py-3 font-semibold text-slate-900">Grade 8-Aguinaldo</td>
-                    <td class="px-4 py-3 text-center">
-                      <div class="text-xs p-1">
-                        <div class="text-blue-600 font-bold">Math</div>
-                        <div class="text-black">Mr. Fernandez</div>
-                        <div class="text-xs text-slate-600">[Adviser]</div>
-                      </div>
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                      <div class="text-xs p-1">
-                        <div class="text-blue-600 font-bold">English</div>
-                        <div class="text-black">Ms. Mendoza</div>
-                      </div>
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                      <div class="text-xs p-1">
-                        <div class="text-blue-600 font-bold">Science</div>
-                        <div class="text-black">Mr. Torres</div>
-                      </div>
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                      <div class="text-xs p-1">
-                        <div class="text-blue-600 font-bold">Filipino</div>
-                        <div class="text-black">Ms. Silva</div>
-                      </div>
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                      <div class="text-xs p-1">
-                        <div class="text-blue-600 font-bold">Soc. Stud.</div>
-                        <div class="text-black">Mr. Santos</div>
-                      </div>
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                      <div class="text-xs p-1">
-                        <div class="text-blue-600 font-bold">PE</div>
-                        <div class="text-black">Ms. Garcia</div>
-                      </div>
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                      <div class="text-xs p-1">
-                        <div class="text-blue-600 font-bold">Values</div>
-                        <div class="text-black">Mr. Reyes</div>
-                      </div>
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                      <div class="text-xs p-1">
-                        <div class="text-blue-600 font-bold">TLE</div>
-                        <div class="text-black">Mr. Cruz</div>
-                      </div>
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                      <div class="bg-slate-100 text-slate-600 text-xs font-bold p-1 rounded italic">
-                        Unassigned
-                      </div>
-                    </td>
-                  </tr>
+                  <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </tbody>
               </table>
             </div>
@@ -607,6 +473,74 @@ document.addEventListener('DOMContentLoaded', function() {
       document.getElementById('tab-' + targetTab).classList.remove('hidden');
     });
   });
+  
+  // Initialize all schedule cells with dropdown functionality
+  document.querySelectorAll('.schedule-cell').forEach(cell => {
+    const subjectDropdown = cell.querySelector('.subject-dropdown');
+    const teacherDropdown = cell.querySelector('.teacher-dropdown');
+    
+    if (!subjectDropdown || !teacherDropdown) return;
+    
+    // Function to update teacher dropdown based on selected subject
+    function updateTeacherDropdown() {
+      const selectedSubjectId = parseInt(subjectDropdown.value);
+      const currentTeacher = teacherDropdown.value;
+      
+      teacherDropdown.innerHTML = '<option value="">Assign Teacher</option>';
+      
+      if (selectedSubjectId) {
+        const selectedSubject = window.schedulerData.subjects.find(s => s.id === selectedSubjectId);
+        
+        if (selectedSubject && selectedSubject.teachers) {
+          selectedSubject.teachers.forEach(teacher => {
+            const option = document.createElement('option');
+            option.value = teacher.id;
+            option.textContent = teacher.name;
+            if (teacher.id == currentTeacher) {
+              option.selected = true;
+            }
+            teacherDropdown.appendChild(option);
+          });
+        }
+      }
+    }
+    
+    // Initialize teacher dropdown on page load
+    updateTeacherDropdown();
+    
+    // When subject changes, update teacher dropdown
+    subjectDropdown.addEventListener('change', function() {
+      updateTeacherDropdown();
+      saveScheduleChange(cell, subjectDropdown, teacherDropdown);
+    });
+    
+    // When teacher changes, save
+    teacherDropdown.addEventListener('change', function() {
+      saveScheduleChange(cell, subjectDropdown, teacherDropdown);
+    });
+  });
+  
+  // Function to save schedule changes
+  function saveScheduleChange(cell, subjectDropdown, teacherDropdown) {
+    const subjectId = subjectDropdown.value;
+    const teacherId = teacherDropdown.value;
+    
+    if (!subjectId || !teacherId) return;
+    
+    const subject = window.schedulerData.subjects.find(s => s.id == subjectId);
+    const teacher = window.schedulerData.teachers.find(t => t.id == teacherId);
+    
+    console.log('Schedule updated:', {
+      section: cell.dataset.section,
+      period: cell.dataset.period,
+      subjectId: subjectId,
+      subject: subject?.name,
+      teacherId: teacherId,
+      teacher: teacher?.name
+    });
+    
+    // TODO: Save to database via AJAX
+  }
 });
 </script>
 <?php $__env->stopSection(); ?>

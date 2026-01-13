@@ -88,7 +88,17 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
 
     // Schedule Maker placeholders (nav group: Schedule Maker -> Scheduler, Settings)
     Route::prefix('schedule-maker')->name('schedule-maker.')->group(function () {
-        Route::get('/scheduler', fn() => view('admin.schedule-maker.scheduler'))->name('scheduler');
+        Route::get('/scheduler', function() {
+            $subjects = \App\Models\Subject::with('teachers')->orderBy('name')->get();
+            $teachers = \App\Models\Teacher::with('subjects')->orderBy('name')->get();
+            // Get Junior High sections only (grade level IDs 1-4 which are Grade 7-10)
+            $sections = \App\Models\Section::with('gradeLevel')
+                ->whereIn('grade_level_id', [1, 2, 3, 4])
+                ->orderBy('grade_level_id')
+                ->orderBy('name')
+                ->get();
+            return view('admin.schedule-maker.scheduler', compact('subjects', 'teachers', 'sections'));
+        })->name('scheduler');
         Route::get('/settings', [\App\Http\Controllers\Admin\SchedulingConfigController::class, 'index'])->name('settings');
         Route::post('/settings', [\App\Http\Controllers\Admin\SchedulingConfigController::class, 'store'])->name('settings.save');
         Route::post('/settings/qualifications', [\App\Http\Controllers\Admin\SchedulingConfigController::class, 'saveQualifications'])->name('settings.save-qualifications');
