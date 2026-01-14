@@ -58,13 +58,13 @@
             <div class="text-xs text-slate-500 font-semibold calendar-day-count" data-config="jh-regular">4 days</div>
           </div>
           <div class="flex gap-2 mb-3">
-            <button type="button" class="calendar-day" data-config="jh-regular" data-day="0" data-active="false"><div class="w-12 h-12 rounded-full border-2 bg-slate-100 border-slate-300 text-slate-400 flex items-center justify-center text-xs font-medium cursor-pointer hover:bg-slate-200">Mon</div></button>
+            <button type="button" class="calendar-day" data-config="jh-regular" data-day="0" data-active="false"><div class="w-12 h-12 rounded-full border-2 bg-white border-slate-300 text-slate-500 flex items-center justify-center text-xs font-medium cursor-pointer hover:bg-slate-50">Mon</div></button>
             <button type="button" class="calendar-day" data-config="jh-regular" data-day="1" data-active="true"><div class="w-12 h-12 rounded-full border-2 bg-blue-500 border-blue-600 text-white flex items-center justify-center text-xs font-medium cursor-pointer hover:bg-blue-600">Tue</div></button>
             <button type="button" class="calendar-day" data-config="jh-regular" data-day="2" data-active="true"><div class="w-12 h-12 rounded-full border-2 bg-blue-500 border-blue-600 text-white flex items-center justify-center text-xs font-medium cursor-pointer hover:bg-blue-600">Wed</div></button>
             <button type="button" class="calendar-day" data-config="jh-regular" data-day="3" data-active="true"><div class="w-12 h-12 rounded-full border-2 bg-blue-500 border-blue-600 text-white flex items-center justify-center text-xs font-medium cursor-pointer hover:bg-blue-600">Thu</div></button>
             <button type="button" class="calendar-day" data-config="jh-regular" data-day="4" data-active="true"><div class="w-12 h-12 rounded-full border-2 bg-blue-500 border-blue-600 text-white flex items-center justify-center text-xs font-medium cursor-pointer hover:bg-blue-600">Fri</div></button>
-            <button type="button" class="calendar-day" data-config="jh-regular" data-day="5" data-active="false"><div class="w-12 h-12 rounded-full border-2 bg-white border-slate-300 text-slate-500 flex items-center justify-center text-xs font-medium cursor-pointer hover:bg-slate-50">Sat</div></button>
-            <button type="button" class="calendar-day" data-config="jh-regular" data-day="6" data-active="false"><div class="w-12 h-12 rounded-full border-2 bg-white border-slate-300 text-slate-500 flex items-center justify-center text-xs font-medium cursor-pointer hover:bg-slate-50">Sun</div></button>
+            <button type="button" class="calendar-day" data-config="jh-regular" data-day="5" data-active="false"><div class="w-12 h-12 rounded-full border-2 bg-slate-100 border-slate-300 text-slate-400 flex items-center justify-center text-xs font-medium cursor-pointer hover:bg-slate-200">Sat</div></button>
+            <button type="button" class="calendar-day" data-config="jh-regular" data-day="6" data-active="false"><div class="w-12 h-12 rounded-full border-2 bg-slate-100 border-slate-300 text-slate-400 flex items-center justify-center text-xs font-medium cursor-pointer hover:bg-slate-200">Sun</div></button>
           </div>
         </div>
 
@@ -120,32 +120,57 @@
 
         <!-- Break Schedule -->
         <div class="border rounded-lg p-4 bg-white">
-          <h4 class="font-semibold mb-3 text-slate-800">☕ Breaks</h4>
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <div class="flex items-center gap-2 mb-1">
+          <h4 class="font-semibold mb-4 text-slate-800">☕ Breaks</h4>
+          <div class="grid grid-cols-3 gap-4">
+            <div class="border rounded-lg p-4 bg-slate-50">
+              <div class="flex items-center gap-2 mb-3">
                 <input type="checkbox" class="break-enabled" data-config="jh-regular" data-break="morning" checked />
-                <label class="text-xs text-slate-600 font-semibold">Morning</label>
+                <label class="text-sm font-semibold text-slate-700">Morning Break</label>
               </div>
-              <div class="flex items-center gap-2 text-sm">
-                <span>After P</span>
-                <input type="number" value="3" class="break-after input w-12 text-xs" data-config="jh-regular" data-break="morning" min="1" max="9" />
-                <span>for</span>
-                <input type="number" value="20" class="break-duration input w-12 text-xs" data-config="jh-regular" data-break="morning" min="5" max="60" />
-                <span class="text-xs">min</span>
+              <div class="space-y-2 text-sm">
+                <div class="flex items-center gap-2">
+                  <span class="text-slate-600 whitespace-nowrap">After P</span>
+                  <input type="number" value="3" class="break-after input w-14 px-2 py-1 border border-slate-300 rounded" data-config="jh-regular" data-break="morning" min="1" max="9" />
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-slate-600 whitespace-nowrap">Duration</span>
+                  <input type="number" value="20" class="break-duration input w-14 px-2 py-1 border border-slate-300 rounded" data-config="jh-regular" data-break="morning" min="5" max="60" />
+                  <span class="text-slate-600 text-xs">min</span>
+                </div>
               </div>
             </div>
-            <div>
-              <div class="flex items-center gap-2 mb-1">
+            <div class="border rounded-lg p-4 bg-slate-50">
+              <div class="flex items-center gap-2 mb-3">
                 <input type="checkbox" class="break-enabled" data-config="jh-regular" data-break="lunch" checked />
-                <label class="text-xs text-slate-600 font-semibold">Lunch</label>
+                <label class="text-sm font-semibold text-slate-700">Lunch Break</label>
               </div>
-              <div class="flex items-center gap-2 text-sm">
-                <span>After P</span>
-                <input type="number" value="5" class="break-after input w-12 text-xs" data-config="jh-regular" data-break="lunch" min="1" max="9" />
-                <span>for</span>
-                <input type="number" value="60" class="break-duration input w-12 text-xs" data-config="jh-regular" data-break="lunch" min="5" max="90" />
-                <span class="text-xs">min</span>
+              <div class="space-y-2 text-sm">
+                <div class="flex items-center gap-2">
+                  <span class="text-slate-600 whitespace-nowrap">After P</span>
+                  <input type="number" value="5" class="break-after input w-14 px-2 py-1 border border-slate-300 rounded" data-config="jh-regular" data-break="lunch" min="1" max="9" />
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-slate-600 whitespace-nowrap">Duration</span>
+                  <input type="number" value="60" class="break-duration input w-14 px-2 py-1 border border-slate-300 rounded" data-config="jh-regular" data-break="lunch" min="5" max="90" />
+                  <span class="text-slate-600 text-xs">min</span>
+                </div>
+              </div>
+            </div>
+            <div class="border rounded-lg p-4 bg-slate-50">
+              <div class="flex items-center gap-2 mb-3">
+                <input type="checkbox" class="break-enabled" data-config="jh-regular" data-break="afternoon" />
+                <label class="text-sm font-semibold text-slate-700">Afternoon Break</label>
+              </div>
+              <div class="space-y-2 text-sm">
+                <div class="flex items-center gap-2">
+                  <span class="text-slate-600 whitespace-nowrap">After P</span>
+                  <input type="number" value="7" class="break-after input w-14 px-2 py-1 border border-slate-300 rounded" data-config="jh-regular" data-break="afternoon" min="1" max="9" />
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-slate-600 whitespace-nowrap">Duration</span>
+                  <input type="number" value="15" class="break-duration input w-14 px-2 py-1 border border-slate-300 rounded" data-config="jh-regular" data-break="afternoon" min="5" max="60" />
+                  <span class="text-slate-600 text-xs">min</span>
+                </div>
               </div>
             </div>
           </div>
@@ -219,12 +244,12 @@
           </div>
           <div class="flex gap-2 mb-3">
             <button type="button" class="calendar-day" data-config="jh-shortened" data-day="0" data-active="true"><div class="w-12 h-12 rounded-full border-2 bg-blue-500 border-blue-600 text-white flex items-center justify-center text-xs font-medium cursor-pointer hover:bg-blue-600">Mon</div></button>
-            <button type="button" class="calendar-day" data-config="jh-shortened" data-day="1" data-active="false"><div class="w-12 h-12 rounded-full border-2 bg-slate-100 border-slate-300 text-slate-400 flex items-center justify-center text-xs font-medium cursor-pointer hover:bg-slate-200">Tue</div></button>
-            <button type="button" class="calendar-day" data-config="jh-shortened" data-day="2" data-active="false"><div class="w-12 h-12 rounded-full border-2 bg-slate-100 border-slate-300 text-slate-400 flex items-center justify-center text-xs font-medium cursor-pointer hover:bg-slate-200">Wed</div></button>
-            <button type="button" class="calendar-day" data-config="jh-shortened" data-day="3" data-active="false"><div class="w-12 h-12 rounded-full border-2 bg-slate-100 border-slate-300 text-slate-400 flex items-center justify-center text-xs font-medium cursor-pointer hover:bg-slate-200">Thu</div></button>
-            <button type="button" class="calendar-day" data-config="jh-shortened" data-day="4" data-active="false"><div class="w-12 h-12 rounded-full border-2 bg-slate-100 border-slate-300 text-slate-400 flex items-center justify-center text-xs font-medium cursor-pointer hover:bg-slate-200">Fri</div></button>
-            <button type="button" class="calendar-day" data-config="jh-shortened" data-day="5" data-active="false"><div class="w-12 h-12 rounded-full border-2 bg-white border-slate-300 text-slate-500 flex items-center justify-center text-xs font-medium cursor-pointer hover:bg-slate-50">Sat</div></button>
-            <button type="button" class="calendar-day" data-config="jh-shortened" data-day="6" data-active="false"><div class="w-12 h-12 rounded-full border-2 bg-white border-slate-300 text-slate-500 flex items-center justify-center text-xs font-medium cursor-pointer hover:bg-slate-50">Sun</div></button>
+            <button type="button" class="calendar-day" data-config="jh-shortened" data-day="1" data-active="false"><div class="w-12 h-12 rounded-full border-2 bg-white border-slate-300 text-slate-500 flex items-center justify-center text-xs font-medium cursor-pointer hover:bg-slate-50">Tue</div></button>
+            <button type="button" class="calendar-day" data-config="jh-shortened" data-day="2" data-active="false"><div class="w-12 h-12 rounded-full border-2 bg-white border-slate-300 text-slate-500 flex items-center justify-center text-xs font-medium cursor-pointer hover:bg-slate-50">Wed</div></button>
+            <button type="button" class="calendar-day" data-config="jh-shortened" data-day="3" data-active="false"><div class="w-12 h-12 rounded-full border-2 bg-white border-slate-300 text-slate-500 flex items-center justify-center text-xs font-medium cursor-pointer hover:bg-slate-50">Thu</div></button>
+            <button type="button" class="calendar-day" data-config="jh-shortened" data-day="4" data-active="false"><div class="w-12 h-12 rounded-full border-2 bg-white border-slate-300 text-slate-500 flex items-center justify-center text-xs font-medium cursor-pointer hover:bg-slate-50">Fri</div></button>
+            <button type="button" class="calendar-day" data-config="jh-shortened" data-day="5" data-active="false"><div class="w-12 h-12 rounded-full border-2 bg-slate-100 border-slate-300 text-slate-400 flex items-center justify-center text-xs font-medium cursor-pointer hover:bg-slate-200">Sat</div></button>
+            <button type="button" class="calendar-day" data-config="jh-shortened" data-day="6" data-active="false"><div class="w-12 h-12 rounded-full border-2 bg-slate-100 border-slate-300 text-slate-400 flex items-center justify-center text-xs font-medium cursor-pointer hover:bg-slate-200">Sun</div></button>
           </div>
         </div>
 
@@ -280,32 +305,57 @@
 
         <!-- Break Schedule -->
         <div class="border rounded-lg p-4 bg-white">
-          <h4 class="font-semibold mb-3 text-slate-800">☕ Breaks</h4>
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <div class="flex items-center gap-2 mb-1">
+          <h4 class="font-semibold mb-4 text-slate-800">☕ Breaks</h4>
+          <div class="grid grid-cols-3 gap-4">
+            <div class="border rounded-lg p-4 bg-slate-50">
+              <div class="flex items-center gap-2 mb-3">
                 <input type="checkbox" class="break-enabled" data-config="jh-shortened" data-break="morning" checked />
-                <label class="text-xs text-slate-600 font-semibold">Morning</label>
+                <label class="text-sm font-semibold text-slate-700">Morning Break</label>
               </div>
-              <div class="flex items-center gap-2 text-sm">
-                <span>After P</span>
-                <input type="number" value="3" class="break-after input w-12 text-xs" data-config="jh-shortened" data-break="morning" min="1" max="9" />
-                <span>for</span>
-                <input type="number" value="20" class="break-duration input w-12 text-xs" data-config="jh-shortened" data-break="morning" min="5" max="60" />
-                <span class="text-xs">min</span>
+              <div class="space-y-2 text-sm">
+                <div class="flex items-center gap-2">
+                  <span class="text-slate-600 whitespace-nowrap">After P</span>
+                  <input type="number" value="3" class="break-after input w-14 px-2 py-1 border border-slate-300 rounded" data-config="jh-shortened" data-break="morning" min="1" max="9" />
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-slate-600 whitespace-nowrap">Duration</span>
+                  <input type="number" value="20" class="break-duration input w-14 px-2 py-1 border border-slate-300 rounded" data-config="jh-shortened" data-break="morning" min="5" max="60" />
+                  <span class="text-slate-600 text-xs">min</span>
+                </div>
               </div>
             </div>
-            <div>
-              <div class="flex items-center gap-2 mb-1">
+            <div class="border rounded-lg p-4 bg-slate-50">
+              <div class="flex items-center gap-2 mb-3">
                 <input type="checkbox" class="break-enabled" data-config="jh-shortened" data-break="lunch" checked />
-                <label class="text-xs text-slate-600 font-semibold">Lunch</label>
+                <label class="text-sm font-semibold text-slate-700">Lunch Break</label>
               </div>
-              <div class="flex items-center gap-2 text-sm">
-                <span>After P</span>
-                <input type="number" value="5" class="break-after input w-12 text-xs" data-config="jh-shortened" data-break="lunch" min="1" max="9" />
-                <span>for</span>
-                <input type="number" value="60" class="break-duration input w-12 text-xs" data-config="jh-shortened" data-break="lunch" min="5" max="90" />
-                <span class="text-xs">min</span>
+              <div class="space-y-2 text-sm">
+                <div class="flex items-center gap-2">
+                  <span class="text-slate-600 whitespace-nowrap">After P</span>
+                  <input type="number" value="5" class="break-after input w-14 px-2 py-1 border border-slate-300 rounded" data-config="jh-shortened" data-break="lunch" min="1" max="9" />
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-slate-600 whitespace-nowrap">Duration</span>
+                  <input type="number" value="60" class="break-duration input w-14 px-2 py-1 border border-slate-300 rounded" data-config="jh-shortened" data-break="lunch" min="5" max="90" />
+                  <span class="text-slate-600 text-xs">min</span>
+                </div>
+              </div>
+            </div>
+            <div class="border rounded-lg p-4 bg-slate-50">
+              <div class="flex items-center gap-2 mb-3">
+                <input type="checkbox" class="break-enabled" data-config="jh-shortened" data-break="afternoon" />
+                <label class="text-sm font-semibold text-slate-700">Afternoon Break</label>
+              </div>
+              <div class="space-y-2 text-sm">
+                <div class="flex items-center gap-2">
+                  <span class="text-slate-600 whitespace-nowrap">After P</span>
+                  <input type="number" value="7" class="break-after input w-14 px-2 py-1 border border-slate-300 rounded" data-config="jh-shortened" data-break="afternoon" min="1" max="9" />
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-slate-600 whitespace-nowrap">Duration</span>
+                  <input type="number" value="15" class="break-duration input w-14 px-2 py-1 border border-slate-300 rounded" data-config="jh-shortened" data-break="afternoon" min="5" max="60" />
+                  <span class="text-slate-600 text-xs">min</span>
+                </div>
               </div>
             </div>
           </div>
@@ -353,9 +403,9 @@
             <button type="button" class="calendar-day" data-config="sh-regular" data-day="1" data-active="true"><div class="w-12 h-12 rounded-full border-2 bg-green-500 border-green-600 text-white flex items-center justify-center text-xs font-medium cursor-pointer hover:bg-green-600">Tue</div></button>
             <button type="button" class="calendar-day" data-config="sh-regular" data-day="2" data-active="true"><div class="w-12 h-12 rounded-full border-2 bg-green-500 border-green-600 text-white flex items-center justify-center text-xs font-medium cursor-pointer hover:bg-green-600">Wed</div></button>
             <button type="button" class="calendar-day" data-config="sh-regular" data-day="3" data-active="true"><div class="w-12 h-12 rounded-full border-2 bg-green-500 border-green-600 text-white flex items-center justify-center text-xs font-medium cursor-pointer hover:bg-green-600">Thu</div></button>
-            <button type="button" class="calendar-day" data-config="sh-regular" data-day="4" data-active="false"><div class="w-12 h-12 rounded-full border-2 bg-slate-100 border-slate-300 text-slate-400 flex items-center justify-center text-xs font-medium cursor-pointer hover:bg-slate-200">Fri</div></button>
-            <button type="button" class="calendar-day" data-config="sh-regular" data-day="5" data-active="false"><div class="w-12 h-12 rounded-full border-2 bg-white border-slate-300 text-slate-500 flex items-center justify-center text-xs font-medium cursor-pointer hover:bg-slate-50">Sat</div></button>
-            <button type="button" class="calendar-day" data-config="sh-regular" data-day="6" data-active="false"><div class="w-12 h-12 rounded-full border-2 bg-white border-slate-300 text-slate-500 flex items-center justify-center text-xs font-medium cursor-pointer hover:bg-slate-50">Sun</div></button>
+            <button type="button" class="calendar-day" data-config="sh-regular" data-day="4" data-active="false"><div class="w-12 h-12 rounded-full border-2 bg-white border-slate-300 text-slate-500 flex items-center justify-center text-xs font-medium cursor-pointer hover:bg-slate-50">Fri</div></button>
+            <button type="button" class="calendar-day" data-config="sh-regular" data-day="5" data-active="false"><div class="w-12 h-12 rounded-full border-2 bg-slate-100 border-slate-300 text-slate-400 flex items-center justify-center text-xs font-medium cursor-pointer hover:bg-slate-200">Sat</div></button>
+            <button type="button" class="calendar-day" data-config="sh-regular" data-day="6" data-active="false"><div class="w-12 h-12 rounded-full border-2 bg-slate-100 border-slate-300 text-slate-400 flex items-center justify-center text-xs font-medium cursor-pointer hover:bg-slate-200">Sun</div></button>
           </div>
         </div>
 
@@ -414,45 +464,57 @@
 
         <!-- Break Schedule -->
         <div class="border rounded-lg p-4 bg-white">
-          <h4 class="font-semibold mb-3 text-slate-800">☕ Breaks</h4>
+          <h4 class="font-semibold mb-4 text-slate-800">☕ Breaks</h4>
           <div class="grid grid-cols-3 gap-4">
-            <div>
-              <div class="flex items-center gap-2 mb-1">
+            <div class="border rounded-lg p-4 bg-slate-50">
+              <div class="flex items-center gap-2 mb-3">
                 <input type="checkbox" class="break-enabled" data-config="sh-regular" data-break="morning" checked />
-                <label class="text-xs text-slate-600 font-semibold">Morning</label>
+                <label class="text-sm font-semibold text-slate-700">Morning Break</label>
               </div>
-              <div class="flex items-center gap-2 text-sm">
-                <span>After P</span>
-                <input type="number" value="3" class="break-after input w-12 text-xs" data-config="sh-regular" data-break="morning" min="1" max="9" />
-                <span>for</span>
-                <input type="number" value="20" class="break-duration input w-12 text-xs" data-config="sh-regular" data-break="morning" min="5" max="60" />
-                <span class="text-xs">min</span>
+              <div class="space-y-2 text-sm">
+                <div class="flex items-center gap-2">
+                  <span class="text-slate-600 whitespace-nowrap">After P</span>
+                  <input type="number" value="3" class="break-after input w-14 px-2 py-1 border border-slate-300 rounded" data-config="sh-regular" data-break="morning" min="1" max="9" />
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-slate-600 whitespace-nowrap">Duration</span>
+                  <input type="number" value="20" class="break-duration input w-14 px-2 py-1 border border-slate-300 rounded" data-config="sh-regular" data-break="morning" min="5" max="60" />
+                  <span class="text-slate-600 text-xs">min</span>
+                </div>
               </div>
             </div>
-            <div>
-              <div class="flex items-center gap-2 mb-1">
+            <div class="border rounded-lg p-4 bg-slate-50">
+              <div class="flex items-center gap-2 mb-3">
                 <input type="checkbox" class="break-enabled" data-config="sh-regular" data-break="lunch" checked />
-                <label class="text-xs text-slate-600 font-semibold">Lunch</label>
+                <label class="text-sm font-semibold text-slate-700">Lunch Break</label>
               </div>
-              <div class="flex items-center gap-2 text-sm">
-                <span>After P</span>
-                <input type="number" value="5" class="break-after input w-12 text-xs" data-config="sh-regular" data-break="lunch" min="1" max="9" />
-                <span>for</span>
-                <input type="number" value="60" class="break-duration input w-12 text-xs" data-config="sh-regular" data-break="lunch" min="5" max="90" />
-                <span class="text-xs">min</span>
+              <div class="space-y-2 text-sm">
+                <div class="flex items-center gap-2">
+                  <span class="text-slate-600 whitespace-nowrap">After P</span>
+                  <input type="number" value="5" class="break-after input w-14 px-2 py-1 border border-slate-300 rounded" data-config="sh-regular" data-break="lunch" min="1" max="9" />
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-slate-600 whitespace-nowrap">Duration</span>
+                  <input type="number" value="60" class="break-duration input w-14 px-2 py-1 border border-slate-300 rounded" data-config="sh-regular" data-break="lunch" min="5" max="90" />
+                  <span class="text-slate-600 text-xs">min</span>
+                </div>
               </div>
             </div>
-            <div>
-              <div class="flex items-center gap-2 mb-1">
+            <div class="border rounded-lg p-4 bg-slate-50">
+              <div class="flex items-center gap-2 mb-3">
                 <input type="checkbox" class="break-enabled" data-config="sh-regular" data-break="afternoon" checked />
-                <label class="text-xs text-slate-600 font-semibold">Afternoon</label>
+                <label class="text-sm font-semibold text-slate-700">Afternoon Break</label>
               </div>
-              <div class="flex items-center gap-2 text-sm">
-                <span>After P</span>
-                <input type="number" value="7" class="break-after input w-12 text-xs" data-config="sh-regular" data-break="afternoon" min="1" max="9" />
-                <span>for</span>
-                <input type="number" value="15" class="break-duration input w-12 text-xs" data-config="sh-regular" data-break="afternoon" min="5" max="60" />
-                <span class="text-xs">min</span>
+              <div class="space-y-2 text-sm">
+                <div class="flex items-center gap-2">
+                  <span class="text-slate-600 whitespace-nowrap">After P</span>
+                  <input type="number" value="7" class="break-after input w-14 px-2 py-1 border border-slate-300 rounded" data-config="sh-regular" data-break="afternoon" min="1" max="9" />
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-slate-600 whitespace-nowrap">Duration</span>
+                  <input type="number" value="15" class="break-duration input w-14 px-2 py-1 border border-slate-300 rounded" data-config="sh-regular" data-break="afternoon" min="5" max="60" />
+                  <span class="text-slate-600 text-xs">min</span>
+                </div>
               </div>
             </div>
           </div>
@@ -470,13 +532,13 @@
             <div class="text-xs text-slate-500 font-semibold calendar-day-count" data-config="sh-shortened">1 day</div>
           </div>
           <div class="flex gap-2 mb-3">
-            <button type="button" class="calendar-day" data-config="sh-shortened" data-day="0" data-active="false"><div class="w-12 h-12 rounded-full border-2 bg-slate-100 border-slate-300 text-slate-400 flex items-center justify-center text-xs font-medium cursor-pointer hover:bg-slate-200">Mon</div></button>
-            <button type="button" class="calendar-day" data-config="sh-shortened" data-day="1" data-active="false"><div class="w-12 h-12 rounded-full border-2 bg-slate-100 border-slate-300 text-slate-400 flex items-center justify-center text-xs font-medium cursor-pointer hover:bg-slate-200">Tue</div></button>
-            <button type="button" class="calendar-day" data-config="sh-shortened" data-day="2" data-active="false"><div class="w-12 h-12 rounded-full border-2 bg-slate-100 border-slate-300 text-slate-400 flex items-center justify-center text-xs font-medium cursor-pointer hover:bg-slate-200">Wed</div></button>
-            <button type="button" class="calendar-day" data-config="sh-shortened" data-day="3" data-active="false"><div class="w-12 h-12 rounded-full border-2 bg-slate-100 border-slate-300 text-slate-400 flex items-center justify-center text-xs font-medium cursor-pointer hover:bg-slate-200">Thu</div></button>
+            <button type="button" class="calendar-day" data-config="sh-shortened" data-day="0" data-active="false"><div class="w-12 h-12 rounded-full border-2 bg-white border-slate-300 text-slate-500 flex items-center justify-center text-xs font-medium cursor-pointer hover:bg-slate-50">Mon</div></button>
+            <button type="button" class="calendar-day" data-config="sh-shortened" data-day="1" data-active="false"><div class="w-12 h-12 rounded-full border-2 bg-white border-slate-300 text-slate-500 flex items-center justify-center text-xs font-medium cursor-pointer hover:bg-slate-50">Tue</div></button>
+            <button type="button" class="calendar-day" data-config="sh-shortened" data-day="2" data-active="false"><div class="w-12 h-12 rounded-full border-2 bg-white border-slate-300 text-slate-500 flex items-center justify-center text-xs font-medium cursor-pointer hover:bg-slate-50">Wed</div></button>
+            <button type="button" class="calendar-day" data-config="sh-shortened" data-day="3" data-active="false"><div class="w-12 h-12 rounded-full border-2 bg-white border-slate-300 text-slate-500 flex items-center justify-center text-xs font-medium cursor-pointer hover:bg-slate-50">Thu</div></button>
             <button type="button" class="calendar-day" data-config="sh-shortened" data-day="4" data-active="true"><div class="w-12 h-12 rounded-full border-2 bg-green-500 border-green-600 text-white flex items-center justify-center text-xs font-medium cursor-pointer hover:bg-green-600">Fri</div></button>
-            <button type="button" class="calendar-day" data-config="sh-shortened" data-day="5" data-active="false"><div class="w-12 h-12 rounded-full border-2 bg-white border-slate-300 text-slate-500 flex items-center justify-center text-xs font-medium cursor-pointer hover:bg-slate-50">Sat</div></button>
-            <button type="button" class="calendar-day" data-config="sh-shortened" data-day="6" data-active="false"><div class="w-12 h-12 rounded-full border-2 bg-white border-slate-300 text-slate-500 flex items-center justify-center text-xs font-medium cursor-pointer hover:bg-slate-50">Sun</div></button>
+            <button type="button" class="calendar-day" data-config="sh-shortened" data-day="5" data-active="false"><div class="w-12 h-12 rounded-full border-2 bg-slate-100 border-slate-300 text-slate-400 flex items-center justify-center text-xs font-medium cursor-pointer hover:bg-slate-200">Sat</div></button>
+            <button type="button" class="calendar-day" data-config="sh-shortened" data-day="6" data-active="false"><div class="w-12 h-12 rounded-full border-2 bg-slate-100 border-slate-300 text-slate-400 flex items-center justify-center text-xs font-medium cursor-pointer hover:bg-slate-200">Sun</div></button>
           </div>
         </div>
 
@@ -535,45 +597,57 @@
 
         <!-- Break Schedule -->
         <div class="border rounded-lg p-4 bg-white">
-          <h4 class="font-semibold mb-3 text-slate-800">☕ Breaks</h4>
+          <h4 class="font-semibold mb-4 text-slate-800">☕ Breaks</h4>
           <div class="grid grid-cols-3 gap-4">
-            <div>
-              <div class="flex items-center gap-2 mb-1">
+            <div class="border rounded-lg p-4 bg-slate-50">
+              <div class="flex items-center gap-2 mb-3">
                 <input type="checkbox" class="break-enabled" data-config="sh-shortened" data-break="morning" checked />
-                <label class="text-xs text-slate-600 font-semibold">Morning</label>
+                <label class="text-sm font-semibold text-slate-700">Morning Break</label>
               </div>
-              <div class="flex items-center gap-2 text-sm">
-                <span>After P</span>
-                <input type="number" value="3" class="break-after input w-12 text-xs" data-config="sh-shortened" data-break="morning" min="1" max="9" />
-                <span>for</span>
-                <input type="number" value="20" class="break-duration input w-12 text-xs" data-config="sh-shortened" data-break="morning" min="5" max="60" />
-                <span class="text-xs">min</span>
+              <div class="space-y-2 text-sm">
+                <div class="flex items-center gap-2">
+                  <span class="text-slate-600 whitespace-nowrap">After P</span>
+                  <input type="number" value="3" class="break-after input w-14 px-2 py-1 border border-slate-300 rounded" data-config="sh-shortened" data-break="morning" min="1" max="9" />
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-slate-600 whitespace-nowrap">Duration</span>
+                  <input type="number" value="20" class="break-duration input w-14 px-2 py-1 border border-slate-300 rounded" data-config="sh-shortened" data-break="morning" min="5" max="60" />
+                  <span class="text-slate-600 text-xs">min</span>
+                </div>
               </div>
             </div>
-            <div>
-              <div class="flex items-center gap-2 mb-1">
+            <div class="border rounded-lg p-4 bg-slate-50">
+              <div class="flex items-center gap-2 mb-3">
                 <input type="checkbox" class="break-enabled" data-config="sh-shortened" data-break="lunch" checked />
-                <label class="text-xs text-slate-600 font-semibold">Lunch</label>
+                <label class="text-sm font-semibold text-slate-700">Lunch Break</label>
               </div>
-              <div class="flex items-center gap-2 text-sm">
-                <span>After P</span>
-                <input type="number" value="5" class="break-after input w-12 text-xs" data-config="sh-shortened" data-break="lunch" min="1" max="9" />
-                <span>for</span>
-                <input type="number" value="60" class="break-duration input w-12 text-xs" data-config="sh-shortened" data-break="lunch" min="5" max="90" />
-                <span class="text-xs">min</span>
+              <div class="space-y-2 text-sm">
+                <div class="flex items-center gap-2">
+                  <span class="text-slate-600 whitespace-nowrap">After P</span>
+                  <input type="number" value="5" class="break-after input w-14 px-2 py-1 border border-slate-300 rounded" data-config="sh-shortened" data-break="lunch" min="1" max="9" />
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-slate-600 whitespace-nowrap">Duration</span>
+                  <input type="number" value="60" class="break-duration input w-14 px-2 py-1 border border-slate-300 rounded" data-config="sh-shortened" data-break="lunch" min="5" max="90" />
+                  <span class="text-slate-600 text-xs">min</span>
+                </div>
               </div>
             </div>
-            <div>
-              <div class="flex items-center gap-2 mb-1">
+            <div class="border rounded-lg p-4 bg-slate-50">
+              <div class="flex items-center gap-2 mb-3">
                 <input type="checkbox" class="break-enabled" data-config="sh-shortened" data-break="afternoon" checked />
-                <label class="text-xs text-slate-600 font-semibold">Afternoon</label>
+                <label class="text-sm font-semibold text-slate-700">Afternoon Break</label>
               </div>
-              <div class="flex items-center gap-2 text-sm">
-                <span>After P</span>
-                <input type="number" value="7" class="break-after input w-12 text-xs" data-config="sh-shortened" data-break="afternoon" min="1" max="9" />
-                <span>for</span>
-                <input type="number" value="15" class="break-duration input w-12 text-xs" data-config="sh-shortened" data-break="afternoon" min="5" max="60" />
-                <span class="text-xs">min</span>
+              <div class="space-y-2 text-sm">
+                <div class="flex items-center gap-2">
+                  <span class="text-slate-600 whitespace-nowrap">After P</span>
+                  <input type="number" value="7" class="break-after input w-14 px-2 py-1 border border-slate-300 rounded" data-config="sh-shortened" data-break="afternoon" min="1" max="9" />
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-slate-600 whitespace-nowrap">Duration</span>
+                  <input type="number" value="15" class="break-duration input w-14 px-2 py-1 border border-slate-300 rounded" data-config="sh-shortened" data-break="afternoon" min="5" max="60" />
+                  <span class="text-slate-600 text-xs">min</span>
+                </div>
               </div>
             </div>
           </div>
@@ -896,7 +970,21 @@ document.addEventListener('DOMContentLoaded', function() {
     } else if (activeDays.length === 2) {
       dayText = dayNames[activeDays[0]] + ', ' + dayNames[activeDays[1]];
     } else {
-      dayText = dayNames[activeDays[0]] + '–' + dayNames[activeDays[activeDays.length - 1]];
+      // Check if days are consecutive
+      let isConsecutive = true;
+      for (let i = 1; i < activeDays.length; i++) {
+        if (activeDays[i] !== activeDays[i - 1] + 1) {
+          isConsecutive = false;
+          break;
+        }
+      }
+      
+      if (isConsecutive) {
+        dayText = dayNames[activeDays[0]] + '–' + dayNames[activeDays[activeDays.length - 1]];
+      } else {
+        // Show all days if not consecutive
+        dayText = activeDays.map(day => dayNames[day]).join(', ');
+      }
     }
     
     // Update session-day-label
