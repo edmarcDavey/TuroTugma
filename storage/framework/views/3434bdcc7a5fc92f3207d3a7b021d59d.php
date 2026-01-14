@@ -97,23 +97,58 @@
               <input type="number" value="9" class="period-count input w-20 text-sm" data-config="jh-regular" min="5" max="12" />
             </div>
           </div>
-          <div class="bg-slate-50 p-3 rounded text-xs space-y-1" id="jh-regular-schedule">
-            <div class="grid grid-cols-3 gap-2">
-              <div><span class="font-semibold">P1:</span> 7:30-8:30</div>
-              <div><span class="font-semibold">P2:</span> 8:30-9:30</div>
-              <div><span class="font-semibold">P3:</span> 9:30-10:30</div>
+          <div class="bg-slate-50 p-4 rounded space-y-3" id="jh-regular-schedule">
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+              <div class="p-2 rounded border bg-blue-50 border-l-4 border-blue-400 text-xs">
+                <div class="font-semibold text-slate-900">P1</div>
+                <div class="text-slate-600">7:30 AM - 8:30 AM</div>
+              </div>
+              <div class="p-2 rounded border bg-blue-50 border-l-4 border-blue-400 text-xs">
+                <div class="font-semibold text-slate-900">P2</div>
+                <div class="text-slate-600">8:30 AM - 9:30 AM</div>
+              </div>
+              <div class="p-2 rounded border bg-blue-50 border-l-4 border-blue-400 text-xs">
+                <div class="font-semibold text-slate-900">P3</div>
+                <div class="text-slate-600">9:30 AM - 10:30 AM</div>
+              </div>
             </div>
-            <div class="text-amber-700 bg-amber-50 px-2 py-1 rounded">☕ Break (20min)</div>
-            <div class="grid grid-cols-2 gap-2">
-              <div><span class="font-semibold">P4:</span> 10:50-11:50</div>
-              <div><span class="font-semibold">P5:</span> 11:50-12:50</div>
+            <div class="col-span-full flex items-center gap-2 px-3 py-2 rounded border-2 border-dashed bg-amber-100 border-amber-400 text-amber-800 font-semibold text-sm">
+              <span>☕</span>
+              <span>Morning Break</span>
+              <span class="ml-auto text-xs opacity-75">20 min</span>
             </div>
-            <div class="text-orange-700 bg-orange-50 px-2 py-1 rounded">🍱 Lunch (60min)</div>
-            <div class="grid grid-cols-4 gap-2">
-              <div><span class="font-semibold">P6:</span> 1:50-2:50</div>
-              <div><span class="font-semibold">P7:</span> 2:50-3:50</div>
-              <div><span class="font-semibold">P8:</span> 3:50-4:50</div>
-              <div><span class="font-semibold">P9:</span> 4:50-5:50</div>
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+              <div class="p-2 rounded border bg-emerald-50 border-l-4 border-emerald-400 text-xs">
+                <div class="font-semibold text-slate-900">P4</div>
+                <div class="text-slate-600">10:50 AM - 11:50 AM</div>
+              </div>
+              <div class="p-2 rounded border bg-emerald-50 border-l-4 border-emerald-400 text-xs">
+                <div class="font-semibold text-slate-900">P5</div>
+                <div class="text-slate-600">11:50 AM - 12:50 PM</div>
+              </div>
+            </div>
+            <div class="col-span-full flex items-center gap-2 px-3 py-2 rounded border-2 border-dashed bg-orange-100 border-orange-400 text-orange-800 font-semibold text-sm">
+              <span>🍱</span>
+              <span>Lunch Break</span>
+              <span class="ml-auto text-xs opacity-75">60 min</span>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+              <div class="p-2 rounded border bg-rose-50 border-l-4 border-rose-400 text-xs">
+                <div class="font-semibold text-slate-900">P6</div>
+                <div class="text-slate-600">1:50 PM - 2:50 PM</div>
+              </div>
+              <div class="p-2 rounded border bg-rose-50 border-l-4 border-rose-400 text-xs">
+                <div class="font-semibold text-slate-900">P7</div>
+                <div class="text-slate-600">2:50 PM - 3:50 PM</div>
+              </div>
+              <div class="p-2 rounded border bg-rose-50 border-l-4 border-rose-400 text-xs">
+                <div class="font-semibold text-slate-900">P8</div>
+                <div class="text-slate-600">3:50 PM - 4:50 PM</div>
+              </div>
+              <div class="p-2 rounded border bg-rose-50 border-l-4 border-rose-400 text-xs">
+                <div class="font-semibold text-slate-900">P9</div>
+                <div class="text-slate-600">4:50 PM - 5:50 PM</div>
+              </div>
             </div>
           </div>
         </div>
@@ -932,13 +967,26 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
 
+    // Identify which periods fall in which section (for color coding)
+    let breakPoints = [];
+    Object.values(breakConfig).forEach(b => breakPoints.push(b.afterPeriod));
+    breakPoints.sort((a, b) => a - b);
+
     // Start time: 7:30 AM = 450 minutes from midnight
     let currentTime = 7 * 60 + 30;
     let html = '';
-    let periodsBeforeBreak = [];
-    let lastPeriod = 0;
+    let periodRows = [];
+    let currentRow = [];
 
     for (let i = 1; i <= periodCount; i++) {
+      // Determine section (for color coding)
+      let section = 0; // 0 = before first break, 1 = between first and second, 2 = after last break
+      for (let j = 0; j < breakPoints.length; j++) {
+        if (i > breakPoints[j]) {
+          section = j + 1;
+        }
+      }
+
       // Check if we need a break after this period
       let breakAfterThisPeriod = null;
       Object.entries(breakConfig).forEach(([type, config]) => {
@@ -948,39 +996,71 @@ document.addEventListener('DOMContentLoaded', function() {
       });
 
       // Add period to current row
-      periodsBeforeBreak.push({
+      currentRow.push({
         number: i,
         start: currentTime,
-        end: currentTime + periodDuration
+        end: currentTime + periodDuration,
+        section: section
       });
 
       currentTime += periodDuration;
-      lastPeriod = i;
 
-      // Render periods if break coming or last period
-      if (breakAfterThisPeriod || i === periodCount) {
-        const cols = periodsBeforeBreak.length <= 2 ? 2 : (periodsBeforeBreak.length <= 3 ? 3 : 4);
-        html += `<div class="grid grid-cols-${cols} gap-2">`;
-        periodsBeforeBreak.forEach(p => {
-          html += `<div><span class="font-semibold">P${p.number}:</span> ${formatTime(p.start)}-${formatTime(p.end)}</div>`;
+      // When we reach 4 periods or need a break, finalize the row
+      if (currentRow.length === 4 || breakAfterThisPeriod || i === periodCount) {
+        periodRows.push({
+          periods: [...currentRow],
+          breakAfter: breakAfterThisPeriod
         });
-        html += '</div>';
-
-        // Add break if applicable
+        currentRow = [];
+        
         if (breakAfterThisPeriod) {
-          const breakColor = breakAfterThisPeriod.type === 'morning' ? 'amber' : 
-                              (breakAfterThisPeriod.type === 'lunch' ? 'orange' : 'purple');
-          const breakIcon = breakAfterThisPeriod.type === 'morning' ? '☕' : 
-                            (breakAfterThisPeriod.type === 'lunch' ? '🍱' : '🌆');
-          const breakLabel = breakAfterThisPeriod.type.charAt(0).toUpperCase() + breakAfterThisPeriod.type.slice(1);
-          
-          html += `<div class="text-${breakColor}-700 bg-${breakColor}-50 px-2 py-1 rounded">${breakIcon} ${breakLabel} (${breakAfterThisPeriod.duration}min)</div>`;
           currentTime += breakAfterThisPeriod.duration;
         }
-
-        periodsBeforeBreak = [];
       }
     }
+
+    // Render all rows with consistent 4-column grid
+    periodRows.forEach(row => {
+      // Periods row
+      html += '<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">';
+      
+      row.periods.forEach(p => {
+        // Color code by section
+        let bgColor = 'bg-blue-50 border-l-4 border-blue-400';
+        if (p.section === 1) bgColor = 'bg-emerald-50 border-l-4 border-emerald-400';
+        if (p.section === 2) bgColor = 'bg-rose-50 border-l-4 border-rose-400';
+        
+        html += `<div class="p-2 rounded border ${bgColor} text-xs">
+                  <div class="font-semibold text-slate-900">P${p.number}</div>
+                    <div class="text-slate-600">${formatTime(p.start)} - ${formatTime(p.end)}</div>
+                </div>`;
+      });
+      
+      // Fill remaining cells in 4-column grid if needed
+      const remainingCells = 4 - (row.periods.length % 4);
+      if (remainingCells < 4) {
+        for (let i = 0; i < remainingCells; i++) {
+          html += '<div></div>';
+        }
+      }
+      
+      html += '</div>';
+
+      // Break row (if applicable)
+      if (row.breakAfter) {
+        const breakColor = row.breakAfter.type === 'morning' ? 'bg-amber-100 border-amber-400 text-amber-800' : 
+                          (row.breakAfter.type === 'lunch' ? 'bg-orange-100 border-orange-400 text-orange-800' : 'bg-purple-100 border-purple-400 text-purple-800');
+        const breakIcon = row.breakAfter.type === 'morning' ? '☕' : 
+                         (row.breakAfter.type === 'lunch' ? '🍱' : '🌆');
+        const breakLabel = row.breakAfter.type.charAt(0).toUpperCase() + row.breakAfter.type.slice(1) + ' Break';
+        
+        html += `<div class="col-span-full flex items-center gap-2 px-3 py-2 rounded border-2 border-dashed ${breakColor} font-semibold text-sm my-1">
+                  <span>${breakIcon}</span>
+                  <span>${breakLabel}</span>
+                  <span class="ml-auto text-xs opacity-75">${row.breakAfter.duration} min</span>
+                </div>`;
+      }
+    });
 
     scheduleContainer.innerHTML = html;
   }
