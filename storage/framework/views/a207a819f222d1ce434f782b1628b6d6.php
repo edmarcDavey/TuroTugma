@@ -17,6 +17,7 @@
 
     
     <script>
+      // @ts-ignore
       window.schedulerData = {
         subjects: <?php echo json_encode($subjects, 15, 512) ?>,
         teachers: <?php echo json_encode($teachers, 15, 512) ?>

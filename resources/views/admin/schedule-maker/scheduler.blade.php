@@ -19,9 +19,11 @@
 
     {{-- Pass subjects and teachers data to JavaScript --}}
     <script>
-      // @ts-ignore
+      // @ts-ignore - Blade @json directive
       window.schedulerData = {
+        // @ts-ignore
         subjects: @json($subjects),
+        // @ts-ignore
         teachers: @json($teachers)
       };
     </script>

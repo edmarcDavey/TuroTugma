@@ -484,12 +484,22 @@
         </div>
 
       </div>
-          </div>
+    </div>
+
+    <!-- Tab Content: Senior High - Coming Soon -->
+    <div id="tab-sh" class="settings-tab-content hidden p-6">
+      <div style="display: flex; align-items: center; justify-content: center; min-height: 500px;">
+        <div class="text-center">
+          <div class="text-6xl mb-4">🚀</div>
+          <h3 class="text-2xl font-bold text-slate-900 mb-2">Senior High Configuration</h3>
+          <p class="text-slate-600 text-lg">Coming Soon</p>
+          <p class="text-slate-500 text-sm mt-4">Senior High scheduling configuration is currently in development and will be available in the next update.</p>
         </div>
       </div>
+    </div>
 
-      <!-- Hidden content for future use -->
-      <div class="hidden">
+    <!-- Hidden content for future use -->
+    <div class="hidden">
 
       <!-- Regular Session Configuration -->
       <div id="sh-regular-config" class="session-config space-y-4">
@@ -874,31 +884,47 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-  // Tab Switching
+  if ('scrollRestoration' in window.history) {
+    window.history.scrollRestoration = 'manual';
+  }
+
   const tabs = document.querySelectorAll('.settings-tab');
   const tabContents = document.querySelectorAll('.settings-tab-content');
 
+  function switchTab(tabName) {
+    // Scroll to top
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+
+    // Update tab styles
+    tabs.forEach(t => {
+      t.classList.remove('border-b-2', 'border-blue-600', 'border-green-600', 'text-blue-600', 'text-green-600');
+      t.classList.add('text-slate-500');
+    });
+
+    const activeTab = document.querySelector(`[data-tab="${tabName}"]`);
+    if (activeTab) {
+      activeTab.classList.remove('text-slate-500');
+      if (tabName === 'sh') {
+        activeTab.classList.add('border-b-2', 'border-green-600', 'text-green-600');
+      } else {
+        activeTab.classList.add('border-b-2', 'border-blue-600', 'text-blue-600');
+      }
+    }
+
+    // Hide all, show one
+    tabContents.forEach(content => content.classList.add('hidden'));
+    const tab = document.getElementById('tab-' + tabName);
+    if (tab) tab.classList.remove('hidden');
+
+    // Scroll again after layout
+    setTimeout(() => window.scrollTo(0, 0), 10);
+  }
+
   tabs.forEach(tab => {
     tab.addEventListener('click', function() {
-      const targetTab = this.getAttribute('data-tab');
-      
-      // Update tab buttons
-      tabs.forEach(t => {
-        t.classList.remove('border-blue-600', 'text-blue-600', 'border-green-600', 'text-green-600', 'border-b-2');
-        t.classList.add('text-slate-500');
-      });
-      
-      if (targetTab === 'sh') {
-        this.classList.remove('text-slate-500');
-        this.classList.add('border-green-600', 'text-green-600', 'border-b-2');
-      } else {
-        this.classList.remove('text-slate-500');
-        this.classList.add('border-blue-600', 'text-blue-600', 'border-b-2');
-      }
-      
-      // Update content
-      tabContents.forEach(content => content.classList.add('hidden'));
-      document.getElementById('tab-' + targetTab).classList.remove('hidden');
+      switchTab(this.getAttribute('data-tab'));
     });
   });
 
