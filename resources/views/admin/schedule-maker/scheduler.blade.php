@@ -19,6 +19,7 @@
 
     {{-- Pass subjects and teachers data to JavaScript --}}
     <script>
+      // @ts-ignore
       window.schedulerData = {
         subjects: @json($subjects),
         teachers: @json($teachers)

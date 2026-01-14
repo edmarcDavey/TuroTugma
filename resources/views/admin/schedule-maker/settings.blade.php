@@ -178,9 +178,9 @@
 
         <!-- Section Types -->
         <div class="border rounded-lg p-4 bg-white">
-          <h4 class="font-semibold mb-3 text-slate-800">📋 Section Types</h4>
-          <div class="grid grid-cols-2 gap-3 mb-3">
-            <div class="border rounded p-3">
+          <h4 class="font-semibold mb-3 text-slate-800">📋 Subject Assignments</h4>
+          <div class="grid grid-cols-2 gap-3 mb-4">
+            <div class="border rounded p-3 bg-blue-50">
               <div class="flex items-center gap-2 mb-2">
                 <div class="w-8 h-8 bg-blue-500 text-white rounded flex items-center justify-center font-bold text-sm">R</div>
                 <div>
@@ -190,7 +190,7 @@
               </div>
               <div class="text-xs text-slate-600">7-Saturn, 8-Jupiter</div>
             </div>
-            <div class="border rounded p-3">
+            <div class="border rounded p-3 bg-purple-50">
               <div class="flex items-center gap-2 mb-2">
                 <div class="w-8 h-8 bg-purple-500 text-white rounded flex items-center justify-center font-bold text-sm">S</div>
                 <div>
@@ -201,33 +201,49 @@
               <div class="text-xs text-slate-600">7-SPA, 8-SPJ</div>
             </div>
           </div>
-          <div class="overflow-x-auto">
-            <table class="w-full text-xs">
-              <thead class="border-b">
-                <tr>
-                  <th class="text-left py-2">Subject Type</th>
-                  <th class="text-center py-2">Regular</th>
-                  <th class="text-center py-2">Special</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr class="border-b">
-                  <td class="py-2">Core</td>
-                  <td class="text-center"><span class="bg-green-100 text-green-700 px-2 py-1 rounded">✓</span></td>
-                  <td class="text-center"><span class="bg-green-100 text-green-700 px-2 py-1 rounded">✓</span></td>
-                </tr>
-                <tr class="border-b">
-                  <td class="py-2">Arts</td>
-                  <td class="text-center"><span class="bg-red-100 text-red-700 px-2 py-1 rounded">✗</span></td>
-                  <td class="text-center"><span class="bg-green-100 text-green-700 px-2 py-1 rounded">✓</span></td>
-                </tr>
-                <tr>
-                  <td class="py-2">Journalism</td>
-                  <td class="text-center"><span class="bg-red-100 text-red-700 px-2 py-1 rounded">✗</span></td>
-                  <td class="text-center"><span class="bg-green-100 text-green-700 px-2 py-1 rounded">✓</span></td>
-                </tr>
-              </tbody>
-            </table>
+          <div class="space-y-3">
+            <!-- Core Subjects -->
+            <div class="border rounded-lg p-3 bg-slate-50 hover:bg-slate-100 transition subject-row" data-config="jh-regular" data-subject="core">
+              <div class="flex items-center justify-between">
+                <div class="flex-1">
+                  <div class="font-semibold text-sm text-slate-900">📚 Core Subjects</div>
+                  <div class="text-xs text-slate-500">MATH, SCI, ENG, FIL, MAPEH, ESP, ARPAN, TLE</div>
+                </div>
+                <div class="flex gap-4">
+                  <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" class="subject-checkbox" data-type="regular" checked />
+                    <span class="text-xs font-semibold text-slate-600">Regular</span>
+                  </label>
+                  <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" class="subject-checkbox" data-type="special" checked />
+                    <span class="text-xs font-semibold text-slate-600">Special</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Specialized Subjects -->
+            <div class="border rounded-lg p-3 bg-slate-50 hover:bg-slate-100 transition subject-row" data-config="jh-regular" data-subject="specialized">
+              <div class="flex items-center justify-between">
+                <div class="flex-1">
+                  <div class="font-semibold text-sm text-slate-900">✨ Specialized Subjects</div>
+                  <div class="text-xs text-slate-500">SPA, SPJ</div>
+                </div>
+                <div class="flex gap-4">
+                  <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" class="subject-checkbox" data-type="regular" />
+                    <span class="text-xs font-semibold text-slate-600">Regular</span>
+                  </label>
+                  <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" class="subject-checkbox" data-type="special" checked />
+                    <span class="text-xs font-semibold text-slate-600">Special</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="mt-3 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700">
+            ℹ️ 2 subject types × 8 periods = 16 total assignments available
           </div>
         </div>
 
@@ -361,27 +377,78 @@
           </div>
         </div>
 
-      </div>
-
-      <!-- Save Button -->
-      <div class="border-t pt-4 flex justify-end gap-3">
-        <button type="button" class="px-4 py-2 bg-slate-300 text-slate-500 rounded cursor-not-allowed text-sm" disabled title="Demo only">
-          💾 Save JH Configuration
-        </button>
-      </div>
-    </div>
-
-    <!-- Tab Content: Senior High -->
-    <div id="tab-sh" class="settings-tab-content hidden p-6">
-      <!-- Coming Soon Overlay -->
-      <div class="relative min-h-[600px]">
-        <div class="absolute inset-0 bg-white z-10 rounded-lg flex items-center justify-center">
-          <div class="bg-slate-50 px-8 py-6 rounded-lg shadow-xl border-2 border-slate-300">
-            <div class="text-center">
-              <div class="text-5xl mb-3">🚧</div>
-              <h4 class="text-xl font-bold text-slate-800 mb-2">Coming Soon</h4>
-              <p class="text-sm text-slate-600">Senior High configuration will be available in a future update</p>
+        <!-- Section Types -->
+        <div class="border rounded-lg p-4 bg-white">
+          <h4 class="font-semibold mb-3 text-slate-800">📋 Subject Assignments</h4>
+          <div class="grid grid-cols-2 gap-3 mb-4">
+            <div class="border rounded p-3 bg-blue-50">
+              <div class="flex items-center gap-2 mb-2">
+                <div class="w-8 h-8 bg-blue-500 text-white rounded flex items-center justify-center font-bold text-sm">R</div>
+                <div>
+                  <div class="font-semibold text-sm">Regular</div>
+                  <div class="text-xs text-slate-500">8 periods</div>
+                </div>
+              </div>
+              <div class="text-xs text-slate-600">7-Saturn, 8-Jupiter</div>
             </div>
+            <div class="border rounded p-3 bg-purple-50">
+              <div class="flex items-center gap-2 mb-2">
+                <div class="w-8 h-8 bg-purple-500 text-white rounded flex items-center justify-center font-bold text-sm">S</div>
+                <div>
+                  <div class="font-semibold text-sm">Special</div>
+                  <div class="text-xs text-slate-500">9 periods</div>
+                </div>
+              </div>
+              <div class="text-xs text-slate-600">7-SPA, 8-SPJ</div>
+            </div>
+          </div>
+          <div class="space-y-3">
+            <!-- Core Subjects -->
+            <div class="border rounded-lg p-3 bg-slate-50 hover:bg-slate-100 transition subject-row" data-config="jh-shortened" data-subject="core">
+              <div class="flex items-center justify-between">
+                <div class="flex-1">
+                  <div class="font-semibold text-sm text-slate-900">📚 Core Subjects</div>
+                  <div class="text-xs text-slate-500">MATH, SCI, ENG, FIL, MAPEH, ESP, ARPAN, TLE</div>
+                </div>
+                <div class="flex gap-4">
+                  <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" class="subject-checkbox" data-type="regular" checked />
+                    <span class="text-xs font-semibold text-slate-600">Regular</span>
+                  </label>
+                  <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" class="subject-checkbox" data-type="special" checked />
+                    <span class="text-xs font-semibold text-slate-600">Special</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Specialized Subjects -->
+            <div class="border rounded-lg p-3 bg-slate-50 hover:bg-slate-100 transition subject-row" data-config="jh-shortened" data-subject="specialized">
+              <div class="flex items-center justify-between">
+                <div class="flex-1">
+                  <div class="font-semibold text-sm text-slate-900">✨ Specialized Subjects</div>
+                  <div class="text-xs text-slate-500">SPA, SPJ</div>
+                </div>
+                <div class="flex gap-4">
+                  <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" class="subject-checkbox" data-type="regular" />
+                    <span class="text-xs font-semibold text-slate-600">Regular</span>
+                  </label>
+                  <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" class="subject-checkbox" data-type="special" checked />
+                    <span class="text-xs font-semibold text-slate-600">Special</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="mt-3 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700">
+            ℹ️ 2 subject types × 8 periods = 16 total assignments available
+          </div>
+        </div>
+
+      </div>
           </div>
         </div>
       </div>
@@ -1057,6 +1124,23 @@ document.addEventListener('DOMContentLoaded', function() {
   // Initialize schedules
   ['jh-regular', 'jh-shortened', 'sh-regular', 'sh-shortened'].forEach(config => {
     calculateSchedule(config);
+  });
+
+  // Handle subject checkbox changes
+  document.querySelectorAll('.subject-checkbox').forEach(checkbox => {
+    checkbox.addEventListener('change', function() {
+      const row = this.closest('.subject-row');
+      const config = row.getAttribute('data-config');
+      const subject = row.getAttribute('data-subject');
+      const type = this.getAttribute('data-type');
+      
+      // Store state (in mock UI, this is just visual - no backend yet)
+      const isChecked = this.checked;
+      this.parentElement.classList.toggle('opacity-50', !isChecked);
+      
+      // Log for debugging
+      console.log(`Subject config: ${config}, Subject: ${subject}, Type: ${type}, Enabled: ${isChecked}`);
+    });
   });
 });
 </script>
