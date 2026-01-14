@@ -1,9 +1,7 @@
-@extends('admin.layout')
+<?php $__env->startSection('title','Schedule Maker - Scheduler'); ?>
+<?php $__env->startSection('heading','Schedule Maker — Scheduler'); ?>
 
-@section('title','Schedule Maker - Scheduler')
-@section('heading','Schedule Maker — Scheduler')
-
-@section('content')
+<?php $__env->startSection('content'); ?>
 <style>
   /* Hide dropdown arrows */
   .subject-dropdown, .teacher-dropdown {
@@ -17,18 +15,18 @@
 <div class="min-h-screen bg-white p-6">
   <div class="max-w-full mx-auto">
 
-    {{-- Pass subjects and teachers data to JavaScript --}}
+    
     <script>
       window.schedulerData = {
-        subjects: @json($subjects),
-        teachers: @json($teachers)
+        subjects: <?php echo json_encode($subjects, 15, 512) ?>,
+        teachers: <?php echo json_encode($teachers, 15, 512) ?>
       };
     </script>
 
     <!-- Main Content: Full Width Schedule -->
     <!-- Tabs Navigation -->
           <div class="border-b bg-slate-50 flex">
-            <button data-tab="master" class="tab-button flex-1 px-6 py-4 font-semibold border-b-2 border-blue-600 text-blue-600 hover:bg-blue-50">
+            <button data-tab="master" class="tab-button flex-1 px-6 py-4 font-semibold text-slate-700 border-b-2 border-blue-600 text-blue-600 hover:bg-blue-50">
               📊 Master Schedule
             </button>
             <button data-tab="sections" class="tab-button flex-1 px-6 py-4 font-semibold text-slate-500 hover:text-slate-700 hover:bg-slate-100">
@@ -108,27 +106,27 @@
                   </tr>
                 </thead>
                 <tbody>
-                  @foreach($sections as $section)
-                  <!-- Row for {{ $section->name }} -->
+                  <?php $__currentLoopData = $sections; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $section): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                  <!-- Row for <?php echo e($section->name); ?> -->
                   <tr class="border-b hover:bg-blue-50">
-                    <td class="px-4 py-3 font-semibold text-slate-900">{{ $section->grade_level_id + 6 }}-{{ $section->name }}</td>
-                    @for($period = 1; $period <= 9; $period++)
-                    <td class="px-4 py-3 text-center schedule-cell" data-section="{{ $section->name }}" data-period="{{ $period }}">
+                    <td class="px-4 py-3 font-semibold text-slate-900"><?php echo e($section->grade_level_id + 6); ?>-<?php echo e($section->name); ?></td>
+                    <?php for($period = 1; $period <= 9; $period++): ?>
+                    <td class="px-4 py-3 text-center schedule-cell" data-section="<?php echo e($section->name); ?>" data-period="<?php echo e($period); ?>">
                       <div class="p-1">
                         <select class="subject-dropdown w-full px-1 py-1 text-xs border border-slate-300 rounded mb-1">
                           <option value="">Select Subject</option>
-                          @foreach($subjects as $subject)
-                            <option value="{{ $subject->id }}">{{ $subject->name }}</option>
-                          @endforeach
+                          <?php $__currentLoopData = $subjects; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $subject): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <option value="<?php echo e($subject->id); ?>"><?php echo e($subject->name); ?></option>
+                          <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </select>
                         <select class="teacher-dropdown w-full px-1 py-1 text-xs border border-slate-300 rounded">
                           <option value="">Assign Teacher</option>
                         </select>
                       </div>
                     </td>
-                    @endfor
+                    <?php endfor; ?>
                   </tr>
-                  @endforeach
+                  <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </tbody>
               </table>
             </div>
@@ -543,4 +541,6 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 </script>
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('admin.layout', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\TuroTugma\resources\views/admin/schedule-maker/scheduler.blade.php ENDPATH**/ ?>
