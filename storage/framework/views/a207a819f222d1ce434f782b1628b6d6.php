@@ -26,7 +26,7 @@
     <!-- Main Content: Full Width Schedule -->
     <!-- Tabs Navigation -->
           <div class="border-b bg-slate-50 flex">
-            <button data-tab="master" class="tab-button flex-1 px-6 py-4 font-semibold text-slate-700 border-b-2 border-blue-600 text-blue-600 hover:bg-blue-50">
+            <button data-tab="master" class="tab-button flex-1 px-6 py-4 font-semibold border-b-2 border-blue-600 text-blue-600 hover:bg-blue-50">
               📊 Master Schedule
             </button>
             <button data-tab="sections" class="tab-button flex-1 px-6 py-4 font-semibold text-slate-500 hover:text-slate-700 hover:bg-slate-100">
