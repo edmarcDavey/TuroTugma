@@ -10,6 +10,8 @@ use App\Models\PeriodRestriction;
 use App\Models\Subject;
 use App\Models\User;
 use App\Models\ScheduleSection;
+use App\Models\Teacher;
+use Illuminate\Support\Facades\DB;
 
 class SchedulingConfigController extends Controller
 {
@@ -22,7 +24,24 @@ class SchedulingConfigController extends Controller
         $teachers = User::where('role', 'teacher')->orderBy('name')->get();
         $sections_jhs = ScheduleSection::where('level', 'junior_high')->orderBy('name')->get();
         $sections_shs = ScheduleSection::where('level', 'senior_high')->orderBy('name')->get();
-        return view('admin.schedule-maker.settings', compact('jh','sh','general','subjects','teachers','sections_jhs','sections_shs'));
+        
+        // Get distinct ancillary roles from teachers table
+        // ancillary_assignments is stored as JSON/text, so we need to extract unique values
+        $ancillaryRoles = Teacher::whereNotNull('ancillary_assignments')
+            ->get()
+            ->pluck('ancillary_assignments')
+            ->filter()
+            ->map(function($item) {
+                // If it's JSON encoded, decode it; otherwise use as-is
+                $decoded = json_decode($item, true);
+                return is_array($decoded) ? $decoded : [$item];
+            })
+            ->flatten()
+            ->unique()
+            ->sort()
+            ->values();
+        
+        return view('admin.schedule-maker.settings', compact('jh','sh','general','subjects','teachers','sections_jhs','sections_shs','ancillaryRoles'));
     }
 
     public function store(Request $request)

@@ -6,16 +6,8 @@
 <?php $__env->startSection('content'); ?>
 
 <style>
-  /* Remove dropdown arrow from datalist input */
-  #subject-name::-webkit-calendar-picker-indicator {
-    display: none;
-  }
-  #subject-name::-webkit-list-button {
-    display: none;
-  }
-</style>
 
-<div class="min-h-screen bg-white">
+</style>
   <div class="max-w-7xl mx-auto p-6">
 
     <!-- Demo Notice -->
@@ -828,10 +820,14 @@
               <label class="block text-sm font-semibold text-slate-700 mb-2">Who to restrict?</label>
               <select id="restriction-type" class="w-full border border-slate-300 rounded px-3 py-2 text-sm">
                 <option value="">-- Select --</option>
-                <option value="dept-head">Department Head</option>
-                <option value="ict-coordinator">ICT Coordinator</option>
                 <option value="teacher">Specific Teacher</option>
-                <option value="ancillary">All Teachers with Ancillary Tasks</option>
+                <option value="all-ancillary">All Teachers with Ancillary Tasks</option>
+                <?php if($ancillaryRoles->count() > 0): ?>
+                  <option value="" disabled style="font-weight: bold; background-color: #f3f4f6;">── Ancillary Roles ──</option>
+                  <?php $__currentLoopData = $ancillaryRoles; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $role): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <option value="ancillary-<?php echo e(strtolower(str_replace(' ', '-', $role))); ?>">&nbsp;&nbsp;<?php echo e($role); ?></option>
+                  <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                <?php endif; ?>
               </select>
             </div>
 
@@ -944,20 +940,17 @@
           <form id="constraint-form" class="space-y-4">
             <div>
               <label class="block text-sm font-semibold text-slate-700 mb-2">Subject Name</label>
-              <input type="text" id="subject-name" list="subject-list" class="w-full border border-slate-300 rounded px-3 py-2 text-sm" placeholder="Type or select a subject" required>
-              <datalist id="subject-list">
-                <option value="Mathematics">
-                <option value="Science">
-                <option value="Filipino">
-                <option value="English">
-                <option value="Araling Panlipunan">
-                <option value="Edukasyon sa Pagpapakatao">
-                <option value="Music, Arts, PE, & Health">
-                <option value="Technology & Livelihood Education">
-                <option value="Special Program in the Arts">
-                <option value="Special Program in Journalism">
-              </datalist>
-              <p class="text-xs text-slate-500 mt-1">Type to filter or click to see all subjects</p>
+              <div class="relative">
+                <input type="text" id="subject-search" class="w-full border border-slate-300 rounded px-3 py-2 text-sm" placeholder="Type to search or select a subject">
+                <select id="subject-name" class="hidden">
+                  <option value="">-- Select a subject --</option>
+                  <?php $__currentLoopData = $subjects; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $subject): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <option value="<?php echo e($subject->id); ?>" data-name="<?php echo e($subject->name); ?>"><?php echo e($subject->name); ?></option>
+                  <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                </select>
+                <div id="subject-dropdown" class="hidden absolute top-full left-0 right-0 mt-1 border border-slate-300 bg-white rounded shadow-lg z-50 max-h-48 overflow-y-auto">
+                </div>
+              </div>
             </div>
 
             <div>
@@ -1737,19 +1730,20 @@ document.addEventListener('DOMContentLoaded', function() {
     // Determine type based on name
     let type = '';
     let teacherName = '';
+    let ancillaryRole = '';
     
-    if (name === 'Dept. Heads') {
-      type = 'dept-head';
-    } else if (name === 'ICT Coordinator') {
-      type = 'ict-coordinator';
-    } else if (name === 'Teachers with Ancillary Tasks') {
-      type = 'ancillary';
+    if (name === 'All Teachers with Ancillary Tasks') {
+      type = 'all-ancillary';
+    } else if (name.includes('Department Head') || name.includes('ICT Coordinator') || name.includes('Coordinator') || name.includes('Head') || name.includes('Director') || name.includes('Adviser')) {
+      // It's an ancillary role
+      type = 'ancillary-' + name.toLowerCase().replace(/ /g, '-');
+      ancillaryRole = name;
     } else {
       type = 'teacher';
       teacherName = name;
     }
     
-    return { type, teacherName, periods };
+    return { type, teacherName, ancillaryRole, periods };
   }
 
   // Function to open modal in add mode
@@ -1868,11 +1862,8 @@ document.addEventListener('DOMContentLoaded', function() {
     let displayName = '';
     let description = '';
 
-    if (type === 'dept-head') {
-      displayName = 'Dept. Heads';
-      description = 'Cannot teach ' + formatPeriods(selectedPeriods);
-    } else if (type === 'ict-coordinator') {
-      displayName = 'ICT Coordinator';
+    if (type === 'all-ancillary') {
+      displayName = 'All Teachers with Ancillary Tasks';
       description = 'Cannot teach ' + formatPeriods(selectedPeriods);
     } else if (type === 'teacher') {
       const teacherName = teacherSelect.value;
@@ -1882,8 +1873,11 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       displayName = teacherName;
       description = 'Cannot teach ' + formatPeriods(selectedPeriods);
-    } else if (type === 'ancillary') {
-      displayName = 'Teachers with Ancillary Tasks';
+    } else if (type.startsWith('ancillary-')) {
+      // Extract role name from value (e.g., "ancillary-department-head" -> "Department Head")
+      const roleSlug = type.replace('ancillary-', '');
+      const roleName = roleSlug.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+      displayName = roleName;
       description = 'Cannot teach ' + formatPeriods(selectedPeriods);
     }
 
@@ -1959,11 +1953,65 @@ document.addEventListener('DOMContentLoaded', function() {
   const deleteConstraintBtn = document.getElementById('delete-constraint-btn');
   const constraintForm = document.getElementById('constraint-form');
   const subjectNameInput = document.getElementById('subject-name');
+  const subjectSearchInput = document.getElementById('subject-search');
+  const subjectDropdown = document.getElementById('subject-dropdown');
   const constraintReasonInput = document.getElementById('constraint-reason');
   const constraintList = document.getElementById('constraint-list');
   const constraintCount = document.getElementById('constraint-count');
   
   let editingConstraintItem = null;
+
+  // Subject search functionality
+  function populateSubjectDropdown(filter = '') {
+    const options = subjectNameInput.querySelectorAll('option');
+    subjectDropdown.innerHTML = '';
+    
+    options.forEach(option => {
+      if (option.value === '') return; // Skip empty option
+      
+      const name = option.dataset.name || option.textContent;
+      if (filter === '' || name.toLowerCase().includes(filter.toLowerCase())) {
+        const div = document.createElement('div');
+        div.className = 'px-3 py-2 hover:bg-blue-100 cursor-pointer text-sm border-b last:border-b-0';
+        div.textContent = name;
+        div.dataset.value = option.value;
+        div.dataset.name = name;
+        
+        div.addEventListener('click', function() {
+          subjectNameInput.value = this.dataset.value;
+          subjectSearchInput.value = this.dataset.name;
+          subjectDropdown.classList.add('hidden');
+        });
+        
+        subjectDropdown.appendChild(div);
+      }
+    });
+    
+    // Show dropdown if there are results
+    if (subjectDropdown.children.length > 0) {
+      subjectDropdown.classList.remove('hidden');
+    } else {
+      subjectDropdown.classList.add('hidden');
+    }
+  }
+
+  // Search input event listener
+  subjectSearchInput.addEventListener('input', function(e) {
+    populateSubjectDropdown(e.target.value);
+  });
+
+  // Open dropdown on focus
+  subjectSearchInput.addEventListener('focus', function() {
+    populateSubjectDropdown(this.value);
+  });
+
+  // Close dropdown when clicking outside
+  document.addEventListener('click', function(e) {
+    if (e.target !== subjectSearchInput && e.target !== subjectDropdown && !subjectDropdown.contains(e.target)) {
+      subjectDropdown.classList.add('hidden');
+    }
+  });
+
 
   // Function to update constraint count
   function updateConstraintCount() {
@@ -1999,6 +2047,9 @@ document.addEventListener('DOMContentLoaded', function() {
   function openConstraintAddMode() {
     editingConstraintItem = null;
     constraintForm.reset();
+    subjectSearchInput.value = '';
+    subjectNameInput.value = '';
+    subjectDropdown.classList.add('hidden');
     deleteConstraintBtn.classList.add('hidden');
     constraintModal.classList.remove('hidden');
   }
@@ -2008,8 +2059,22 @@ document.addEventListener('DOMContentLoaded', function() {
     editingConstraintItem = item;
     const data = extractConstraintData(item);
     
-    // Set subject name
-    subjectNameInput.value = data.subjectName;
+    // Set subject name - find the option by text and select it
+    let found = false;
+    for (let i = 0; i < subjectNameInput.options.length; i++) {
+      if (subjectNameInput.options[i].dataset.name === data.subjectName) {
+        subjectNameInput.value = subjectNameInput.options[i].value;
+        subjectSearchInput.value = data.subjectName;
+        found = true;
+        break;
+      }
+    }
+    
+    // If subject not found in dropdown, just clear the values
+    if (!found) {
+      subjectNameInput.value = '';
+      subjectSearchInput.value = '';
+    }
     
     // Set reason
     constraintReasonInput.value = data.reason;
@@ -2075,11 +2140,13 @@ document.addEventListener('DOMContentLoaded', function() {
   constraintForm.addEventListener('submit', function(e) {
     e.preventDefault();
 
-    const subjectName = subjectNameInput.value.trim();
-    if (!subjectName) {
-      alert('Please enter a subject name');
+    const subjectId = subjectNameInput.value.trim();
+    if (!subjectId) {
+      alert('Please select a subject');
       return;
     }
+
+    const subjectName = subjectSearchInput.value.trim();
 
     // Get selected periods
     const selectedPeriods = [];
