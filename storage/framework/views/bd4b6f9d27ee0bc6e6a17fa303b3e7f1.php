@@ -93,288 +93,30 @@
             console.log('Using cached restrictions from localStorage');
           }
         });
-      
-      // Helper function to filter subjects based on section type
-      function getFilteredSubjects(isSpecial) {
-        const specializedCodes = window.schedulerData.specializedSubjectCodes;
-        
-        if (isSpecial) {
-          // Special sections: show all subjects (core + specialized)
-          return window.schedulerData.subjects;
-        } else {
-          // Regular sections: show only core subjects (exclude SPA, SPJ)
-          return window.schedulerData.subjects.filter(subject => 
-            !specializedCodes.includes(subject.code)
-          );
-        }
-      }
-      
-      // Helper function to check if a subject is specialized
-      function isSpecializedSubject(subjectId) {
-        const subject = window.schedulerData.subjects.find(s => s.id == subjectId);
-        return subject && window.schedulerData.specializedSubjectCodes.includes(subject.code);
-      }
-      
-      // Helper function to count specialized subjects in a section row
-      function countSpecializedSubjects(sectionRow) {
-        let count = 0;
-        const subjectDropdowns = sectionRow.querySelectorAll('.subject-dropdown');
-        subjectDropdowns.forEach(dropdown => {
-          if (dropdown.value && isSpecializedSubject(parseInt(dropdown.value))) {
-            count++;
-          }
-        });
-        return count;
-      }
-      
-      // Function to initialize all dropdowns
-      window.initializeDropdowns = function() {
-        console.log('=== INITIALIZING DROPDOWNS ===');
-        console.log('Subject constraints:', window.schedulerData.subjectConstraints);
-        console.log('Number of constraints:', Object.keys(window.schedulerData.subjectConstraints || {}).length);
-        
-        // Debug: Show all constraint details
-        for (const key in window.schedulerData.subjectConstraints) {
-          const c = window.schedulerData.subjectConstraints[key];
-          console.log(`Constraint ${key}: subject_id=${c.subject_id} (type: ${typeof c.subject_id}), name="${c.subject_name}", periods=[${c.periods}]`);
-        }
-        
-        // Debug: Show first few subjects from scheduler data
-        console.log('First 3 subjects in schedulerData:', window.schedulerData.subjects.slice(0, 3).map(s => `${s.name} (id=${s.id}, type=${typeof s.id})`));
-        
-        document.querySelectorAll('.schedule-cell').forEach(cell => {
-          const subjectDropdown = cell.querySelector('.subject-dropdown');
-          const teacherDropdown = cell.querySelector('.teacher-dropdown');
-          
-          if (!subjectDropdown || !teacherDropdown) return;
-          
-          // Get section info from parent row
-          const sectionRow = cell.closest('tr');
-          const isSpecial = sectionRow.dataset.isSpecial === '1';
-          const sectionId = sectionRow.dataset.sectionId;
-          
-          // Populate subject dropdown based on section type
-          const filteredSubjects = getFilteredSubjects(isSpecial);
-          const currentSubject = subjectDropdown.value;
-          const periodNumber = parseInt(cell.getAttribute('data-period'));
-          
-          subjectDropdown.innerHTML = '<option value="">Select Subject</option>';
-          filteredSubjects.forEach(subject => {
-            const option = document.createElement('option');
-            option.value = subject.id;
-            
-            // Check if subject is restricted for this period
-            const isRestricted = window.isSubjectRestricted(subject, periodNumber);
-            const constraintReason = window.getSubjectConstraintReason(subject, periodNumber);
-            
-            // Debug logging for period 1 only to reduce noise
-            if (periodNumber === 1 && (isRestricted || Object.keys(window.schedulerData.subjectConstraints || {}).length > 0)) {
-              console.log(`P${periodNumber} Subject: "${subject.name}" (id=${subject.id}, type=${typeof subject.id}) → restricted=${isRestricted}`);
-            }
-            
-            if (isRestricted) {
-              // Show but disable restricted subjects
-              option.textContent = subject.name + ' ⛔ (RESTRICTED)';
-              option.disabled = true;
-              option.style.color = '#a1a1a1';
-              option.title = `Subject Constraint: ${constraintReason}`;
-              option.className = 'restricted-option';
-            } else {
-              option.textContent = subject.name;
-            }
-            
-            if (subject.id == currentSubject) {
-              option.selected = true;
-            }
-            subjectDropdown.appendChild(option);
-          });
-        });
-        
-        console.log('=== DROPDOWNS INITIALIZED ===');
-      };
-      
+
       // Load subject constraints from database
       fetch('<?php echo e(route("admin.schedule-maker.settings.get-subject-constraints")); ?>')
         .then(response => response.json())
         .then(data => {
-          if (data.success && data.constraints) {
-            // Convert array to object if needed (PHP returns JSON arrays as arrays, not objects)
-            let constraints = data.constraints;
-            if (Array.isArray(constraints)) {
-              const constraintsObj = {};
-              constraints.forEach((constraint, index) => {
-                constraintsObj[index] = constraint;
-              });
-              constraints = constraintsObj;
-            }
-            window.schedulerData.subjectConstraints = constraints;
-            console.log('Subject constraints loaded:', Object.keys(constraints).length, 'constraints');
-            
-            // Re-initialize all dropdowns now that constraints are loaded
-            window.initializeDropdowns();
-          } else {
-            window.schedulerData.subjectConstraints = {};
-            window.initializeDropdowns();
+          if (data && data.success && Array.isArray(data.constraints)) {
+            window.schedulerData.subjectConstraints = data.constraints;
+            try { localStorage.setItem('subjectConstraints', JSON.stringify(data.constraints)); } catch(e) {}
+            window.dispatchEvent(new CustomEvent('subjectConstraintsLoaded', { detail: data.constraints }));
+            console.log('Subject constraints loaded:', data.constraints);
           }
         })
         .catch(error => {
           console.error('Error loading subject constraints:', error);
-          window.schedulerData.subjectConstraints = {};
-          window.initializeDropdowns();
+          // Fallback to localStorage
+          try {
+            const cached = JSON.parse(localStorage.getItem('subjectConstraints') || '[]');
+            if (Array.isArray(cached)) {
+              window.schedulerData.subjectConstraints = cached;
+              window.dispatchEvent(new CustomEvent('subjectConstraintsLoaded', { detail: cached }));
+              console.log('Using cached subject constraints from localStorage');
+            }
+          } catch(e) {}
         });
-      
-      // Listen for constraint updates from settings page
-      window.addEventListener('constraintsUpdated', function(e) {
-        window.schedulerData.subjectConstraints = e.detail;
-        console.log('Subject constraints updated:', e.detail);
-        // Re-initialize dropdowns to reflect new constraints
-        window.initializeDropdowns();
-      });
-
-      // Global function to check if a teacher is restricted for a period
-      window.isTeacherRestricted = function(teacher, period) {
-        const restrictions = window.schedulerData.facultyRestrictions;
-        const teacherAncillaries = window.schedulerData.teacherAncillaries[teacher.id] || [];
-        
-        // Check all restrictions
-        for (const restrictionId in restrictions) {
-          const restriction = restrictions[restrictionId];
-          
-          // Skip if periods don't include this period
-          if (!restriction.periods || !restriction.periods.includes(period)) {
-            continue;
-          }
-          
-          // Check restriction type
-          if (restriction.type === 'teacher') {
-            // Specific teacher restriction
-            if (restriction.metadata.teacherId === teacher.id) {
-              return true;
-            }
-          } else if (restriction.type === 'all-ancillary') {
-            // All teachers with ANY ancillary task
-            if (teacherAncillaries.length > 0) {
-              return true;
-            }
-          } else if (restriction.type === 'ancillary-role') {
-            // Specific ancillary role
-            const roleName = restriction.metadata.roleName;
-            if (teacherAncillaries.includes(roleName)) {
-              return true;
-            }
-          }
-        }
-        
-        return false;
-      };
-
-      // Global function to get restriction reason for a teacher
-      window.getRestrictionReason = function(teacher, period) {
-        const restrictions = window.schedulerData.facultyRestrictions;
-        const teacherAncillaries = window.schedulerData.teacherAncillaries[teacher.id] || [];
-        
-        // Check all restrictions
-        for (const restrictionId in restrictions) {
-          const restriction = restrictions[restrictionId];
-          
-          // Skip if periods don't include this period
-          if (!restriction.periods || !restriction.periods.includes(period)) {
-            continue;
-          }
-          
-          // Check if this restriction applies to this teacher
-          let applies = false;
-          
-          if (restriction.type === 'teacher') {
-            if (restriction.metadata.teacherId === teacher.id) {
-              applies = true;
-            }
-          } else if (restriction.type === 'all-ancillary') {
-            if (teacherAncillaries.length > 0) {
-              applies = true;
-            }
-          } else if (restriction.type === 'ancillary-role') {
-            const roleName = restriction.metadata.roleName;
-            if (teacherAncillaries.includes(roleName)) {
-              applies = true;
-            }
-          }
-          
-          if (applies) {
-            return restriction.reason;
-          }
-        }
-        
-        return '';
-      };
-
-      // Global function to check if a subject is restricted for a period
-      window.isSubjectRestricted = function(subject, period) {
-        const constraints = window.schedulerData.subjectConstraints;
-        
-        if (!constraints || Object.keys(constraints).length === 0) {
-          return false;
-        }
-        
-        // Normalize subject.id to number
-        const subjectId = parseInt(subject.id);
-        const periodNum = parseInt(period);
-        
-        // Check all constraints
-        for (const constraintId in constraints) {
-          const constraint = constraints[constraintId];
-          
-          // Normalize constraint.subject_id to number for comparison
-          const constraintSubjectId = parseInt(constraint.subject_id);
-          
-          // Check if this constraint applies to this subject and period
-          const subjectIdMatch = constraintSubjectId === subjectId;
-          const periodMatch = constraint.periods && Array.isArray(constraint.periods) && constraint.periods.map(p => parseInt(p)).includes(periodNum);
-          
-          // Debug logging for matching subjects
-          if (subjectIdMatch) {
-            console.log(`🔍 Match found for "${subject.name}" (id=${subjectId}): constraint.subject_id=${constraintSubjectId}, period=${periodNum}, periods=${JSON.stringify(constraint.periods)}, periodMatch=${periodMatch}`);
-          }
-          
-          if (subjectIdMatch && periodMatch) {
-            console.log(`✅ Subject "${subject.name}" IS RESTRICTED for period ${periodNum}`);
-            return true;
-          }
-        }
-        
-        return false;
-      };
-
-      // Global function to get constraint reason for a subject
-      window.getSubjectConstraintReason = function(subject, period) {
-        const constraints = window.schedulerData.subjectConstraints;
-        
-        if (!constraints || Object.keys(constraints).length === 0) {
-          return '';
-        }
-        
-        // Normalize IDs to numbers
-        const subjectId = parseInt(subject.id);
-        const periodNum = parseInt(period);
-        
-        // Check all constraints
-        for (const constraintId in constraints) {
-          const constraint = constraints[constraintId];
-          
-          // Normalize constraint.subject_id to number for comparison
-          const constraintSubjectId = parseInt(constraint.subject_id);
-          
-          // Check if this constraint applies to this subject and period
-          const subjectIdMatch = constraintSubjectId === subjectId;
-          const periodMatch = constraint.periods && Array.isArray(constraint.periods) && constraint.periods.map(p => parseInt(p)).includes(periodNum);
-          
-          if (subjectIdMatch && periodMatch) {
-            return constraint.reason || 'Restricted by subject constraint';
-          }
-        }
-        
-        return '';
-      };
     </script>
 
     <!-- Main Content: Full Width Schedule -->
@@ -753,7 +495,72 @@ document.addEventListener('DOMContentLoaded', function() {
   const schoolLevelFilter = document.getElementById('schoolLevelFilter');
   const gradeLevelFilter = document.getElementById('gradeLevelFilter');
   
-  // Helper functions already defined above in the script block
+  // Function to get filtered subjects for a section
+  function getFilteredSubjects(isSpecial) {
+    const specializedCodes = window.schedulerData.specializedSubjectCodes;
+    
+    if (isSpecial) {
+      // Special sections: show all subjects (core + specialized)
+      return window.schedulerData.subjects;
+    } else {
+      // Regular sections: show only core subjects (exclude SPA, SPJ)
+      return window.schedulerData.subjects.filter(subject => 
+        !specializedCodes.includes(subject.code)
+      );
+    }
+  }
+  
+  // Function to check if a subject is specialized
+  function isSpecializedSubject(subjectId) {
+    const subject = window.schedulerData.subjects.find(s => s.id == subjectId);
+    return subject && window.schedulerData.specializedSubjectCodes.includes(subject.code);
+  }
+
+  // Subject constraints helpers
+  function isSubjectBlockedAtPeriod(subjectId, periodNumber) {
+    if (!subjectId || !periodNumber) return false;
+    const constraints = window.schedulerData.subjectConstraints;
+    if (!constraints) return false;
+    if (Array.isArray(constraints)) {
+      const entry = constraints.find(c => parseInt(c.subject_id) === parseInt(subjectId));
+      if (!entry) return false;
+      const periods = Array.isArray(entry.periods) ? entry.periods : [];
+      return periods.includes(parseInt(periodNumber));
+    }
+    // object-map fallback: { [subjectId]: [periods] }
+    const arr = constraints[String(subjectId)] || constraints[parseInt(subjectId)] || [];
+    return Array.isArray(arr) && arr.includes(parseInt(periodNumber));
+  }
+
+  function applySubjectConstraintsToDropdown(subjectDropdown, periodNumber) {
+    if (!subjectDropdown) return;
+    Array.from(subjectDropdown.options).forEach(opt => {
+      const sid = parseInt(opt.value || '');
+      if (!sid) return;
+      const blocked = isSubjectBlockedAtPeriod(sid, periodNumber);
+      if (blocked) {
+        opt.disabled = true;
+        opt.title = `Blocked by Subject Constraints for P${periodNumber}`;
+        opt.classList.add('text-slate-400');
+      } else {
+        opt.disabled = false;
+        opt.title = '';
+        opt.classList.remove('text-slate-400');
+      }
+    });
+  }
+  
+  // Function to count specialized subjects in a section row
+  function countSpecializedSubjects(sectionRow) {
+    let count = 0;
+    const subjectDropdowns = sectionRow.querySelectorAll('.subject-dropdown');
+    subjectDropdowns.forEach(dropdown => {
+      if (dropdown.value && isSpecializedSubject(parseInt(dropdown.value))) {
+        count++;
+      }
+    });
+    return count;
+  }
   
   // Function to render period headers
   function renderPeriodHeaders(sessionType) {
@@ -915,7 +722,6 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   // Initialize all schedule cells with dropdown functionality
-  // NOTE: Subject dropdowns are populated by window.initializeDropdowns() after constraints load
   document.querySelectorAll('.schedule-cell').forEach(cell => {
     const subjectDropdown = cell.querySelector('.subject-dropdown');
     const teacherDropdown = cell.querySelector('.teacher-dropdown');
@@ -926,6 +732,102 @@ document.addEventListener('DOMContentLoaded', function() {
     const sectionRow = cell.closest('tr');
     const isSpecial = sectionRow.dataset.isSpecial === '1';
     const sectionId = sectionRow.dataset.sectionId;
+    
+    // Populate subject dropdown based on section type
+    const filteredSubjects = getFilteredSubjects(isSpecial);
+    const currentSubject = subjectDropdown.value;
+    const periodNumber = parseInt(cell.getAttribute('data-period'));
+    
+    subjectDropdown.innerHTML = '<option value="">Select Subject</option>';
+    filteredSubjects.forEach(subject => {
+      const option = document.createElement('option');
+      option.value = subject.id;
+      option.textContent = subject.name;
+      if (subject.id == currentSubject) {
+        option.selected = true;
+      }
+      subjectDropdown.appendChild(option);
+    });
+
+    // Apply subject constraints (disable blocked subjects for this period)
+    applySubjectConstraintsToDropdown(subjectDropdown, periodNumber);
+    
+    // Function to check if a teacher is restricted for a period
+    function isTeacherRestricted(teacher, period) {
+      const restrictions = window.schedulerData.facultyRestrictions;
+      const teacherAncillaries = window.schedulerData.teacherAncillaries[teacher.id] || [];
+      
+      // Check all restrictions
+      for (const restrictionId in restrictions) {
+        const restriction = restrictions[restrictionId];
+        
+        // Skip if periods don't include this period
+        if (!restriction.periods || !restriction.periods.includes(period)) {
+          continue;
+        }
+        
+        // Check restriction type
+        if (restriction.type === 'teacher') {
+          // Specific teacher restriction
+          if (restriction.metadata.teacherId === teacher.id) {
+            return true;
+          }
+        } else if (restriction.type === 'all-ancillary') {
+          // All teachers with ANY ancillary task
+          if (teacherAncillaries.length > 0) {
+            return true;
+          }
+        } else if (restriction.type === 'ancillary-role') {
+          // Specific ancillary role
+          const roleName = restriction.metadata.roleName;
+          if (teacherAncillaries.includes(roleName)) {
+            return true;
+          }
+        }
+      }
+      
+      return false;
+    }
+    
+    // Function to get restriction reason for a teacher
+    function getRestrictionReason(teacher, period) {
+      const restrictions = window.schedulerData.facultyRestrictions;
+      const teacherAncillaries = window.schedulerData.teacherAncillaries[teacher.id] || [];
+      
+      // Check all restrictions
+      for (const restrictionId in restrictions) {
+        const restriction = restrictions[restrictionId];
+        
+        // Skip if periods don't include this period
+        if (!restriction.periods || !restriction.periods.includes(period)) {
+          continue;
+        }
+        
+        // Check if this restriction applies to this teacher
+        let applies = false;
+        
+        if (restriction.type === 'teacher') {
+          if (restriction.metadata.teacherId === teacher.id) {
+            applies = true;
+          }
+        } else if (restriction.type === 'all-ancillary') {
+          if (teacherAncillaries.length > 0) {
+            applies = true;
+          }
+        } else if (restriction.type === 'ancillary-role') {
+          const roleName = restriction.metadata.roleName;
+          if (teacherAncillaries.includes(roleName)) {
+            applies = true;
+          }
+        }
+        
+        if (applies) {
+          return restriction.reason;
+        }
+      }
+      
+      return '';
+    }
     
     // Function to update teacher dropdown based on selected subject
     function updateTeacherDropdown() {
@@ -944,8 +846,8 @@ document.addEventListener('DOMContentLoaded', function() {
             option.value = teacher.id;
             
             // Check if teacher is restricted for this period
-            const isRestricted = window.isTeacherRestricted(teacher, periodNumber);
-            const restrictionReason = window.getRestrictionReason(teacher, periodNumber);
+            const isRestricted = isTeacherRestricted(teacher, periodNumber);
+            const restrictionReason = getRestrictionReason(teacher, periodNumber);
             
             if (isRestricted) {
               // Show but disable restricted teachers
@@ -1017,6 +919,16 @@ document.addEventListener('DOMContentLoaded', function() {
       saveScheduleChange(cell, subjectDropdown, teacherDropdown);
     });
   });
+
+  // Once subject constraints are loaded, apply to all subject dropdowns
+  window.addEventListener('subjectConstraintsLoaded', function() {
+    document.querySelectorAll('.schedule-cell').forEach(cell => {
+      const subjectDropdown = cell.querySelector('.subject-dropdown');
+      if (!subjectDropdown) return;
+      const periodNumber = parseInt(cell.getAttribute('data-period'));
+      applySubjectConstraintsToDropdown(subjectDropdown, periodNumber);
+    });
+  });
   
   // Function to save schedule changes
   function saveScheduleChange(cell, subjectDropdown, teacherDropdown) {
@@ -1057,4 +969,4 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 <?php $__env->stopSection(); ?>
 
-<?php echo $__env->make('admin.layout', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\TuroTugma\resources\views/admin/schedule-maker/scheduler.blade.php ENDPATH**/ ?>
+<?php echo $__env->make('admin.layout', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\TuroTugma\resources\views\admin\schedule-maker\scheduler.blade.php ENDPATH**/ ?>

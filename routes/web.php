@@ -97,13 +97,24 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
                 ->orderBy('grade_level_id')
                 ->orderBy('name')
                 ->get();
-            return view('admin.schedule-maker.scheduler', compact('subjects', 'teachers', 'sections'));
+            
+            // Calculate period times for both Regular and Shortened sessions
+            $periodsRegular = \App\Http\Controllers\Admin\SchedulingConfigController::calculatePeriodTimes('regular', 'junior_high');
+            $periodsShortened = \App\Http\Controllers\Admin\SchedulingConfigController::calculatePeriodTimes('shortened', 'junior_high');
+            
+            return view('admin.schedule-maker.scheduler', compact('subjects', 'teachers', 'sections', 'periodsRegular', 'periodsShortened'));
         })->name('scheduler');
         Route::get('/settings', [\App\Http\Controllers\Admin\SchedulingConfigController::class, 'index'])->name('settings');
         Route::post('/settings', [\App\Http\Controllers\Admin\SchedulingConfigController::class, 'store'])->name('settings.save');
         Route::post('/settings/qualifications', [\App\Http\Controllers\Admin\SchedulingConfigController::class, 'saveQualifications'])->name('settings.save-qualifications');
         Route::post('/settings/sections', [\App\Http\Controllers\Admin\SchedulingConfigController::class, 'saveSections'])->name('settings.save-sections');
         Route::post('/settings/constraints', [\App\Http\Controllers\Admin\SchedulingConfigController::class, 'saveConstraints'])->name('settings.save-constraints');
+        Route::post('/settings/jh-config', [\App\Http\Controllers\Admin\SchedulingConfigController::class, 'storeJHConfig'])->name('settings.save-jh-config');
+        Route::get('/settings/jh-config', [\App\Http\Controllers\Admin\SchedulingConfigController::class, 'getJHConfig'])->name('settings.get-jh-config');
         Route::get('/settings/teachers-by-type/{type}', [\App\Http\Controllers\Admin\SchedulingConfigController::class, 'getTeachersByType'])->name('settings.teachers-by-type');
+        Route::post('/settings/faculty-restrictions', [\App\Http\Controllers\Admin\SchedulingConfigController::class, 'saveFacultyRestrictions'])->name('settings.save-faculty-restrictions');
+        Route::get('/settings/faculty-restrictions', [\App\Http\Controllers\Admin\SchedulingConfigController::class, 'getFacultyRestrictions'])->name('settings.get-faculty-restrictions');
+        Route::post('/settings/subject-constraints', [\App\Http\Controllers\Admin\SchedulingConfigController::class, 'saveSubjectConstraints'])->name('settings.save-subject-constraints');
+        Route::get('/settings/subject-constraints', [\App\Http\Controllers\Admin\SchedulingConfigController::class, 'getSubjectConstraints'])->name('settings.get-subject-constraints');
     });
 });

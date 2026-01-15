@@ -6,7 +6,17 @@
 <?php $__env->startSection('content'); ?>
 
 <style>
-
+  /* Hide JH config inputs while loading from DB */
+  .jh-config-inputs {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease-in;
+  }
+  
+  .jh-config-inputs.loaded {
+    opacity: 1;
+    pointer-events: auto;
+  }
 </style>
   <div class="max-w-7xl mx-auto p-6">
 
@@ -30,7 +40,13 @@
 
     <!-- Tab Content: Junior High -->
     <div id="tab-jh" class="settings-tab-content p-6">
-      <h3 class="text-lg font-bold text-slate-900 mb-4">📘 Junior High Configuration</h3>
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-bold text-slate-900">📘 Junior High Configuration</h3>
+        <div id="auto-save-indicator" class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-100 text-slate-600">
+          <span class="inline-block w-2 h-2 rounded-full bg-slate-400"></span>
+          Ready
+        </div>
+      </div>
 
       <!-- Session Type Selector -->
       <div class="mb-6 flex gap-3">
@@ -80,26 +96,26 @@
                 <input type="radio" name="jh-regular-mode" value="auto" class="schedule-mode" data-config="jh-regular" checked />
                 <span>Auto</span>
               </label>
-              <label class="flex items-center gap-1 text-xs cursor-pointer">
-                <input type="radio" name="jh-regular-mode" value="manual" class="schedule-mode" data-config="jh-regular" />
-                <span>Manual</span>
+              <label class="flex items-center gap-1 text-xs cursor-not-allowed opacity-50">
+                <input type="radio" name="jh-regular-mode" value="manual" class="schedule-mode" data-config="jh-regular" disabled />
+                <span>Manual (Coming Soon)</span>
               </label>
             </div>
           </div>
-          <div class="grid grid-cols-2 gap-4 mb-3">
+          <div class="grid grid-cols-2 gap-4 mb-3 jh-config-inputs">
             <div>
               <label class="text-xs text-slate-600">Class Duration</label>
               <div class="flex items-center gap-2">
-                <input type="number" value="60" class="period-duration input w-20 text-sm" data-config="jh-regular" min="30" max="90" />
+                <input type="number" value="50" name="period_duration" class="period-duration input w-20 text-sm" data-config="jh-regular" min="30" max="90" />
                 <span class="text-xs text-slate-600">min</span>
               </div>
             </div>
             <div>
               <label class="text-xs text-slate-600">Total Periods</label>
-              <input type="number" value="9" class="period-count input w-20 text-sm" data-config="jh-regular" min="5" max="12" />
+              <input type="number" value="9" name="total_periods" class="period-count input w-20 text-sm" data-config="jh-regular" min="5" max="12" />
             </div>
           </div>
-          <div class="bg-slate-50 p-4 rounded space-y-3" id="jh-regular-schedule">
+          <div class="bg-slate-50 p-4 rounded space-y-3 jh-config-inputs" id="jh-regular-schedule">
             <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
               <div class="p-2 rounded border bg-blue-50 border-l-4 border-blue-400 text-xs">
                 <div class="font-semibold text-slate-900">P1</div>
@@ -161,126 +177,55 @@
           <div class="grid grid-cols-3 gap-4">
             <div class="border rounded-lg p-4 bg-slate-50">
               <div class="flex items-center gap-2 mb-3">
-                <input type="checkbox" class="break-enabled" data-config="jh-regular" data-break="morning" checked />
+                <input type="checkbox" name="morning_break_enabled" class="break-enabled" data-config="jh-regular" data-break="morning" checked />
                 <label class="text-sm font-semibold text-slate-700">Morning Break</label>
               </div>
               <div class="space-y-2 text-sm">
                 <div class="flex items-center gap-2">
                   <span class="text-slate-600 whitespace-nowrap">After P</span>
-                  <input type="number" value="3" class="break-after input w-14 px-2 py-1 border border-slate-300 rounded" data-config="jh-regular" data-break="morning" min="1" max="9" />
+                  <input type="number" value="3" name="morning_break_after_period" class="break-after input w-14 px-2 py-1 border border-slate-300 rounded" data-config="jh-regular" data-break="morning" min="1" max="9" />
                 </div>
                 <div class="flex items-center gap-2">
                   <span class="text-slate-600 whitespace-nowrap">Duration</span>
-                  <input type="number" value="20" class="break-duration input w-14 px-2 py-1 border border-slate-300 rounded" data-config="jh-regular" data-break="morning" min="5" max="60" />
+                  <input type="number" value="20" name="morning_break_duration" class="break-duration input w-14 px-2 py-1 border border-slate-300 rounded" data-config="jh-regular" data-break="morning" min="5" max="60" />
                   <span class="text-slate-600 text-xs">min</span>
                 </div>
               </div>
             </div>
             <div class="border rounded-lg p-4 bg-slate-50">
               <div class="flex items-center gap-2 mb-3">
-                <input type="checkbox" class="break-enabled" data-config="jh-regular" data-break="lunch" checked />
+                <input type="checkbox" name="lunch_break_enabled" class="break-enabled" data-config="jh-regular" data-break="lunch" checked />
                 <label class="text-sm font-semibold text-slate-700">Lunch Break</label>
               </div>
               <div class="space-y-2 text-sm">
                 <div class="flex items-center gap-2">
                   <span class="text-slate-600 whitespace-nowrap">After P</span>
-                  <input type="number" value="5" class="break-after input w-14 px-2 py-1 border border-slate-300 rounded" data-config="jh-regular" data-break="lunch" min="1" max="9" />
+                  <input type="number" value="5" name="lunch_break_after_period" class="break-after input w-14 px-2 py-1 border border-slate-300 rounded" data-config="jh-regular" data-break="lunch" min="1" max="9" />
                 </div>
                 <div class="flex items-center gap-2">
                   <span class="text-slate-600 whitespace-nowrap">Duration</span>
-                  <input type="number" value="60" class="break-duration input w-14 px-2 py-1 border border-slate-300 rounded" data-config="jh-regular" data-break="lunch" min="5" max="90" />
+                  <input type="number" value="60" name="lunch_break_duration" class="break-duration input w-14 px-2 py-1 border border-slate-300 rounded" data-config="jh-regular" data-break="lunch" min="5" max="90" />
                   <span class="text-slate-600 text-xs">min</span>
                 </div>
               </div>
             </div>
             <div class="border rounded-lg p-4 bg-slate-50">
               <div class="flex items-center gap-2 mb-3">
-                <input type="checkbox" class="break-enabled" data-config="jh-regular" data-break="afternoon" />
+                <input type="checkbox" name="afternoon_break_enabled" class="break-enabled" data-config="jh-regular" data-break="afternoon" />
                 <label class="text-sm font-semibold text-slate-700">Afternoon Break</label>
               </div>
               <div class="space-y-2 text-sm">
                 <div class="flex items-center gap-2">
                   <span class="text-slate-600 whitespace-nowrap">After P</span>
-                  <input type="number" value="7" class="break-after input w-14 px-2 py-1 border border-slate-300 rounded" data-config="jh-regular" data-break="afternoon" min="1" max="9" />
+                  <input type="number" value="7" name="afternoon_break_after_period" class="break-after input w-14 px-2 py-1 border border-slate-300 rounded" data-config="jh-regular" data-break="afternoon" min="1" max="9" />
                 </div>
                 <div class="flex items-center gap-2">
                   <span class="text-slate-600 whitespace-nowrap">Duration</span>
-                  <input type="number" value="15" class="break-duration input w-14 px-2 py-1 border border-slate-300 rounded" data-config="jh-regular" data-break="afternoon" min="5" max="60" />
+                  <input type="number" value="15" name="afternoon_break_duration" class="break-duration input w-14 px-2 py-1 border border-slate-300 rounded" data-config="jh-regular" data-break="afternoon" min="5" max="60" />
                   <span class="text-slate-600 text-xs">min</span>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-
-        <!-- Section Types -->
-        <div class="border rounded-lg p-4 bg-white">
-          <h4 class="font-semibold mb-3 text-slate-800">📋 Subject Assignments</h4>
-          <div class="grid grid-cols-2 gap-3 mb-4">
-            <div class="border rounded p-3 bg-blue-50">
-              <div class="flex items-center gap-2 mb-2">
-                <div class="w-8 h-8 bg-blue-500 text-white rounded flex items-center justify-center font-bold text-sm">R</div>
-                <div>
-                  <div class="font-semibold text-sm">Regular</div>
-                  <div class="text-xs text-slate-500">8 periods</div>
-                </div>
-              </div>
-              <div class="text-xs text-slate-600">7-Saturn, 8-Jupiter</div>
-            </div>
-            <div class="border rounded p-3 bg-purple-50">
-              <div class="flex items-center gap-2 mb-2">
-                <div class="w-8 h-8 bg-purple-500 text-white rounded flex items-center justify-center font-bold text-sm">S</div>
-                <div>
-                  <div class="font-semibold text-sm">Special</div>
-                  <div class="text-xs text-slate-500">9 periods</div>
-                </div>
-              </div>
-              <div class="text-xs text-slate-600">7-SPA, 8-SPJ</div>
-            </div>
-          </div>
-          <div class="space-y-3">
-            <!-- Core Subjects -->
-            <div class="border rounded-lg p-3 bg-slate-50 hover:bg-slate-100 transition subject-row" data-config="jh-regular" data-subject="core">
-              <div class="flex items-center justify-between">
-                <div class="flex-1">
-                  <div class="font-semibold text-sm text-slate-900">📚 Core Subjects</div>
-                  <div class="text-xs text-slate-500">MATH, SCI, ENG, FIL, MAPEH, ESP, ARPAN, TLE</div>
-                </div>
-                <div class="flex gap-4">
-                  <label class="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" class="subject-checkbox" data-type="regular" checked />
-                    <span class="text-xs font-semibold text-slate-600">Regular</span>
-                  </label>
-                  <label class="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" class="subject-checkbox" data-type="special" checked />
-                    <span class="text-xs font-semibold text-slate-600">Special</span>
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            <!-- Specialized Subjects -->
-            <div class="border rounded-lg p-3 bg-slate-50 hover:bg-slate-100 transition subject-row" data-config="jh-regular" data-subject="specialized">
-              <div class="flex items-center justify-between">
-                <div class="flex-1">
-                  <div class="font-semibold text-sm text-slate-900">✨ Specialized Subjects</div>
-                  <div class="text-xs text-slate-500">SPA, SPJ</div>
-                </div>
-                <div class="flex gap-4">
-                  <label class="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" class="subject-checkbox" data-type="regular" />
-                    <span class="text-xs font-semibold text-slate-600">Regular</span>
-                  </label>
-                  <label class="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" class="subject-checkbox" data-type="special" checked />
-                    <span class="text-xs font-semibold text-slate-600">Special</span>
-                  </label>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="mt-3 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700">
-            ℹ️ 2 subject types × 8 periods = 16 total assignments available
           </div>
         </div>
 
@@ -316,42 +261,77 @@
                 <input type="radio" name="jh-shortened-mode" value="auto" class="schedule-mode" data-config="jh-shortened" checked />
                 <span>Auto</span>
               </label>
-              <label class="flex items-center gap-1 text-xs cursor-pointer">
-                <input type="radio" name="jh-shortened-mode" value="manual" class="schedule-mode" data-config="jh-shortened" />
-                <span>Manual</span>
+              <label class="flex items-center gap-1 text-xs cursor-not-allowed opacity-50">
+                <input type="radio" name="jh-shortened-mode" value="manual" class="schedule-mode" data-config="jh-shortened" disabled />
+                <span>Manual (Coming Soon)</span>
               </label>
             </div>
           </div>
-          <div class="grid grid-cols-2 gap-4 mb-3">
+          <div class="grid grid-cols-2 gap-4 mb-3 jh-config-inputs">
             <div>
               <label class="text-xs text-slate-600">Class Duration</label>
               <div class="flex items-center gap-2">
-                <input type="number" value="50" class="period-duration input w-20 text-sm" data-config="jh-shortened" min="30" max="90" />
+                <input type="number" value="40" name="period_duration" class="period-duration input w-20 text-sm" data-config="jh-shortened" min="30" max="90" />
                 <span class="text-xs text-slate-600">min</span>
               </div>
             </div>
             <div>
               <label class="text-xs text-slate-600">Total Periods</label>
-              <input type="number" value="9" class="period-count input w-20 text-sm" data-config="jh-shortened" min="5" max="12" />
+              <input type="number" value="9" name="total_periods" class="period-count input w-20 text-sm" data-config="jh-shortened" min="5" max="12" />
             </div>
           </div>
-          <div class="bg-slate-50 p-3 rounded text-xs space-y-1">
-            <div class="grid grid-cols-3 gap-2">
-              <div><span class="font-semibold">P1:</span> 7:30-8:20</div>
-              <div><span class="font-semibold">P2:</span> 8:20-9:10</div>
-              <div><span class="font-semibold">P3:</span> 9:10-10:00</div>
+          <div class="bg-slate-50 p-4 rounded space-y-3 jh-config-inputs" id="jh-shortened-schedule">
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+              <div class="p-2 rounded border bg-blue-50 border-l-4 border-blue-400 text-xs">
+                <div class="font-semibold text-slate-900">P1</div>
+                <div class="text-slate-600">7:30 AM - 8:20 AM</div>
+              </div>
+              <div class="p-2 rounded border bg-blue-50 border-l-4 border-blue-400 text-xs">
+                <div class="font-semibold text-slate-900">P2</div>
+                <div class="text-slate-600">8:20 AM - 9:10 AM</div>
+              </div>
+              <div class="p-2 rounded border bg-blue-50 border-l-4 border-blue-400 text-xs">
+                <div class="font-semibold text-slate-900">P3</div>
+                <div class="text-slate-600">9:10 AM - 10:00 AM</div>
+              </div>
             </div>
-            <div class="text-amber-700 bg-amber-50 px-2 py-1 rounded">☕ Break (20min)</div>
-            <div class="grid grid-cols-2 gap-2">
-              <div><span class="font-semibold">P4:</span> 10:20-11:10</div>
-              <div><span class="font-semibold">P5:</span> 11:10-12:00</div>
+            <div class="col-span-full flex items-center gap-2 px-3 py-2 rounded border-2 border-dashed bg-amber-100 border-amber-400 text-amber-800 font-semibold text-sm">
+              <span>☕</span>
+              <span>Morning Break</span>
+              <span class="ml-auto text-xs opacity-75">20 min</span>
             </div>
-            <div class="text-orange-700 bg-orange-50 px-2 py-1 rounded">🍱 Lunch (60min)</div>
-            <div class="grid grid-cols-4 gap-2">
-              <div><span class="font-semibold">P6:</span> 1:00-1:50</div>
-              <div><span class="font-semibold">P7:</span> 1:50-2:40</div>
-              <div><span class="font-semibold">P8:</span> 2:40-3:30</div>
-              <div><span class="font-semibold">P9:</span> 3:30-4:20</div>
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+              <div class="p-2 rounded border bg-emerald-50 border-l-4 border-emerald-400 text-xs">
+                <div class="font-semibold text-slate-900">P4</div>
+                <div class="text-slate-600">10:20 AM - 11:10 AM</div>
+              </div>
+              <div class="p-2 rounded border bg-emerald-50 border-l-4 border-emerald-400 text-xs">
+                <div class="font-semibold text-slate-900">P5</div>
+                <div class="text-slate-600">11:10 AM - 12:00 PM</div>
+              </div>
+            </div>
+            <div class="col-span-full flex items-center gap-2 px-3 py-2 rounded border-2 border-dashed bg-orange-100 border-orange-400 text-orange-800 font-semibold text-sm">
+              <span>🍱</span>
+              <span>Lunch Break</span>
+              <span class="ml-auto text-xs opacity-75">60 min</span>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+              <div class="p-2 rounded border bg-rose-50 border-l-4 border-rose-400 text-xs">
+                <div class="font-semibold text-slate-900">P6</div>
+                <div class="text-slate-600">1:00 PM - 1:50 PM</div>
+              </div>
+              <div class="p-2 rounded border bg-rose-50 border-l-4 border-rose-400 text-xs">
+                <div class="font-semibold text-slate-900">P7</div>
+                <div class="text-slate-600">1:50 PM - 2:40 PM</div>
+              </div>
+              <div class="p-2 rounded border bg-rose-50 border-l-4 border-rose-400 text-xs">
+                <div class="font-semibold text-slate-900">P8</div>
+                <div class="text-slate-600">2:40 PM - 3:30 PM</div>
+              </div>
+              <div class="p-2 rounded border bg-rose-50 border-l-4 border-rose-400 text-xs">
+                <div class="font-semibold text-slate-900">P9</div>
+                <div class="text-slate-600">3:30 PM - 4:20 PM</div>
+              </div>
             </div>
           </div>
         </div>
@@ -385,7 +365,7 @@
               <div class="space-y-2 text-sm">
                 <div class="flex items-center gap-2">
                   <span class="text-slate-600 whitespace-nowrap">After P</span>
-                  <input type="number" value="5" class="break-after input w-14 px-2 py-1 border border-slate-300 rounded" data-config="jh-shortened" data-break="lunch" min="1" max="9" />
+                  <input type="number" value="6" class="break-after input w-14 px-2 py-1 border border-slate-300 rounded" data-config="jh-shortened" data-break="lunch" min="1" max="9" />
                 </div>
                 <div class="flex items-center gap-2">
                   <span class="text-slate-600 whitespace-nowrap">Duration</span>
@@ -411,77 +391,6 @@
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-
-        <!-- Section Types -->
-        <div class="border rounded-lg p-4 bg-white">
-          <h4 class="font-semibold mb-3 text-slate-800">📋 Subject Assignments</h4>
-          <div class="grid grid-cols-2 gap-3 mb-4">
-            <div class="border rounded p-3 bg-blue-50">
-              <div class="flex items-center gap-2 mb-2">
-                <div class="w-8 h-8 bg-blue-500 text-white rounded flex items-center justify-center font-bold text-sm">R</div>
-                <div>
-                  <div class="font-semibold text-sm">Regular</div>
-                  <div class="text-xs text-slate-500">8 periods</div>
-                </div>
-              </div>
-              <div class="text-xs text-slate-600">7-Saturn, 8-Jupiter</div>
-            </div>
-            <div class="border rounded p-3 bg-purple-50">
-              <div class="flex items-center gap-2 mb-2">
-                <div class="w-8 h-8 bg-purple-500 text-white rounded flex items-center justify-center font-bold text-sm">S</div>
-                <div>
-                  <div class="font-semibold text-sm">Special</div>
-                  <div class="text-xs text-slate-500">9 periods</div>
-                </div>
-              </div>
-              <div class="text-xs text-slate-600">7-SPA, 8-SPJ</div>
-            </div>
-          </div>
-          <div class="space-y-3">
-            <!-- Core Subjects -->
-            <div class="border rounded-lg p-3 bg-slate-50 hover:bg-slate-100 transition subject-row" data-config="jh-shortened" data-subject="core">
-              <div class="flex items-center justify-between">
-                <div class="flex-1">
-                  <div class="font-semibold text-sm text-slate-900">📚 Core Subjects</div>
-                  <div class="text-xs text-slate-500">MATH, SCI, ENG, FIL, MAPEH, ESP, ARPAN, TLE</div>
-                </div>
-                <div class="flex gap-4">
-                  <label class="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" class="subject-checkbox" data-type="regular" checked />
-                    <span class="text-xs font-semibold text-slate-600">Regular</span>
-                  </label>
-                  <label class="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" class="subject-checkbox" data-type="special" checked />
-                    <span class="text-xs font-semibold text-slate-600">Special</span>
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            <!-- Specialized Subjects -->
-            <div class="border rounded-lg p-3 bg-slate-50 hover:bg-slate-100 transition subject-row" data-config="jh-shortened" data-subject="specialized">
-              <div class="flex items-center justify-between">
-                <div class="flex-1">
-                  <div class="font-semibold text-sm text-slate-900">✨ Specialized Subjects</div>
-                  <div class="text-xs text-slate-500">SPA, SPJ</div>
-                </div>
-                <div class="flex gap-4">
-                  <label class="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" class="subject-checkbox" data-type="regular" />
-                    <span class="text-xs font-semibold text-slate-600">Regular</span>
-                  </label>
-                  <label class="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" class="subject-checkbox" data-type="special" checked />
-                    <span class="text-xs font-semibold text-slate-600">Special</span>
-                  </label>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="mt-3 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700">
-            ℹ️ 2 subject types × 8 periods = 16 total assignments available
           </div>
         </div>
 
@@ -835,10 +744,9 @@
               <label class="block text-sm font-semibold text-slate-700 mb-2">Select Teacher</label>
               <select id="teacher-select" class="w-full border border-slate-300 rounded px-3 py-2 text-sm">
                 <option value="">-- Select Teacher --</option>
-                <option value="Ruby Toledo">Ruby Toledo</option>
-                <option value="Juan Dela Cruz">Juan Dela Cruz</option>
-                <option value="Maria Santos">Maria Santos</option>
-                <option value="Pedro Garcia">Pedro Garcia</option>
+                <?php $__currentLoopData = $teachers; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $teacher): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                  <option value="<?php echo e($teacher->id); ?>"><?php echo e($teacher->name); ?></option>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
               </select>
             </div>
 
@@ -1542,6 +1450,7 @@
             </div>
           </div>
         </div>
+
       </div>
 
       <!-- Conflict Detection & Resolution -->
@@ -1659,6 +1568,8 @@ document.addEventListener('DOMContentLoaded', function() {
   const tabContents = document.querySelectorAll('.settings-tab-content');
 
   function switchTab(tabName) {
+    // Persist current tab so returning from modals keeps context
+    try { localStorage.setItem('settingsActiveTab', tabName); } catch (e) {}
     // Scroll to top
     window.scrollTo(0, 0);
     document.documentElement.scrollTop = 0;
@@ -1695,6 +1606,13 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
+  // Restore last active tab on load (default to jh)
+  (function restoreTab() {
+    let saved = 'jh';
+    try { saved = localStorage.getItem('settingsActiveTab') || 'jh'; } catch (e) {}
+    switchTab(saved);
+  })();
+
   // Junior High Session Type Switching
   const jhSessionRadios = document.querySelectorAll('input[name="jh-session"]');
   jhSessionRadios.forEach(radio => {
@@ -1708,6 +1626,90 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
   });
+
+  // Load saved JH config on page load
+  function loadSavedJHConfig() {
+    fetch('<?php echo e(route("admin.schedule-maker.settings.get-jh-config")); ?>')
+      .then(response => response.json())
+      .then(data => {
+        if (data.success && data.config) {
+          // Populate regular session
+          if (data.config.regular) {
+            const config = data.config.regular;
+            const regularDuration = document.querySelector('[name="period_duration"][data-config="jh-regular"]');
+            const regularPeriods = document.querySelector('[name="total_periods"][data-config="jh-regular"]');
+            if (regularDuration) regularDuration.value = config.period_duration || 50;
+            if (regularPeriods) regularPeriods.value = config.total_periods || 9;
+            
+            const morningEnabledReg = document.querySelector('[name="morning_break_enabled"][data-config="jh-regular"]');
+            const morningAfterReg = document.querySelector('[name="morning_break_after_period"][data-config="jh-regular"]');
+            const morningDurReg = document.querySelector('[name="morning_break_duration"][data-config="jh-regular"]');
+            if (morningEnabledReg) morningEnabledReg.checked = config.breaks?.morning_break_enabled || false;
+            if (morningAfterReg) morningAfterReg.value = config.breaks?.morning_break_after_period || 2;
+            if (morningDurReg) morningDurReg.value = config.breaks?.morning_break_duration || 15;
+            
+            const lunchEnabledReg = document.querySelector('[name="lunch_break_enabled"][data-config="jh-regular"]');
+            const lunchAfterReg = document.querySelector('[name="lunch_break_after_period"][data-config="jh-regular"]');
+            const lunchDurReg = document.querySelector('[name="lunch_break_duration"][data-config="jh-regular"]');
+            if (lunchEnabledReg) lunchEnabledReg.checked = config.breaks?.lunch_break_enabled || false;
+            if (lunchAfterReg) lunchAfterReg.value = config.breaks?.lunch_break_after_period || 4;
+            if (lunchDurReg) lunchDurReg.value = config.breaks?.lunch_break_duration || 60;
+            
+            const afternoonEnabledReg = document.querySelector('[name="afternoon_break_enabled"][data-config="jh-regular"]');
+            const afternoonAfterReg = document.querySelector('[name="afternoon_break_after_period"][data-config="jh-regular"]');
+            const afternoonDurReg = document.querySelector('[name="afternoon_break_duration"][data-config="jh-regular"]');
+            if (afternoonEnabledReg) afternoonEnabledReg.checked = config.breaks?.afternoon_break_enabled || false;
+            if (afternoonAfterReg) afternoonAfterReg.value = config.breaks?.afternoon_break_after_period || 5;
+            if (afternoonDurReg) afternoonDurReg.value = config.breaks?.afternoon_break_duration || 10;
+          }
+          
+          // Populate shortened session (if exists)
+          if (data.config.shortened) {
+            const config = data.config.shortened;
+            const shortenedDuration = document.querySelector('[name="period_duration"][data-config="jh-shortened"]');
+            const shortenedPeriods = document.querySelector('[name="total_periods"][data-config="jh-shortened"]');
+            if (shortenedDuration) shortenedDuration.value = config.period_duration || 50;
+            if (shortenedPeriods) shortenedPeriods.value = config.total_periods || 9;
+            
+            const morningEnabledSh = document.querySelector('[name="morning_break_enabled"][data-config="jh-shortened"]');
+            const morningAfterSh = document.querySelector('[name="morning_break_after_period"][data-config="jh-shortened"]');
+            const morningDurSh = document.querySelector('[name="morning_break_duration"][data-config="jh-shortened"]');
+            if (morningEnabledSh) morningEnabledSh.checked = config.breaks?.morning_break_enabled || false;
+            if (morningAfterSh) morningAfterSh.value = config.breaks?.morning_break_after_period || 2;
+            if (morningDurSh) morningDurSh.value = config.breaks?.morning_break_duration || 15;
+            
+            const lunchEnabledSh = document.querySelector('[name="lunch_break_enabled"][data-config="jh-shortened"]');
+            const lunchAfterSh = document.querySelector('[name="lunch_break_after_period"][data-config="jh-shortened"]');
+            const lunchDurSh = document.querySelector('[name="lunch_break_duration"][data-config="jh-shortened"]');
+            if (lunchEnabledSh) lunchEnabledSh.checked = config.breaks?.lunch_break_enabled || false;
+            if (lunchAfterSh) lunchAfterSh.value = config.breaks?.lunch_break_after_period || 4;
+            if (lunchDurSh) lunchDurSh.value = config.breaks?.lunch_break_duration || 60;
+            
+            const afternoonEnabledSh = document.querySelector('[name="afternoon_break_enabled"][data-config="jh-shortened"]');
+            const afternoonAfterSh = document.querySelector('[name="afternoon_break_after_period"][data-config="jh-shortened"]');
+            const afternoonDurSh = document.querySelector('[name="afternoon_break_duration"][data-config="jh-shortened"]');
+            if (afternoonEnabledSh) afternoonEnabledSh.checked = config.breaks?.afternoon_break_enabled || false;
+            if (afternoonAfterSh) afternoonAfterSh.value = config.breaks?.afternoon_break_after_period || 5;
+            if (afternoonDurSh) afternoonDurSh.value = config.breaks?.afternoon_break_duration || 10;
+          }
+        }
+        
+        // Show the config inputs now that they're loaded
+        document.querySelectorAll('.jh-config-inputs').forEach(el => {
+          el.classList.add('loaded');
+        });
+      })
+      .catch(error => {
+        console.error('Error loading JH config:', error);
+        // Show inputs anyway if there's an error
+        document.querySelectorAll('.jh-config-inputs').forEach(el => {
+          el.classList.add('loaded');
+        });
+      });
+  }
+
+  // Call on page load
+  loadSavedJHConfig();
 
   // Senior High Session Type Switching
   const shSessionRadios = document.querySelectorAll('input[name="sh-session"]');
@@ -2033,6 +2035,80 @@ document.addEventListener('DOMContentLoaded', function() {
   
   let editingItem = null; // Track which item we're editing
 
+  // Load restrictions from database on page load
+  function loadFacultyRestrictionsFromDatabase() {
+    console.log('Loading faculty restrictions from database...');
+    fetch('<?php echo e(route("admin.schedule-maker.settings.get-faculty-restrictions")); ?>')
+      .then(response => {
+        console.log('Load response status:', response.status);
+        return response.json();
+      })
+      .then(data => {
+        console.log('Load response data:', data);
+        if (data.success && data.restrictions) {
+          // Clear existing restrictions (except the hardcoded demo one)
+          restrictionList.innerHTML = '';
+          
+          // Load each restriction and display it
+          Object.values(data.restrictions).forEach(restriction => {
+            const periodBadges = restriction.periods.map(p => 
+              `<span class="px-2 py-1 bg-red-100 text-red-700 rounded text-xs font-semibold">P${p}</span>`
+            ).join(' ');
+            
+            let displayName = '';
+            if (restriction.type === 'teacher') {
+              displayName = restriction.metadata.teacherName;
+            } else if (restriction.type === 'all-ancillary') {
+              displayName = 'All Teachers with Ancillary Tasks';
+            } else if (restriction.type === 'ancillary-role') {
+              displayName = restriction.metadata.roleName;
+            }
+            
+            const restrictionHTML = `
+              <div class="flex-1">
+                <div class="font-semibold text-sm group-hover:text-blue-700">${displayName}</div>
+                <div class="text-xs text-slate-600">${restriction.reason}</div>
+              </div>
+              <div class="flex gap-1 items-center">
+                ${periodBadges}
+                <svg class="w-4 h-4 text-slate-400 group-hover:text-blue-600 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+              </div>
+            `;
+            
+            const newRestriction = document.createElement('div');
+            newRestriction.className = 'restriction-item bg-slate-50 p-3 rounded flex items-center justify-between hover:bg-blue-50 hover:border-blue-300 border border-transparent transition cursor-pointer group';
+            newRestriction.innerHTML = restrictionHTML;
+            
+            // Store metadata as data attributes
+            newRestriction.setAttribute('data-restriction-type', restriction.type);
+            newRestriction.setAttribute('data-metadata', JSON.stringify(restriction.metadata));
+            newRestriction.setAttribute('data-periods', JSON.stringify(restriction.periods));
+            
+            restrictionList.appendChild(newRestriction);
+            attachClickHandler(newRestriction);
+          });
+          
+          updateRestrictionCount();
+          
+          // Also save to localStorage as cache
+          localStorage.setItem('facultyRestrictions', JSON.stringify(data.restrictions));
+        }
+      })
+      .catch(error => {
+        console.error('Error loading restrictions from database:', error);
+        // Fallback to localStorage if database load fails
+        const cached = localStorage.getItem('facultyRestrictions');
+        if (cached) {
+          console.log('Using cached restrictions from localStorage');
+        }
+      });
+  }
+  
+  // Load restrictions on page load
+  loadFacultyRestrictionsFromDatabase();
+
   // Function to update restriction count
   function updateRestrictionCount() {
     const currentCount = restrictionList.querySelectorAll('.restriction-item').length;
@@ -2090,12 +2166,21 @@ document.addEventListener('DOMContentLoaded', function() {
     const data = extractRestrictionData(item);
     
     // Set restriction type
-    restrictionType.value = data.type;
+    if (data.type.startsWith('ancillary-')) {
+      restrictionType.value = data.type;
+    } else {
+      restrictionType.value = data.type;
+    }
     
     // Show/set teacher select if needed
     if (data.type === 'teacher') {
       teacherSelectContainer.classList.remove('hidden');
-      teacherSelect.value = data.teacherName;
+      // Find the teacher by name in the select options and set by ID
+      const options = Array.from(teacherSelect.options);
+      const matchingOption = options.find(opt => opt.textContent === data.teacherName);
+      if (matchingOption) {
+        teacherSelect.value = matchingOption.value;
+      }
     } else {
       teacherSelectContainer.classList.add('hidden');
     }
@@ -2145,6 +2230,7 @@ document.addEventListener('DOMContentLoaded', function() {
       if (confirm(`Delete this restriction?\n\n${name}\n${description}`)) {
         editingItem.remove();
         updateRestrictionCount();
+        saveFacultyRestrictionsToStorage();
         closeModal();
       }
     }
@@ -2187,27 +2273,36 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
 
-    // Determine the display name
+    // Determine the display name and store type information
     let displayName = '';
     let description = '';
+    let restrictionDataType = '';
+    let metadata = {};
 
     if (type === 'all-ancillary') {
       displayName = 'All Teachers with Ancillary Tasks';
       description = 'Cannot teach ' + formatPeriods(selectedPeriods);
+      restrictionDataType = 'all-ancillary';
     } else if (type === 'teacher') {
-      const teacherName = teacherSelect.value;
-      if (!teacherName) {
+      const teacherId = teacherSelect.value;
+      if (!teacherId) {
         alert('Please select a teacher');
         return;
       }
+      const teacherName = document.querySelector(`#teacher-select option[value="${teacherId}"]`).textContent;
       displayName = teacherName;
       description = 'Cannot teach ' + formatPeriods(selectedPeriods);
+      restrictionDataType = 'teacher';
+      metadata.teacherId = parseInt(teacherId);
+      metadata.teacherName = teacherName;
     } else if (type.startsWith('ancillary-')) {
       // Extract role name from value (e.g., "ancillary-department-head" -> "Department Head")
       const roleSlug = type.replace('ancillary-', '');
       const roleName = roleSlug.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
       displayName = roleName;
       description = 'Cannot teach ' + formatPeriods(selectedPeriods);
+      restrictionDataType = 'ancillary-role';
+      metadata.ancillaryRole = displayName;
     }
 
     // Create HTML for restriction
@@ -2231,11 +2326,20 @@ document.addEventListener('DOMContentLoaded', function() {
     if (editingItem) {
       // Update existing item
       editingItem.innerHTML = restrictionHTML;
+      // Update data attributes
+      editingItem.setAttribute('data-restriction-type', restrictionDataType);
+      editingItem.setAttribute('data-metadata', JSON.stringify(metadata));
+      editingItem.setAttribute('data-periods', JSON.stringify(selectedPeriods));
     } else {
       // Create new item
       const newRestriction = document.createElement('div');
       newRestriction.className = 'restriction-item bg-slate-50 p-3 rounded flex items-center justify-between hover:bg-blue-50 hover:border-blue-300 border border-transparent transition cursor-pointer group';
       newRestriction.innerHTML = restrictionHTML;
+      
+      // Store metadata as data attributes
+      newRestriction.setAttribute('data-restriction-type', restrictionDataType);
+      newRestriction.setAttribute('data-metadata', JSON.stringify(metadata));
+      newRestriction.setAttribute('data-periods', JSON.stringify(selectedPeriods));
       
       // Add to list
       restrictionList.appendChild(newRestriction);
@@ -2247,11 +2351,111 @@ document.addEventListener('DOMContentLoaded', function() {
       updateRestrictionCount();
     }
 
+    // Save restrictions to localStorage for scheduler to use
+    saveFacultyRestrictionsToStorage();
+
     // Close modal
     closeModal();
   });
 
-  // Helper function to format periods
+  // Function to save all restrictions to localStorage
+  function saveFacultyRestrictionsToStorage() {
+    const restrictions = {};
+    let restrictionId = 0;
+    
+    // Get all restriction items
+    document.querySelectorAll('.restriction-item').forEach(item => {
+      const displayName = item.querySelector('.font-semibold').textContent;
+      const description = item.querySelector('.text-xs.text-slate-600').textContent;
+      
+      // Get data from data attributes (preferred) or parse from UI (fallback)
+      let restrictionType = item.getAttribute('data-restriction-type');
+      let periods = item.getAttribute('data-periods') ? JSON.parse(item.getAttribute('data-periods')) : [];
+      let metadata = item.getAttribute('data-metadata') ? JSON.parse(item.getAttribute('data-metadata')) : {};
+      
+      // Fallback: Extract periods from description if data attribute is missing
+      if (periods.length === 0) {
+        const periodRegex = /P(\d+)(?:-P(\d+))?/g;
+        let match;
+        
+        while ((match = periodRegex.exec(description)) !== null) {
+          const start = parseInt(match[1]);
+          const end = match[2] ? parseInt(match[2]) : start;
+          for (let i = start; i <= end; i++) {
+            if (!periods.includes(i)) periods.push(i);
+          }
+        }
+      }
+      
+      // Fallback: Determine restriction type from display name if data attribute is missing
+      if (!restrictionType) {
+        restrictionType = 'teacher'; // default
+        
+        if (displayName === 'All Teachers with Ancillary Tasks') {
+          restrictionType = 'all-ancillary';
+        } else if (displayName.includes(' ') && !displayName.includes('-')) {
+          restrictionType = 'ancillary-role';
+          metadata.roleName = displayName;
+        } else {
+          metadata.teacherName = displayName;
+        }
+      }
+      
+      let restrictionKey = displayName;
+      if (restrictionType === 'all-ancillary') {
+        restrictionKey = 'all-ancillary';
+      } else if (restrictionType === 'ancillary-role') {
+        restrictionKey = 'ancillary-' + displayName.toLowerCase().replace(/ /g, '-');
+      }
+      
+      restrictions[restrictionId] = {
+        type: restrictionType,
+        key: restrictionKey,
+        periods: periods.sort((a, b) => a - b),
+        reason: description,
+        metadata: metadata
+      };
+      
+      restrictionId++;
+    });
+    
+    // Save to localStorage as backup
+    localStorage.setItem('facultyRestrictions', JSON.stringify(restrictions));
+    
+    // Debug: Log what we're about to save
+    console.log('Saving restrictions:', restrictions);
+    
+    // Save to database
+    fetch('<?php echo e(route("admin.schedule-maker.settings.save-faculty-restrictions")); ?>', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+      },
+      body: JSON.stringify({ restrictions: restrictions })
+    })
+    .then(response => {
+      console.log('Save response status:', response.status);
+      return response.json();
+    })
+    .then(data => {
+      console.log('Save response data:', data);
+      if (data.success) {
+        console.log('Faculty restrictions saved to database successfully');
+        // Trigger update event for scheduler
+        window.dispatchEvent(new CustomEvent('restrictionsUpdated', { detail: restrictions }));
+      } else {
+        console.error('Failed to save restrictions:', data.message);
+        alert('Failed to save restrictions: ' + data.message);
+      }
+    })
+    .catch(error => {
+      console.error('Error saving restrictions:', error);
+      alert('Error saving restrictions. Check console for details.');
+    });
+  }
+
+  // Helper function to format periods  // Helper function to format periods
   function formatPeriods(periods) {
     periods.sort((a, b) => a - b);
     if (periods.length === 1) {
@@ -2516,11 +2720,20 @@ document.addEventListener('DOMContentLoaded', function() {
     if (editingConstraintItem) {
       // Update existing item
       editingConstraintItem.innerHTML = constraintHTML;
+      // Update data attributes
+      editingConstraintItem.setAttribute('data-subject-id', subjectId);
+      editingConstraintItem.setAttribute('data-periods', JSON.stringify(selectedPeriods));
+      editingConstraintItem.setAttribute('data-reason', reason);
     } else {
       // Create new item
       const newConstraint = document.createElement('div');
       newConstraint.className = 'constraint-item bg-slate-50 p-3 rounded flex items-center justify-between hover:bg-blue-50 hover:border-blue-300 border border-transparent transition cursor-pointer group';
       newConstraint.innerHTML = constraintHTML;
+      
+      // Store metadata as data attributes
+      newConstraint.setAttribute('data-subject-id', subjectId);
+      newConstraint.setAttribute('data-periods', JSON.stringify(selectedPeriods));
+      newConstraint.setAttribute('data-reason', reason);
       
       // Add to list
       constraintList.appendChild(newConstraint);
@@ -2532,9 +2745,271 @@ document.addEventListener('DOMContentLoaded', function() {
       updateConstraintCount();
     }
 
+    // Save to database
+    saveSubjectConstraintsToDatabase();
+
     // Close modal
     closeConstraintModalFunc();
   });
+
+  // Function to save all constraints to database
+  function saveSubjectConstraintsToDatabase() {
+    const constraints = {};
+    let constraintId = 0;
+    
+    document.querySelectorAll('.constraint-item').forEach(item => {
+      const subjectId = item.getAttribute('data-subject-id');
+      const periods = item.getAttribute('data-periods') ? JSON.parse(item.getAttribute('data-periods')) : [];
+      const reason = item.getAttribute('data-reason') || '';
+      const subjectName = item.querySelector('.font-semibold').textContent;
+      
+      constraints[constraintId] = {
+        subject_id: parseInt(subjectId),
+        subject_name: subjectName,
+        periods: periods.sort((a, b) => a - b),
+        reason: reason
+      };
+      
+      constraintId++;
+    });
+    
+    console.log('Saving subject constraints:', constraints);
+    
+    fetch('<?php echo e(route("admin.schedule-maker.settings.save-subject-constraints")); ?>', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+      },
+      body: JSON.stringify({ constraints: constraints })
+    })
+    .then(response => response.json())
+    .then(data => {
+      console.log('Subject constraints save response:', data);
+      if (data.success) {
+        console.log('Subject constraints saved to database successfully');
+        window.dispatchEvent(new CustomEvent('constraintsUpdated', { detail: constraints }));
+      } else {
+        console.error('Failed to save constraints:', data.message);
+      }
+    })
+    .catch(error => {
+      console.error('Error saving constraints:', error);
+    });
+  }
+
+  // Load constraints from database on page load
+  function loadSubjectConstraintsFromDatabase() {
+    console.log('Loading subject constraints from database...');
+    fetch('<?php echo e(route("admin.schedule-maker.settings.get-subject-constraints")); ?>')
+      .then(response => response.json())
+      .then(data => {
+        console.log('Constraints load response:', data);
+        if (data.success && data.constraints) {
+          constraintList.innerHTML = '';
+          
+          Object.values(data.constraints).forEach(constraint => {
+            // Ensure periods are integers
+            const periods = constraint.periods.map(p => parseInt(p));
+            
+            const periodBadges = periods.map(p =>
+              `<span class="px-2 py-1 bg-red-100 text-red-700 rounded text-xs font-semibold">P${p}</span>`
+            ).join(' ');
+            
+            let description = 'Avoid ' + formatPeriods(periods);
+            if (constraint.reason) {
+              description += ' (' + constraint.reason + ')';
+            }
+            
+            const constraintHTML = `
+              <div class="flex-1">
+                <div class="font-semibold text-sm group-hover:text-blue-700">${constraint.subject_name}</div>
+                <div class="text-xs text-slate-600">${description}</div>
+              </div>
+              <div class="flex gap-1 items-center">
+                ${periodBadges}
+                <svg class="w-4 h-4 text-slate-400 group-hover:text-blue-600 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+              </div>
+            `;
+            
+            const newConstraint = document.createElement('div');
+            newConstraint.className = 'constraint-item bg-slate-50 p-3 rounded flex items-center justify-between hover:bg-blue-50 hover:border-blue-300 border border-transparent transition cursor-pointer group';
+            newConstraint.innerHTML = constraintHTML;
+            
+            newConstraint.setAttribute('data-subject-id', parseInt(constraint.subject_id));
+            newConstraint.setAttribute('data-periods', JSON.stringify(periods));
+            newConstraint.setAttribute('data-reason', constraint.reason || '');
+            
+            constraintList.appendChild(newConstraint);
+            attachConstraintClickHandler(newConstraint);
+          });
+          
+          updateConstraintCount();
+        }
+      })
+      .catch(error => {
+        console.error('Error loading constraints:', error);
+      });
+  }
+
+  loadSubjectConstraintsFromDatabase();
+
+  // Auto-save Configuration Handler
+  const autoSaveIndicator = document.getElementById('auto-save-indicator');
+  let autoSaveTimeout;
+  let forceAutoSaveInterval;
+  let hasUnsavedChanges = false;
+
+  function getActiveDays(config) {
+    const activeDays = [];
+    document.querySelectorAll(`.calendar-day[data-config="${config}"]`).forEach(btn => {
+      if (btn.getAttribute('data-active') === 'true') {
+        activeDays.push(parseInt(btn.getAttribute('data-day')));
+      }
+    });
+    return activeDays.sort((a, b) => a - b);
+  }
+
+  function getCurrentSessionType() {
+    const jh = document.getElementById('tab-jh');
+    if (!jh || jh.classList.contains('hidden')) return null;
+    
+    const regularRadio = document.querySelector('input[name="jh-session"][value="regular"]');
+    return regularRadio?.checked ? 'regular' : 'shortened';
+  }
+
+  function collectConfigData() {
+    const sessionType = getCurrentSessionType();
+    if (!sessionType) return null;
+
+    const config = `jh-${sessionType}`;
+    
+    return {
+      session_type: sessionType,
+      period_duration: document.querySelector(`[name="period_duration"][data-config="${config}"]`)?.value || 50,
+      total_periods: document.querySelector(`[name="total_periods"][data-config="${config}"]`)?.value || 9,
+      active_days: getActiveDays(config),
+      morning_break_enabled: document.querySelector(`[name="morning_break_enabled"][data-config="${config}"]`)?.checked || false,
+      morning_break_after_period: document.querySelector(`[name="morning_break_after_period"][data-config="${config}"]`)?.value || 2,
+      morning_break_duration: document.querySelector(`[name="morning_break_duration"][data-config="${config}"]`)?.value || 15,
+      lunch_break_enabled: document.querySelector(`[name="lunch_break_enabled"][data-config="${config}"]`)?.checked || false,
+      lunch_break_after_period: document.querySelector(`[name="lunch_break_after_period"][data-config="${config}"]`)?.value || 4,
+      lunch_break_duration: document.querySelector(`[name="lunch_break_duration"][data-config="${config}"]`)?.value || 60,
+      afternoon_break_enabled: document.querySelector(`[name="afternoon_break_enabled"][data-config="${config}"]`)?.checked || false,
+      afternoon_break_after_period: document.querySelector(`[name="afternoon_break_after_period"][data-config="${config}"]`)?.value || 5,
+      afternoon_break_duration: document.querySelector(`[name="afternoon_break_duration"][data-config="${config}"]`)?.value || 10,
+    };
+  }
+
+  function updateAutoSaveIndicator(state, text) {
+    if (!autoSaveIndicator) return;
+    
+    let color = 'bg-slate-400';
+    let bgColor = 'bg-slate-100';
+    let textColor = 'text-slate-600';
+    
+    if (state === 'saving') {
+      color = 'bg-blue-400';
+      bgColor = 'bg-blue-100';
+      textColor = 'text-blue-700';
+    } else if (state === 'saved') {
+      color = 'bg-green-400';
+      bgColor = 'bg-green-100';
+      textColor = 'text-green-700';
+    } else if (state === 'error') {
+      color = 'bg-red-400';
+      bgColor = 'bg-red-100';
+      textColor = 'text-red-700';
+    }
+    
+    autoSaveIndicator.className = `flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium ${bgColor} ${textColor}`;
+    autoSaveIndicator.innerHTML = `
+      <span class="inline-block w-2 h-2 rounded-full ${color} ${state === 'saving' ? 'animate-pulse' : ''}"></span>
+      ${text}
+    `;
+  }
+
+  function autoSave() {
+    const data = collectConfigData();
+    if (!data) return;
+
+    updateAutoSaveIndicator('saving', 'Saving...');
+    hasUnsavedChanges = false;
+
+    fetch('<?php echo e(route("admin.schedule-maker.settings.save-jh-config")); ?>', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+      },
+      body: JSON.stringify(data)
+    })
+    .then(response => {
+      if (!response.ok) {
+        return response.json().then(err => {
+          console.error('HTTP error:', response.status, err);
+          throw new Error(`HTTP ${response.status}: ${err.message || 'Unknown error'}`);
+        });
+      }
+      return response.json();
+    })
+    .then(data => {
+      if (data.success) {
+        updateAutoSaveIndicator('saved', 'Saved');
+        // Hide "Saved" message after 2 seconds
+        setTimeout(() => {
+          if (!hasUnsavedChanges) {
+            updateAutoSaveIndicator('ready', 'Ready');
+          }
+        }, 2000);
+      } else {
+        console.error('Save returned success=false:', data.message);
+        updateAutoSaveIndicator('error', 'Save failed: ' + (data.message || 'Unknown'));
+      }
+    })
+    .catch(error => {
+      console.error('Auto-save error:', error);
+      updateAutoSaveIndicator('error', 'Error: ' + error.message);
+    });
+  }
+
+  function scheduleAutoSave() {
+    hasUnsavedChanges = true;
+    
+    // Clear existing timeout
+    if (autoSaveTimeout) clearTimeout(autoSaveTimeout);
+    
+    // Show "unsaved changes" indicator
+    updateAutoSaveIndicator('ready', 'Unsaved changes');
+    
+    // Debounce: save 2 seconds after last change
+    autoSaveTimeout = setTimeout(() => {
+      autoSave();
+    }, 2000);
+  }
+
+  // Attach listeners to all Junior High config inputs
+  document.getElementById('tab-jh').addEventListener('change', function(e) {
+    if (e.target.matches('input[data-config], select[data-config]')) {
+      scheduleAutoSave();
+    }
+  });
+
+  document.getElementById('tab-jh').addEventListener('input', function(e) {
+    if (e.target.matches('input[data-config], select[data-config]')) {
+      scheduleAutoSave();
+    }
+  });
+
+  // Force auto-save every 30 seconds if there are unsaved changes
+  forceAutoSaveInterval = setInterval(() => {
+    if (hasUnsavedChanges) {
+      clearTimeout(autoSaveTimeout);
+      autoSave();
+    }
+  }, 30000);
 });
 </script>
 <?php $__env->stopSection(); ?>

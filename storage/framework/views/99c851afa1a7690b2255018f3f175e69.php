@@ -1,9 +1,9 @@
-@extends('admin.layout')
 
-@section('title','Schedule Maker - Settings')
-@section('heading','Schedule Maker - Settings')
 
-@section('content')
+<?php $__env->startSection('title','Schedule Maker - Settings'); ?>
+<?php $__env->startSection('heading','Schedule Maker - Settings'); ?>
+
+<?php $__env->startSection('content'); ?>
 
 <style>
   /* Hide JH config inputs while loading from DB */
@@ -731,12 +731,12 @@
                 <option value="">-- Select --</option>
                 <option value="teacher">Specific Teacher</option>
                 <option value="all-ancillary">All Teachers with Ancillary Tasks</option>
-                @if($ancillaryRoles->count() > 0)
+                <?php if($ancillaryRoles->count() > 0): ?>
                   <option value="" disabled style="font-weight: bold; background-color: #f3f4f6;">── Ancillary Roles ──</option>
-                  @foreach($ancillaryRoles as $role)
-                    <option value="ancillary-{{ strtolower(str_replace(' ', '-', $role)) }}">&nbsp;&nbsp;{{ $role }}</option>
-                  @endforeach
-                @endif
+                  <?php $__currentLoopData = $ancillaryRoles; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $role): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <option value="ancillary-<?php echo e(strtolower(str_replace(' ', '-', $role))); ?>">&nbsp;&nbsp;<?php echo e($role); ?></option>
+                  <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                <?php endif; ?>
               </select>
             </div>
 
@@ -744,9 +744,9 @@
               <label class="block text-sm font-semibold text-slate-700 mb-2">Select Teacher</label>
               <select id="teacher-select" class="w-full border border-slate-300 rounded px-3 py-2 text-sm">
                 <option value="">-- Select Teacher --</option>
-                @foreach($teachers as $teacher)
-                  <option value="{{ $teacher->id }}">{{ $teacher->name }}</option>
-                @endforeach
+                <?php $__currentLoopData = $teachers; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $teacher): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                  <option value="<?php echo e($teacher->id); ?>"><?php echo e($teacher->name); ?></option>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
               </select>
             </div>
 
@@ -852,9 +852,9 @@
                 <input type="text" id="subject-search" class="w-full border border-slate-300 rounded px-3 py-2 text-sm" placeholder="Type to search or select a subject">
                 <select id="subject-name" class="hidden">
                   <option value="">-- Select a subject --</option>
-                  @foreach($subjects as $subject)
-                    <option value="{{ $subject->id }}" data-name="{{ $subject->name }}">{{ $subject->name }}</option>
-                  @endforeach
+                  <?php $__currentLoopData = $subjects; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $subject): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <option value="<?php echo e($subject->id); ?>" data-name="<?php echo e($subject->name); ?>"><?php echo e($subject->name); ?></option>
+                  <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </select>
                 <div id="subject-dropdown" class="hidden absolute top-full left-0 right-0 mt-1 border border-slate-300 bg-white rounded shadow-lg z-50 max-h-48 overflow-y-auto">
                 </div>
@@ -1629,7 +1629,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Load saved JH config on page load
   function loadSavedJHConfig() {
-    fetch('{{ route("admin.schedule-maker.settings.get-jh-config") }}')
+    fetch('<?php echo e(route("admin.schedule-maker.settings.get-jh-config")); ?>')
       .then(response => response.json())
       .then(data => {
         if (data.success && data.config) {
@@ -2038,7 +2038,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // Load restrictions from database on page load
   function loadFacultyRestrictionsFromDatabase() {
     console.log('Loading faculty restrictions from database...');
-    fetch('{{ route("admin.schedule-maker.settings.get-faculty-restrictions") }}')
+    fetch('<?php echo e(route("admin.schedule-maker.settings.get-faculty-restrictions")); ?>')
       .then(response => {
         console.log('Load response status:', response.status);
         return response.json();
@@ -2426,7 +2426,7 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('Saving restrictions:', restrictions);
     
     // Save to database
-    fetch('{{ route("admin.schedule-maker.settings.save-faculty-restrictions") }}', {
+    fetch('<?php echo e(route("admin.schedule-maker.settings.save-faculty-restrictions")); ?>', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -2494,6 +2494,127 @@ document.addEventListener('DOMContentLoaded', function() {
   
   let editingConstraintItem = null;
 
+  // Utilities to persist subject constraints
+  function collectSubjectConstraintsFromList() {
+    const constraints = [];
+    const items = constraintList.querySelectorAll('.constraint-item');
+    items.forEach(item => {
+      const sid = parseInt(item.dataset.subjectId || '0');
+      if (!sid) return;
+      let periods = [];
+      try {
+        periods = JSON.parse(item.dataset.periods || '[]');
+      } catch(e) { periods = []; }
+      // Fallback if dataset missing: parse badges
+      if (!Array.isArray(periods) || periods.length === 0) {
+        periods = [];
+        item.querySelectorAll('.bg-red-100').forEach(b => {
+          const m = b.textContent.match(/P(\d+)/);
+          if (m) periods.push(parseInt(m[1]));
+        });
+      }
+      periods = Array.from(new Set(periods)).sort((a,b)=>a-b);
+      constraints.push({ subject_id: sid, periods });
+    });
+    return constraints;
+  }
+
+  function saveSubjectConstraintsToDatabase(constraints) {
+    return fetch('<?php echo e(route("admin.schedule-maker.settings.save-subject-constraints")); ?>', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({ constraints })
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (!data.success) throw new Error(data.message || 'Failed to save subject constraints');
+      try { if (typeof showToast === 'function') showToast('Subject constraints saved','success'); } catch(e) {}
+      // Also cache locally for quick reloads
+      try { localStorage.setItem('subjectConstraints', JSON.stringify(constraints)); } catch(e) {}
+      return data;
+    })
+    .catch(err => {
+      console.error('Error saving subject constraints:', err);
+      try { if (typeof showToast === 'function') showToast('Failed to save subject constraints','error'); } catch(e) {}
+    });
+  }
+
+  function formatPeriods(periods) {
+    const arr = Array.isArray(periods) ? [...periods].sort((a,b)=>a-b) : [];
+    return arr.map(p => `P${p}`).join(', ');
+  }
+
+  function renderConstraintItem(subjectId, subjectName, periods, reason='') {
+    const periodBadges = (periods || []).map(p => `<span class="px-2 py-1 bg-red-100 text-red-700 rounded text-xs font-semibold">P${p}</span>`).join(' ');
+    const description = 'Avoid ' + formatPeriods([...(periods||[])]) + (reason ? ` (${reason})` : '');
+    const el = document.createElement('div');
+    el.className = 'constraint-item bg-slate-50 p-3 rounded flex items-center justify-between hover:bg-blue-50 hover:border-blue-300 border border-transparent transition cursor-pointer group';
+    el.innerHTML = `
+      <div class="flex-1">
+        <div class="font-semibold text-sm group-hover:text-blue-700">${subjectName}</div>
+        <div class="text-xs text-slate-600">${description}</div>
+      </div>
+      <div class="flex gap-1 items-center">
+        ${periodBadges}
+        <svg class="w-4 h-4 text-slate-400 group-hover:text-blue-600 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+        </svg>
+      </div>`;
+    el.dataset.subjectId = String(subjectId);
+    try { el.dataset.periods = JSON.stringify(periods || []); } catch(e) { el.dataset.periods = '[]'; }
+    el.dataset.reason = reason || '';
+    attachConstraintClickHandler(el);
+    constraintList.appendChild(el);
+    updateConstraintCount();
+    return el;
+  }
+
+  function updateConstraintCount() {
+    const currentCount = constraintList.querySelectorAll('.constraint-item').length;
+    constraintCount.textContent = currentCount;
+    console.log('Constraint count:', currentCount);
+  }
+
+  function loadSubjectConstraintsFromDatabase() {
+    console.log('Loading subject constraints...');
+    fetch('<?php echo e(route("admin.schedule-maker.settings.get-subject-constraints")); ?>')
+      .then(r => r.json())
+      .then(data => {
+        console.log('DB response:', data);
+        if (!(data && data.success)) throw new Error(data && data.message ? data.message : 'Failed to load');
+        // Clear all children including placeholder
+        constraintList.innerHTML = '';
+        const constraints = data.constraints || [];
+        console.log('Constraints to render:', constraints.length);
+        constraints.forEach(c => {
+          renderConstraintItem(c.subject_id, c.subject_name || 'Subject', c.periods || [], '');
+        });
+        updateConstraintCount();
+        try { localStorage.setItem('subjectConstraints', JSON.stringify(constraints)); } catch(e) {}
+      })
+      .catch(err => {
+        console.error('Load error:', err);
+        // Fallback to cache
+        try {
+          const cached = JSON.parse(localStorage.getItem('subjectConstraints') || '[]');
+          console.log('Using cache:', cached);
+          if (Array.isArray(cached) && cached.length) {
+            constraintList.innerHTML = '';
+            cached.forEach(c => {
+              const opt = subjectNameInput.querySelector(`option[value="${c.subject_id}"]`);
+              const name = opt ? (opt.dataset.name || opt.textContent) : `Subject #${c.subject_id}`;
+              renderConstraintItem(c.subject_id, name, c.periods || [], '');
+            });
+            updateConstraintCount();
+          }
+        } catch(e) { console.error('Cache error:', e); }
+      });
+  }
+
   // Subject search functionality
   function populateSubjectDropdown(filter = '') {
     const options = subjectNameInput.querySelectorAll('option');
@@ -2546,12 +2667,6 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
 
-  // Function to update constraint count
-  function updateConstraintCount() {
-    const currentCount = constraintList.querySelectorAll('.constraint-item').length;
-    constraintCount.textContent = currentCount;
-  }
-
   // Function to extract constraint data from item
   function extractConstraintData(item) {
     const subjectName = item.querySelector('.font-semibold').textContent.trim();
@@ -2590,31 +2705,49 @@ document.addEventListener('DOMContentLoaded', function() {
   // Function to open constraint modal in edit mode
   function openConstraintEditMode(item) {
     editingConstraintItem = item;
-    const data = extractConstraintData(item);
-    
-    // Set subject name - find the option by text and select it
-    let found = false;
-    for (let i = 0; i < subjectNameInput.options.length; i++) {
-      if (subjectNameInput.options[i].dataset.name === data.subjectName) {
-        subjectNameInput.value = subjectNameInput.options[i].value;
-        subjectSearchInput.value = data.subjectName;
-        found = true;
-        break;
+    // Prefer dataset values if present
+    const data = (function(it){
+      const subjectId = parseInt(it.dataset.subjectId || '0');
+      let subjectName = '';
+      if (subjectId) {
+        const opt = subjectNameInput.querySelector(`option[value="${subjectId}"]`);
+        subjectName = opt ? (opt.dataset.name || opt.textContent) : '';
       }
-    }
+      let periods = [];
+      try { periods = JSON.parse(it.dataset.periods || '[]'); } catch(e) { periods = []; }
+      const reason = it.dataset.reason || '';
+      if (!subjectName) {
+        // fallback parse from DOM text
+        const parsed = extractConstraintData(it);
+        subjectName = parsed.subjectName; periods = parsed.periods; 
+      }
+      return { subjectId, subjectName, periods, reason };
+    })(item);
     
-    // If subject not found in dropdown, just clear the values
-    if (!found) {
-      subjectNameInput.value = '';
-      subjectSearchInput.value = '';
+    // Select subject by id when possible
+    if (data.subjectId) {
+      subjectNameInput.value = String(data.subjectId);
+      subjectSearchInput.value = data.subjectName || '';
+    } else {
+      // Fallback by name
+      let found = false;
+      for (let i = 0; i < subjectNameInput.options.length; i++) {
+        if (subjectNameInput.options[i].dataset.name === data.subjectName) {
+          subjectNameInput.value = subjectNameInput.options[i].value;
+          subjectSearchInput.value = data.subjectName;
+          found = true;
+          break;
+        }
+      }
+      if (!found) { subjectNameInput.value = ''; subjectSearchInput.value = ''; }
     }
     
     // Set reason
-    constraintReasonInput.value = data.reason;
+    constraintReasonInput.value = data.reason || '';
     
     // Check the periods
     document.querySelectorAll('input[name="constraint-period"]').forEach(cb => {
-      cb.checked = data.periods.includes(parseInt(cb.value));
+      cb.checked = (data.periods || []).includes(parseInt(cb.value));
     });
     
     // Show delete button
@@ -2664,6 +2797,9 @@ document.addEventListener('DOMContentLoaded', function() {
       if (confirm(`Delete this constraint?\n\n${subjectName}\n${description}`)) {
         editingConstraintItem.remove();
         updateConstraintCount();
+        // Persist deletion
+        const payload = collectSubjectConstraintsFromList();
+        saveSubjectConstraintsToDatabase(payload);
         closeConstraintModalFunc();
       }
     }
@@ -2718,22 +2854,20 @@ document.addEventListener('DOMContentLoaded', function() {
     `;
 
     if (editingConstraintItem) {
-      // Update existing item
+      // Update existing item content and datasets
       editingConstraintItem.innerHTML = constraintHTML;
-      // Update data attributes
-      editingConstraintItem.setAttribute('data-subject-id', subjectId);
-      editingConstraintItem.setAttribute('data-periods', JSON.stringify(selectedPeriods));
-      editingConstraintItem.setAttribute('data-reason', reason);
+      editingConstraintItem.dataset.subjectId = subjectId;
+      try { editingConstraintItem.dataset.periods = JSON.stringify(selectedPeriods); } catch(e) { editingConstraintItem.dataset.periods = '[]'; }
+      editingConstraintItem.dataset.reason = reason;
+      attachConstraintClickHandler(editingConstraintItem);
     } else {
       // Create new item
       const newConstraint = document.createElement('div');
       newConstraint.className = 'constraint-item bg-slate-50 p-3 rounded flex items-center justify-between hover:bg-blue-50 hover:border-blue-300 border border-transparent transition cursor-pointer group';
       newConstraint.innerHTML = constraintHTML;
-      
-      // Store metadata as data attributes
-      newConstraint.setAttribute('data-subject-id', subjectId);
-      newConstraint.setAttribute('data-periods', JSON.stringify(selectedPeriods));
-      newConstraint.setAttribute('data-reason', reason);
+      newConstraint.dataset.subjectId = subjectId;
+      try { newConstraint.dataset.periods = JSON.stringify(selectedPeriods); } catch(e) { newConstraint.dataset.periods = '[]'; }
+      newConstraint.dataset.reason = reason;
       
       // Add to list
       constraintList.appendChild(newConstraint);
@@ -2745,117 +2879,23 @@ document.addEventListener('DOMContentLoaded', function() {
       updateConstraintCount();
     }
 
-    // Save to database
-    saveSubjectConstraintsToDatabase();
+    // Persist changes to DB
+    const payload = collectSubjectConstraintsFromList();
+    console.log('Saving:', payload);
+    saveSubjectConstraintsToDatabase(payload).then(() => {
+      updateConstraintCount();
+      console.log('Saved successfully');
+    }).catch(err => {
+      console.error('Save failed:', err);
+    });
 
     // Close modal
     closeConstraintModalFunc();
   });
-
-  // Function to save all constraints to database
-  function saveSubjectConstraintsToDatabase() {
-    const constraints = {};
-    let constraintId = 0;
-    
-    document.querySelectorAll('.constraint-item').forEach(item => {
-      const subjectId = item.getAttribute('data-subject-id');
-      const periods = item.getAttribute('data-periods') ? JSON.parse(item.getAttribute('data-periods')) : [];
-      const reason = item.getAttribute('data-reason') || '';
-      const subjectName = item.querySelector('.font-semibold').textContent;
-      
-      constraints[constraintId] = {
-        subject_id: parseInt(subjectId),
-        subject_name: subjectName,
-        periods: periods.sort((a, b) => a - b),
-        reason: reason
-      };
-      
-      constraintId++;
-    });
-    
-    console.log('Saving subject constraints:', constraints);
-    
-    fetch('{{ route("admin.schedule-maker.settings.save-subject-constraints") }}', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-      },
-      body: JSON.stringify({ constraints: constraints })
-    })
-    .then(response => response.json())
-    .then(data => {
-      console.log('Subject constraints save response:', data);
-      if (data.success) {
-        console.log('Subject constraints saved to database successfully');
-        window.dispatchEvent(new CustomEvent('constraintsUpdated', { detail: constraints }));
-      } else {
-        console.error('Failed to save constraints:', data.message);
-      }
-    })
-    .catch(error => {
-      console.error('Error saving constraints:', error);
-    });
-  }
-
-  // Load constraints from database on page load
-  function loadSubjectConstraintsFromDatabase() {
-    console.log('Loading subject constraints from database...');
-    fetch('{{ route("admin.schedule-maker.settings.get-subject-constraints") }}')
-      .then(response => response.json())
-      .then(data => {
-        console.log('Constraints load response:', data);
-        if (data.success && data.constraints) {
-          constraintList.innerHTML = '';
-          
-          Object.values(data.constraints).forEach(constraint => {
-            // Ensure periods are integers
-            const periods = constraint.periods.map(p => parseInt(p));
-            
-            const periodBadges = periods.map(p =>
-              `<span class="px-2 py-1 bg-red-100 text-red-700 rounded text-xs font-semibold">P${p}</span>`
-            ).join(' ');
-            
-            let description = 'Avoid ' + formatPeriods(periods);
-            if (constraint.reason) {
-              description += ' (' + constraint.reason + ')';
-            }
-            
-            const constraintHTML = `
-              <div class="flex-1">
-                <div class="font-semibold text-sm group-hover:text-blue-700">${constraint.subject_name}</div>
-                <div class="text-xs text-slate-600">${description}</div>
-              </div>
-              <div class="flex gap-1 items-center">
-                ${periodBadges}
-                <svg class="w-4 h-4 text-slate-400 group-hover:text-blue-600 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                </svg>
-              </div>
-            `;
-            
-            const newConstraint = document.createElement('div');
-            newConstraint.className = 'constraint-item bg-slate-50 p-3 rounded flex items-center justify-between hover:bg-blue-50 hover:border-blue-300 border border-transparent transition cursor-pointer group';
-            newConstraint.innerHTML = constraintHTML;
-            
-            newConstraint.setAttribute('data-subject-id', parseInt(constraint.subject_id));
-            newConstraint.setAttribute('data-periods', JSON.stringify(periods));
-            newConstraint.setAttribute('data-reason', constraint.reason || '');
-            
-            constraintList.appendChild(newConstraint);
-            attachConstraintClickHandler(newConstraint);
-          });
-          
-          updateConstraintCount();
-        }
-      })
-      .catch(error => {
-        console.error('Error loading constraints:', error);
-      });
-  }
-
+  
+  // Initial load of subject constraints
+  console.log('Initializing constraints...');
   loadSubjectConstraintsFromDatabase();
-
   // Auto-save Configuration Handler
   const autoSaveIndicator = document.getElementById('auto-save-indicator');
   let autoSaveTimeout;
@@ -2938,7 +2978,7 @@ document.addEventListener('DOMContentLoaded', function() {
     updateAutoSaveIndicator('saving', 'Saving...');
     hasUnsavedChanges = false;
 
-    fetch('{{ route("admin.schedule-maker.settings.save-jh-config") }}', {
+    fetch('<?php echo e(route("admin.schedule-maker.settings.save-jh-config")); ?>', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -3012,4 +3052,6 @@ document.addEventListener('DOMContentLoaded', function() {
   }, 30000);
 });
 </script>
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('admin.layout', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\TuroTugma\resources\views\admin\schedule-maker\settings.blade.php ENDPATH**/ ?>

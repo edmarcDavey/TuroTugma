@@ -106,4 +106,4 @@
       <?php echo $__env->yieldContent('scripts'); ?>
   </body>
 </html>
-<?php /**PATH C:\xampp\htdocs\TuroTugma\resources\views/admin/layout.blade.php ENDPATH**/ ?>
+<?php /**PATH C:\xampp\htdocs\TuroTugma\resources\views\admin\layout.blade.php ENDPATH**/ ?>

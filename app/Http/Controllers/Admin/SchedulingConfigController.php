@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Models\ScheduleSection;
 use App\Models\Teacher;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class SchedulingConfigController extends Controller
 {
@@ -21,7 +22,7 @@ class SchedulingConfigController extends Controller
         $sh = SchedulingConfig::with('dayConfigs')->where('level','senior_high')->first();
         $general = SchedulingConfig::with('periodRestrictions.subject')->where('level','general')->first();
         $subjects = Subject::orderBy('name')->get();
-        $teachers = User::where('role', 'teacher')->orderBy('name')->get();
+        $teachers = Teacher::orderBy('name')->get();
         $sections_jhs = ScheduleSection::where('level', 'junior_high')->orderBy('name')->get();
         $sections_shs = ScheduleSection::where('level', 'senior_high')->orderBy('name')->get();
         
@@ -386,6 +387,353 @@ class SchedulingConfigController extends Controller
         }
         
         return response()->json($teachers);
+    }
+
+    /**
+     * Save JH configuration (period duration, breaks, etc.)
+     */
+    public function storeJHConfig(Request $request)
+    {
+        try {
+            \Log::info('storeJHConfig called with data:', $request->all());
+            
+            $validated = $request->validate([
+                'period_duration' => 'required|integer|min:30|max:90',
+                'total_periods' => 'required|integer|min:4|max:12',
+                'active_days' => 'array',
+                'active_days.*' => 'integer|min:0|max:6',
+                'morning_break_enabled' => 'boolean',
+                'morning_break_after_period' => 'nullable|integer|min:1|max:12',
+                'morning_break_duration' => 'nullable|integer|min:5|max:60',
+                'lunch_break_enabled' => 'boolean',
+                'lunch_break_after_period' => 'nullable|integer|min:1|max:12',
+                'lunch_break_duration' => 'nullable|integer|min:5|max:90',
+                'afternoon_break_enabled' => 'boolean',
+                'afternoon_break_after_period' => 'nullable|integer|min:1|max:12',
+                'afternoon_break_duration' => 'nullable|integer|min:5|max:60',
+                'session_type' => 'required|in:regular,shortened',
+            ]);
+            
+            \Log::info('Validated data:', $validated);
+        } catch (\Exception $e) {
+            \Log::error('Validation failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error: ' . $e->getMessage()
+            ], 422);
+        }
+
+        // Get or create JH config
+        $config = SchedulingConfig::firstOrCreate(
+            ['level' => 'junior_high'],
+            ['level' => 'junior_high']
+        );
+
+        // Build config array
+        $jhConfig = $config->jh_config ? json_decode($config->jh_config, true) : [];
+        
+        // Store by session type
+        if (!isset($jhConfig['sessions'])) {
+            $jhConfig['sessions'] = [];
+        }
+
+        $jhConfig['sessions'][$validated['session_type']] = [
+            'period_duration' => $validated['period_duration'],
+            'total_periods' => $validated['total_periods'],
+            'active_days' => $validated['active_days'],
+            'breaks' => [
+                'morning_break_enabled' => $validated['morning_break_enabled'],
+                'morning_break_after_period' => $validated['morning_break_after_period'],
+                'morning_break_duration' => $validated['morning_break_duration'],
+                'lunch_break_enabled' => $validated['lunch_break_enabled'],
+                'lunch_break_after_period' => $validated['lunch_break_after_period'],
+                'lunch_break_duration' => $validated['lunch_break_duration'],
+                'afternoon_break_enabled' => $validated['afternoon_break_enabled'],
+                'afternoon_break_after_period' => $validated['afternoon_break_after_period'],
+                'afternoon_break_duration' => $validated['afternoon_break_duration'],
+            ],
+            'start_time' => '07:30', // Can be made configurable later
+            'created_at' => now()->toDateTimeString()
+        ];
+
+        // Save config
+        $config->jh_config = json_encode($jhConfig);
+        $config->save();
+
+        \Log::info('Saved JH config:', ['jh_config' => $jhConfig]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Junior High configuration saved successfully',
+            'config' => $jhConfig
+        ]);
+    }
+
+    /**
+     * Get the current JH configuration
+     */
+    public function getJHConfig()
+    {
+        $config = SchedulingConfig::where('level', 'junior_high')->first();
+        
+        if (!$config) {
+            return response()->json([
+                'success' => false,
+                'config' => null
+            ]);
+        }
+
+        $jhConfig = json_decode($config->jh_config ?? '{}', true) ?? [];
+        
+        return response()->json([
+            'success' => true,
+            'config' => $jhConfig['sessions'] ?? []
+        ]);
+    }
+
+    /**
+     * Calculate period times based on configuration
+     * Returns array of periods with start/end times for both regular and shortened sessions
+     */
+    public static function calculatePeriodTimes($sessionType = 'regular', $level = 'junior_high')
+    {
+        \Log::info('calculatePeriodTimes called', ['sessionType' => $sessionType, 'level' => $level]);
+        
+        $config = SchedulingConfig::where('level', $level)->first();
+        
+        if (!$config) {
+            // Return default hardcoded periods if no config found
+            \Log::warning('No config found, returning defaults');
+            return self::getDefaultPeriods();
+        }
+
+        // Get the appropriate config JSON
+        $configData = null;
+        if ($level === 'junior_high') {
+            $allConfigs = json_decode($config->jh_config ?? '{}', true) ?? [];
+            \Log::info('All configs from DB:', $allConfigs);
+            $configData = $allConfigs['sessions'][$sessionType] ?? null;
+            \Log::info('Config data for session type:', ['configData' => $configData]);
+        }
+
+        if (!$configData) {
+            \Log::warning('No config data for session type, returning defaults');
+            return self::getDefaultPeriods();
+        }
+
+        $periods = [];
+        $startMinutes = 450; // 7:30 AM in minutes from midnight
+        $periodDuration = (int)($configData['period_duration'] ?? 50);
+        $totalPeriods = (int)($configData['total_periods'] ?? 9);
+
+        \Log::info('Period calculation params', [
+            'periodDuration' => $periodDuration,
+            'totalPeriods' => $totalPeriods
+        ]);
+
+        // Normalize breaks to flat structure (support both legacy nested and current flat formats)
+        $rawBreaks = $configData['breaks'] ?? [];
+        \Log::info('Raw breaks from config:', $rawBreaks);
+        
+        // Check if it's the old nested format
+        if (isset($rawBreaks['morning']) || isset($rawBreaks['lunch']) || isset($rawBreaks['afternoon'])) {
+            // Legacy nested format - convert to flat
+            \Log::info('Converting legacy nested format to flat');
+            $breaks = [
+                'morning_break_enabled' => (bool)($rawBreaks['morning']['enabled'] ?? false),
+                'morning_break_after_period' => (int)($rawBreaks['morning']['after_period'] ?? 2),
+                'morning_break_duration' => (int)($rawBreaks['morning']['duration'] ?? 15),
+                'lunch_break_enabled' => (bool)($rawBreaks['lunch']['enabled'] ?? false),
+                'lunch_break_after_period' => (int)($rawBreaks['lunch']['after_period'] ?? 4),
+                'lunch_break_duration' => (int)($rawBreaks['lunch']['duration'] ?? 60),
+                'afternoon_break_enabled' => (bool)($rawBreaks['afternoon']['enabled'] ?? false),
+                'afternoon_break_after_period' => (int)($rawBreaks['afternoon']['after_period'] ?? 5),
+                'afternoon_break_duration' => (int)($rawBreaks['afternoon']['duration'] ?? 10),
+            ];
+        } else {
+            // Already flat format or empty
+            \Log::info('Using flat format (already normalized or new data)');
+            $breaks = $rawBreaks;
+        }
+        
+        \Log::info('Final breaks array:', $breaks);
+
+        for ($i = 1; $i <= $totalPeriods; $i++) {
+            $periodStart = $startMinutes;
+            $periodEnd = $startMinutes + $periodDuration;
+
+            $periods[] = [
+                'number' => $i,
+                'start' => self::minutesToTime($periodStart),
+                'end' => self::minutesToTime($periodEnd),
+            ];
+
+            // Add break duration if this period has a break after it
+            $breakAfterThisPeriod = null;
+            if (($breaks['morning_break_enabled'] ?? false) && ($breaks['morning_break_after_period'] ?? null) == $i) {
+                $breakAfterThisPeriod = (int)($breaks['morning_break_duration'] ?? 15);
+            } elseif (($breaks['lunch_break_enabled'] ?? false) && ($breaks['lunch_break_after_period'] ?? null) == $i) {
+                $breakAfterThisPeriod = (int)($breaks['lunch_break_duration'] ?? 60);
+            } elseif (($breaks['afternoon_break_enabled'] ?? false) && ($breaks['afternoon_break_after_period'] ?? null) == $i) {
+                $breakAfterThisPeriod = (int)($breaks['afternoon_break_duration'] ?? 10);
+            }
+
+            if ($breakAfterThisPeriod) {
+                $startMinutes = $periodEnd + $breakAfterThisPeriod;
+            } else {
+                $startMinutes = $periodEnd;
+            }
+        }
+
+        return $periods;
+    }
+
+    /**
+     * Convert minutes from midnight to HH:MM format
+     */
+    private static function minutesToTime($minutes)
+    {
+        $hours = intdiv($minutes, 60);
+        $mins = $minutes % 60;
+        $period = $hours >= 12 ? 'PM' : 'AM';
+        $displayHours = $hours % 12;
+        if ($displayHours == 0) {
+            $displayHours = 12;
+        }
+        return sprintf('%d:%02d %s', $displayHours, $mins, $period);
+    }
+
+    /**
+     * Get default hardcoded periods if no config exists
+     */
+    private static function getDefaultPeriods()
+    {
+        return [
+            // Include generic start/end so the scheduler header never shows undefined-undefined
+            ['number' => 1, 'start_regular' => '7:30', 'end_regular' => '8:30', 'start_shortened' => '7:30', 'end_shortened' => '8:20', 'start' => '7:30', 'end' => '8:30'],
+            ['number' => 2, 'start_regular' => '8:30', 'end_regular' => '9:30', 'start_shortened' => '8:20', 'end_shortened' => '9:10', 'start' => '8:30', 'end' => '9:30'],
+            ['number' => 3, 'start_regular' => '9:30', 'end_regular' => '10:30', 'start_shortened' => '9:10', 'end_shortened' => '10:00', 'start' => '9:30', 'end' => '10:30'],
+            ['number' => 4, 'start_regular' => '10:30', 'end_regular' => '11:30', 'start_shortened' => '10:00', 'end_shortened' => '10:50', 'start' => '10:30', 'end' => '11:30'],
+            ['number' => 5, 'start_regular' => '11:30', 'end_regular' => '12:30', 'start_shortened' => '10:50', 'end_shortened' => '11:40', 'start' => '11:30', 'end' => '12:30'],
+            ['number' => 6, 'start_regular' => '1:00', 'end_regular' => '2:00', 'start_shortened' => '12:50', 'end_shortened' => '1:40', 'start' => '1:00', 'end' => '2:00'],
+            ['number' => 7, 'start_regular' => '2:00', 'end_regular' => '3:00', 'start_shortened' => '1:40', 'end_shortened' => '2:30', 'start' => '2:00', 'end' => '3:00'],
+            ['number' => 8, 'start_regular' => '3:00', 'end_regular' => '4:00', 'start_shortened' => '2:30', 'end_shortened' => '3:20', 'start' => '3:00', 'end' => '4:00'],
+            ['number' => 9, 'start_regular' => '4:00', 'end_regular' => '5:00', 'start_shortened' => '3:20', 'end_shortened' => '4:10', 'start' => '4:00', 'end' => '5:00'],
+        ];
+    }
+    
+    /**
+     * Save faculty restrictions to database
+     */
+    public function saveFacultyRestrictions(Request $request)
+    {
+        try {
+            $restrictions = $request->validate([
+                'restrictions' => 'required|array'
+            ]);
+            
+            // Get or create general config
+            $config = SchedulingConfig::firstOrCreate(['level' => 'general']);
+            
+            // Save restrictions as JSON
+            $config->faculty_restrictions = json_encode($restrictions['restrictions']);
+            $config->save();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Faculty restrictions saved successfully'
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error saving faculty restrictions: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error saving restrictions: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    
+    /**
+     * Get faculty restrictions from database
+     */
+    public function getFacultyRestrictions()
+    {
+        try {
+            $config = SchedulingConfig::where('level', 'general')->first();
+            
+            $restrictions = [];
+            if ($config && $config->faculty_restrictions) {
+                $restrictions = json_decode($config->faculty_restrictions, true) ?? [];
+            }
+            
+            return response()->json([
+                'success' => true,
+                'restrictions' => $restrictions
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error loading faculty restrictions: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error loading restrictions: ' . $e->getMessage(),
+                'restrictions' => []
+            ], 500);
+        }
+    }
+
+    /**
+     * Save subject constraints to database
+     */
+    public function saveSubjectConstraints(Request $request)
+    {
+        try {
+            $constraints = $request->validate([
+                'constraints' => 'required|array'
+            ]);
+            
+            // Get or create general config
+            $config = SchedulingConfig::firstOrCreate(['level' => 'general']);
+            
+            // Save constraints as JSON
+            $config->subject_constraints = json_encode($constraints['constraints']);
+            $config->save();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Subject constraints saved successfully'
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error saving subject constraints: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error saving constraints: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get subject constraints from database
+     */
+    public function getSubjectConstraints()
+    {
+        try {
+            $config = SchedulingConfig::where('level', 'general')->first();
+            
+            $constraints = [];
+            if ($config && $config->subject_constraints) {
+                $constraints = json_decode($config->subject_constraints, true) ?? [];
+            }
+            
+            return response()->json([
+                'success' => true,
+                'constraints' => $constraints
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error loading subject constraints: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error loading constraints: ' . $e->getMessage(),
+                'constraints' => []
+            ], 500);
+        }
     }
     //
 }

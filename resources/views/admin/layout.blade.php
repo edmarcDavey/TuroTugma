@@ -9,7 +9,7 @@
   </head>
   <body class="bg-white text-slate-800 min-h-screen">
     <div class="flex">
-      <aside class="w-64 p-6 border-r bg-slate-50 min-h-screen">
+      <aside class="w-44 p-4 border-r bg-slate-50 min-h-screen">
         <a href="{{ route('admin.dashboard') }}" class="text-xl font-bold text-[#3b4197]">Admin</a>
         <nav class="mt-6 space-y-3 text-base">
           <a href="{{ route('admin.dashboard') }}" class="block text-slate-700 hover:text-[#3b4197]">Overview</a>
@@ -17,16 +17,16 @@
           <a href="{{ route('admin.teachers.index') }}" class="block text-slate-700 hover:text-[#3b4197]">Teachers</a>
 
           <div class="mt-1">
-            <div class="text-sm font-medium text-slate-700">Schedule Maker</div>
-            <nav class="ml-3 mt-1 space-y-1 text-sm">
+            <div class="text-base font-medium text-slate-700">Schedule Maker</div>
+            <nav class="ml-3 mt-1 space-y-1 text-base">
               <a href="{{ url('/admin/schedule-maker/scheduler') }}" class="block text-slate-700 hover:text-[#3b4197]">Scheduler</a>
               <a href="{{ url('/admin/schedule-maker/settings') }}" class="block text-slate-700 hover:text-[#3b4197]">Settings</a>
             </nav>
           </div>
 
           <div class="mt-1">
-            <div class="text-sm font-medium text-slate-700">Substitution Finder</div>
-            <nav class="ml-3 mt-1 space-y-1 text-sm">
+            <div class="text-base font-medium text-slate-700">Substitution Finder</div>
+            <nav class="ml-3 mt-1 space-y-1 text-base">
               <a href="{{ url('/admin/substitution-finder/find') }}" class="block text-slate-700 hover:text-[#3b4197]">Find Substitutes</a>
               <a href="{{ url('/admin/substitution-finder/history') }}" class="block text-slate-700 hover:text-[#3b4197]">History</a>
             </nav>
