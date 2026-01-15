@@ -1025,38 +1025,200 @@
 
       <!-- Load Balancing -->
       <div class="border rounded-lg p-4 bg-white mb-4">
-        <h4 class="font-semibold mb-3 text-slate-800">⚖️ Load Balancing</h4>
-        <div class="grid grid-cols-2 gap-4 mb-3">
-          <div>
-            <label class="text-xs text-slate-600 block mb-1">Max Consecutive Periods</label>
+        <h4 class="font-semibold mb-4 text-slate-800">⚖️ Load Balancing Framework</h4>
+
+        <!-- Teaching Load Limits Section -->
+        <div class="border rounded-lg mb-4 bg-slate-50">
+          <button type="button" onclick="toggleSection(this)" class="w-full flex items-center justify-between p-4 hover:bg-slate-100 transition cursor-pointer">
             <div class="flex items-center gap-2">
-              <input type="number" value="4" class="border border-slate-300 rounded px-3 py-2 w-20 text-sm" min="2" max="9" />
-              <span class="text-xs text-slate-600">periods</span>
+              <span class="text-lg">📊</span>
+              <span class="font-semibold text-slate-700">Teaching Load Limits</span>
             </div>
-            <p class="text-xs text-slate-400 mt-1">Maximum periods a teacher can teach without break</p>
-          </div>
-          <div>
-            <label class="text-xs text-slate-600 block mb-1">Max Teaching Days/Week</label>
-            <div class="flex items-center gap-2">
-              <input type="number" value="5" class="border border-slate-300 rounded px-3 py-2 w-20 text-sm" min="1" max="6" />
-              <span class="text-xs text-slate-600">days</span>
+            <span class="section-chevron text-slate-500 text-xl" style="display: inline-block; transition: transform 0.3s ease; transform: rotate(0deg);">▶</span>
+          </button>
+          <div class="section-content border-t border-slate-200 bg-white transition-all overflow-hidden" style="max-height: 0px; padding: 0; border: none;">
+            <div class="grid grid-cols-2 gap-4 mb-4 p-4">
+              <div>
+                <label class="text-xs font-semibold text-slate-600 block mb-2">Minimum Units/Year</label>
+                <input type="number" value="12" class="border border-slate-300 rounded px-3 py-2 w-full text-sm" min="6" max="30" />
+                <p class="text-xs text-slate-500 mt-1">Minimum teaching load expected per faculty member</p>
+              </div>
+              <div>
+                <label class="text-xs font-semibold text-slate-600 block mb-2">Maximum Units/Year</label>
+                <input type="number" value="18" class="border border-slate-300 rounded px-3 py-2 w-full text-sm" min="12" max="30" />
+                <p class="text-xs text-slate-500 mt-1">Maximum comfortable teaching load per faculty member</p>
+              </div>
             </div>
-            <p class="text-xs text-slate-400 mt-1">Maximum teaching days per week per teacher</p>
+            <div class="p-3 bg-blue-50 rounded-lg mb-4 border border-blue-200">
+              <div class="text-xs font-semibold text-blue-900 mb-2">Safe Load Zone: 12–18 units</div>
+              <div class="w-full bg-slate-300 rounded-full h-2 overflow-hidden">
+                <div class="bg-gradient-to-r from-amber-400 via-green-500 to-amber-400 h-full" style="width: 50%;"></div>
+              </div>
+              <div class="flex justify-between text-xs text-slate-600 mt-1">
+                <span>Min (12)</span>
+                <span class="font-semibold text-green-700">Optimal</span>
+                <span>Max (18)</span>
+                <span class="text-red-600">⚠ Overload</span>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="text-xs text-slate-600 block mb-1">Max Consecutive Periods</label>
+                <div class="flex items-center gap-2">
+                  <input type="number" value="4" class="border border-slate-300 rounded px-3 py-2 flex-1 text-sm" min="2" max="9" />
+                  <span class="text-xs text-slate-500 whitespace-nowrap">periods</span>
+                </div>
+              </div>
+              <div>
+                <label class="text-xs text-slate-600 block mb-1">Max Teaching Days/Week</label>
+                <div class="flex items-center gap-2">
+                  <input type="number" value="5" class="border border-slate-300 rounded px-3 py-2 flex-1 text-sm" min="1" max="6" />
+                  <span class="text-xs text-slate-500 whitespace-nowrap">days</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-        <div class="space-y-2 text-sm">
-          <label class="flex items-center gap-2 cursor-pointer hover:bg-slate-50 p-2 rounded">
-            <input type="checkbox" checked class="rounded" />
-            <span>Balance workload across teachers</span>
-          </label>
-          <label class="flex items-center gap-2 cursor-pointer hover:bg-slate-50 p-2 rounded">
-            <input type="checkbox" checked class="rounded" />
-            <span>Minimize gaps in teacher schedules</span>
-          </label>
-          <label class="flex items-center gap-2 cursor-pointer hover:bg-slate-50 p-2 rounded">
-            <input type="checkbox" class="rounded" />
-            <span>Prefer core subjects in morning periods</span>
-          </label>
+
+        <!-- Assignment Rules Section -->
+        <div class="border rounded-lg mb-4 bg-slate-50">
+          <button type="button" onclick="toggleSection(this)" class="w-full flex items-center justify-between p-4 hover:bg-slate-100 transition cursor-pointer">
+            <div class="flex items-center gap-2">
+              <span class="text-lg">📋</span>
+              <span class="font-semibold text-slate-700">Assignment Rules</span>
+            </div>
+            <span class="section-chevron text-slate-500 text-xl" style="display: inline-block; transition: transform 0.3s ease; transform: rotate(0deg);">▶</span>
+          </button>
+          <div class="section-content border-t border-slate-200 bg-white transition-all overflow-hidden" style="max-height: 0px; padding: 0; border: none;">
+            <div class="space-y-3 p-4">
+              <label class="flex items-center gap-3 p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer transition">
+                <input type="checkbox" checked class="rounded w-4 h-4" />
+                <div class="flex-1">
+                  <div class="font-semibold text-sm text-slate-800">Specialization-First Matching</div>
+                  <div class="text-xs text-slate-500">Assign subjects teachers are qualified/experienced in first</div>
+                </div>
+              </label>
+              <label class="flex items-center gap-3 p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer transition">
+                <input type="checkbox" checked class="rounded w-4 h-4" />
+                <div class="flex-1">
+                  <div class="font-semibold text-sm text-slate-800">Fair Workload Distribution</div>
+                  <div class="text-xs text-slate-500">Balance teaching load evenly across all faculty members</div>
+                </div>
+              </label>
+              <label class="flex items-center gap-3 p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer transition">
+                <input type="checkbox" checked class="rounded w-4 h-4" />
+                <div class="flex-1">
+                  <div class="font-semibold text-sm text-slate-800">Minimize Schedule Gaps</div>
+                  <div class="text-xs text-slate-500">Cluster teaching periods to reduce unproductive time</div>
+                </div>
+              </label>
+              <label class="flex items-center gap-3 p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer transition">
+                <input type="checkbox" class="rounded w-4 h-4" />
+                <div class="flex-1">
+                  <div class="font-semibold text-sm text-slate-800">Honor Seniority Preferences</div>
+                  <div class="text-xs text-slate-500">Consider tenure and experience in assignment priority</div>
+                </div>
+              </label>
+              <label class="flex items-center gap-3 p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer transition">
+                <input type="checkbox" class="rounded w-4 h-4" />
+                <div class="flex-1">
+                  <div class="font-semibold text-sm text-slate-800">Core Subjects in AM Periods</div>
+                  <div class="text-xs text-slate-500">Schedule Mathematics, Science, and English in morning periods</div>
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Distribution Method Section -->
+        <div class="border rounded-lg mb-4 bg-slate-50">
+          <button type="button" onclick="toggleSection(this)" class="w-full flex items-center justify-between p-4 hover:bg-slate-100 transition cursor-pointer">
+            <div class="flex items-center gap-2">
+              <span class="text-lg">🔄</span>
+              <span class="font-semibold text-slate-700">Distribution Algorithm</span>
+            </div>
+            <span class="section-chevron text-slate-500 text-xl" style="display: inline-block; transition: transform 0.3s ease; transform: rotate(0deg);">▶</span>
+          </button>
+          <div class="section-content border-t border-slate-200 bg-white transition-all overflow-hidden" style="max-height: 0px; padding: 0; border: none;">
+            <div class="space-y-3 p-4">
+              <label class="flex items-center gap-3 p-3 border-2 border-blue-300 rounded-lg bg-blue-50 cursor-pointer transition">
+                <input type="radio" name="algorithm" value="round-robin" checked class="rounded w-4 h-4" />
+                <div class="flex-1">
+                  <div class="font-semibold text-sm text-slate-800">Round-Robin Distribution</div>
+                  <div class="text-xs text-slate-600">Cycle through faculty sequentially, ensuring fair rotation</div>
+                </div>
+              </label>
+              <label class="flex items-center gap-3 p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer transition">
+                <input type="radio" name="algorithm" value="weighted" class="rounded w-4 h-4" />
+                <div class="flex-1">
+                  <div class="font-semibold text-sm text-slate-800">Weighted Distribution</div>
+                  <div class="text-xs text-slate-600">Use specialization, seniority, and preferences as weights</div>
+                </div>
+              </label>
+              <label class="flex items-center gap-3 p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer transition">
+                <input type="radio" name="algorithm" value="demand-driven" class="rounded w-4 h-4" />
+                <div class="flex-1">
+                  <div class="font-semibold text-sm text-slate-800">Demand-Driven Allocation</div>
+                  <div class="text-xs text-slate-600">Prioritize sections with high enrollment or critical needs</div>
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Conflict Handling Section -->
+        <div class="border rounded-lg mb-4 bg-slate-50">
+          <button type="button" onclick="toggleSection(this)" class="w-full flex items-center justify-between p-4 hover:bg-slate-100 transition cursor-pointer">
+            <div class="flex items-center gap-2">
+              <span class="text-lg">⚠️</span>
+              <span class="font-semibold text-slate-700">Conflict Handling</span>
+            </div>
+            <span class="section-chevron text-slate-500 text-xl" style="display: inline-block; transition: transform 0.3s ease; transform: rotate(0deg);">▶</span>
+          </button>
+          <div class="section-content border-t border-slate-200 bg-white transition-all overflow-hidden" style="max-height: 0px; padding: 0; border: none;">
+            <div class="mb-3 p-4">
+              <p class="text-xs text-slate-600 mb-3">See <span class="font-semibold">Conflict Detection & Resolution</span> section below for detailed conflict rules and handling strategies.</p>
+              <div class="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <div class="text-xs font-semibold text-amber-900">Load Balancing Conflict Priority</div>
+                <div class="text-xs text-amber-800 mt-1">Conflicts in achieving optimal load (12-18 units) are secondary to critical scheduling conflicts.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Metrics & Tracking Section -->
+        <div class="border rounded-lg bg-slate-50">
+          <button type="button" onclick="toggleSection(this)" class="w-full flex items-center justify-between p-4 hover:bg-slate-100 transition cursor-pointer">
+            <div class="flex items-center gap-2">
+              <span class="text-lg">📈</span>
+              <span class="font-semibold text-slate-700">Metrics & Tracking</span>
+            </div>
+            <span class="section-chevron text-slate-500 text-xl" style="display: inline-block; transition: transform 0.3s ease; transform: rotate(0deg);">▶</span>
+          </button>
+          <div class="section-content border-t border-slate-200 bg-white transition-all overflow-hidden" style="max-height: 0px; padding: 0; border: none;">
+            <div class="space-y-2 text-sm p-4">
+              <div class="flex items-center gap-2 p-2 bg-slate-100 rounded">
+                <span class="text-lg">✓</span>
+                <span class="text-xs text-slate-700"><strong>Average teaching load:</strong> Mean units per faculty member</span>
+              </div>
+              <div class="flex items-center gap-2 p-2 bg-slate-100 rounded">
+                <span class="text-lg">✓</span>
+                <span class="text-xs text-slate-700"><strong>Load variance:</strong> Std deviation from average (lower = fairer)</span>
+              </div>
+              <div class="flex items-center gap-2 p-2 bg-slate-100 rounded">
+                <span class="text-lg">✓</span>
+                <span class="text-xs text-slate-700"><strong>Faculty within safe zone:</strong> % of teachers in 12-18 unit range</span>
+              </div>
+              <div class="flex items-center gap-2 p-2 bg-slate-100 rounded">
+                <span class="text-lg">✓</span>
+                <span class="text-xs text-slate-700"><strong>Specialization match rate:</strong> % of assignments matching qualifications</span>
+              </div>
+              <div class="flex items-center gap-2 p-2 bg-slate-100 rounded">
+                <span class="text-lg">✓</span>
+                <span class="text-xs text-slate-700"><strong>Schedule efficiency:</strong> Avg gap time (lower = better continuity)</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1153,6 +1315,23 @@ document.addEventListener('DOMContentLoaded', function() {
   if ('scrollRestoration' in window.history) {
     window.history.scrollRestoration = 'manual';
   }
+
+  // Toggle Collapsible Sections (Load Balancing)
+  function toggleSection(button) {
+    const content = button.nextElementSibling;
+    const icon = button.querySelector('.section-chevron');
+    
+    if (content.style.maxHeight === '0px' || !content.style.maxHeight) {
+      content.style.maxHeight = content.scrollHeight + 'px';
+      icon.style.transform = 'rotate(90deg)';
+    } else {
+      content.style.maxHeight = '0px';
+      icon.style.transform = 'rotate(0deg)';
+    }
+  }
+
+  // Make toggleSection available globally
+  window.toggleSection = toggleSection;
 
   const tabs = document.querySelectorAll('.settings-tab');
   const tabContents = document.querySelectorAll('.settings-tab-content');
