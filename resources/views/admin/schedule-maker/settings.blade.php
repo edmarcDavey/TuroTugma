@@ -1030,43 +1030,124 @@
             <span class="section-chevron text-slate-500 text-xl" style="display: inline-block; transition: transform 0.3s ease; transform: rotate(0deg);">▶</span>
           </button>
           <div class="section-content border-t border-slate-200 bg-white transition-all overflow-hidden" style="max-height: 0px; padding: 0; border: none;">
-            <div class="grid grid-cols-2 gap-4 mb-4 p-4">
-              <div>
-                <label class="text-xs font-semibold text-slate-600 block mb-2">Minimum Units/Year</label>
-                <input type="number" value="12" class="border border-slate-300 rounded px-3 py-2 w-full text-sm" min="6" max="30" />
-                <p class="text-xs text-slate-500 mt-1">Minimum teaching load expected per faculty member</p>
-              </div>
-              <div>
-                <label class="text-xs font-semibold text-slate-600 block mb-2">Maximum Units/Year</label>
-                <input type="number" value="18" class="border border-slate-300 rounded px-3 py-2 w-full text-sm" min="12" max="30" />
-                <p class="text-xs text-slate-500 mt-1">Maximum comfortable teaching load per faculty member</p>
-              </div>
-            </div>
-            <div class="p-3 bg-blue-50 rounded-lg mb-4 border border-blue-200">
-              <div class="text-xs font-semibold text-blue-900 mb-2">Safe Load Zone: 12–18 units</div>
-              <div class="w-full bg-slate-300 rounded-full h-2 overflow-hidden">
-                <div class="bg-gradient-to-r from-amber-400 via-green-500 to-amber-400 h-full" style="width: 50%;"></div>
-              </div>
-              <div class="flex justify-between text-xs text-slate-600 mt-1">
-                <span>Min (12)</span>
-                <span class="font-semibold text-green-700">Optimal</span>
-                <span>Max (18)</span>
-                <span class="text-red-600">⚠ Overload</span>
-              </div>
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="text-xs text-slate-600 block mb-1">Max Consecutive Periods</label>
-                <div class="flex items-center gap-2">
-                  <input type="number" value="4" class="border border-slate-300 rounded px-3 py-2 flex-1 text-sm" min="2" max="9" />
-                  <span class="text-xs text-slate-500 whitespace-nowrap">periods</span>
+            <!-- Weekly Teaching Units -->
+            <div class="p-4 border-b border-slate-200">
+              <h5 class="font-semibold text-sm text-slate-800 mb-3">📚 Weekly Teaching Units</h5>
+              <div class="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label class="text-xs font-semibold text-slate-600 block mb-2">Minimum Units/Week</label>
+                  <input type="number" value="12" class="border border-slate-300 rounded px-3 py-2 w-full text-sm" min="6" max="30" />
+                  <p class="text-xs text-slate-500 mt-1">Minimum teaching load per faculty</p>
+                </div>
+                <div>
+                  <label class="text-xs font-semibold text-slate-600 block mb-2">Maximum Units/Week</label>
+                  <input type="number" value="18" class="border border-slate-300 rounded px-3 py-2 w-full text-sm" min="12" max="30" />
+                  <p class="text-xs text-slate-500 mt-1">Maximum comfortable load per faculty</p>
                 </div>
               </div>
-              <div>
-                <label class="text-xs text-slate-600 block mb-1">Max Teaching Days/Week</label>
-                <div class="flex items-center gap-2">
-                  <input type="number" value="5" class="border border-slate-300 rounded px-3 py-2 flex-1 text-sm" min="1" max="6" />
-                  <span class="text-xs text-slate-500 whitespace-nowrap">days</span>
+              <div class="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                <div class="text-xs font-semibold text-blue-900 mb-2">Safe Load Zone: 12–18 units/week</div>
+                <div class="w-full bg-slate-300 rounded-full h-2 overflow-hidden">
+                  <div class="bg-gradient-to-r from-amber-400 via-green-500 to-amber-400 h-full" style="width: 50%;"></div>
+                </div>
+                <div class="flex justify-between text-xs text-slate-600 mt-1">
+                  <span>Min (12)</span>
+                  <span class="font-semibold text-green-700">Optimal</span>
+                  <span>Max (18)</span>
+                  <span class="text-red-600">⚠ Overload</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Daily Teaching Hours (DepEd Compliance) -->
+            <div class="p-4 border-b border-slate-200">
+              <h5 class="font-semibold text-sm text-slate-800 mb-3">⏰ Daily Teaching Hours (DepEd Guideline)</h5>
+              <div class="grid grid-cols-3 gap-3 mb-3">
+                <div>
+                  <label class="text-xs font-semibold text-slate-600 block mb-2">Min Daily Hours</label>
+                  <div class="flex items-center gap-2">
+                    <input type="number" value="4" class="border border-slate-300 rounded px-3 py-2 flex-1 text-sm" min="2" max="8" />
+                    <span class="text-xs text-slate-500 whitespace-nowrap">hrs</span>
+                  </div>
+                </div>
+                <div>
+                  <label class="text-xs font-semibold text-slate-600 block mb-2">Standard Daily Hours</label>
+                  <div class="flex items-center gap-2">
+                    <input type="number" value="6" class="border border-slate-300 rounded px-3 py-2 flex-1 text-sm" min="4" max="8" />
+                    <span class="text-xs text-slate-500 whitespace-nowrap">hrs</span>
+                  </div>
+                </div>
+                <div>
+                  <label class="text-xs font-semibold text-slate-600 block mb-2">Max Daily Hours</label>
+                  <div class="flex items-center gap-2">
+                    <input type="number" value="6" class="border border-slate-300 rounded px-3 py-2 flex-1 text-sm" min="6" max="12" disabled />
+                    <span class="text-xs text-slate-500 whitespace-nowrap">hrs</span>
+                  </div>
+                </div>
+              </div>
+              <p class="text-xs text-amber-700 bg-amber-50 p-2 rounded border border-amber-200">
+                📌 <strong>DepEd Standard:</strong> 6 teaching hours/day + 2 ancillary hours = 8 hours total
+              </p>
+            </div>
+
+            <!-- Ancillary Hours -->
+            <div class="p-4 border-b border-slate-200">
+              <h5 class="font-semibold text-sm text-slate-800 mb-3">🎯 Ancillary Hours (Non-Teaching Duties)</h5>
+              <div class="grid grid-cols-2 gap-4 mb-3">
+                <div>
+                  <label class="text-xs font-semibold text-slate-600 block mb-2">Daily Ancillary Hours</label>
+                  <div class="flex items-center gap-2">
+                    <input type="number" value="2" class="border border-slate-300 rounded px-3 py-2 flex-1 text-sm" min="0" max="4" />
+                    <span class="text-xs text-slate-500 whitespace-nowrap">hrs</span>
+                  </div>
+                  <p class="text-xs text-slate-500 mt-1">Lesson prep, grading, consultation</p>
+                </div>
+                <div>
+                  <label class="text-xs font-semibold text-slate-600 block mb-2">Max Ancillary Roles</label>
+                  <div class="flex items-center gap-2">
+                    <input type="number" value="2" class="border border-slate-300 rounded px-3 py-2 flex-1 text-sm" min="1" max="5" />
+                    <span class="text-xs text-slate-500 whitespace-nowrap">roles</span>
+                  </div>
+                  <p class="text-xs text-slate-500 mt-1">Per teacher to prevent overconcentration</p>
+                </div>
+              </div>
+              <label class="flex items-center gap-2 p-2 border border-slate-200 rounded hover:bg-slate-50 cursor-pointer">
+                <input type="checkbox" checked class="rounded" />
+                <span class="text-xs text-slate-700">Balance ancillary duties fairly across faculty</span>
+              </label>
+            </div>
+
+            <!-- Period Constraints -->
+            <div class="p-4">
+              <h5 class="font-semibold text-sm text-slate-800 mb-3">📅 Period & Schedule Constraints</h5>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="text-xs text-slate-600 block mb-1">Max Consecutive Periods</label>
+                  <div class="flex items-center gap-2">
+                    <input type="number" value="4" class="border border-slate-300 rounded px-3 py-2 flex-1 text-sm" min="2" max="9" />
+                    <span class="text-xs text-slate-500 whitespace-nowrap">periods</span>
+                  </div>
+                </div>
+                <div>
+                  <label class="text-xs text-slate-600 block mb-1">Minimum Break Between Classes</label>
+                  <div class="flex items-center gap-2">
+                    <input type="number" value="15" class="border border-slate-300 rounded px-3 py-2 flex-1 text-sm" min="5" max="60" />
+                    <span class="text-xs text-slate-500 whitespace-nowrap">min</span>
+                  </div>
+                </div>
+                <div>
+                  <label class="text-xs text-slate-600 block mb-1">Max Teaching Days/Week</label>
+                  <div class="flex items-center gap-2">
+                    <input type="number" value="5" class="border border-slate-300 rounded px-3 py-2 flex-1 text-sm" min="1" max="6" />
+                    <span class="text-xs text-slate-500 whitespace-nowrap">days</span>
+                  </div>
+                </div>
+                <div>
+                  <label class="text-xs text-slate-600 block mb-1">Max Classes per Day</label>
+                  <div class="flex items-center gap-2">
+                    <input type="number" value="6" class="border border-slate-300 rounded px-3 py-2 flex-1 text-sm" min="2" max="9" />
+                    <span class="text-xs text-slate-500 whitespace-nowrap">classes</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1078,45 +1159,82 @@
           <button type="button" onclick="toggleSection(this)" class="w-full flex items-center justify-between p-4 hover:bg-slate-100 transition cursor-pointer">
             <div class="flex items-center gap-2">
               <span class="text-lg">📋</span>
-              <span class="font-semibold text-slate-700">Assignment Rules</span>
+              <span class="font-semibold text-slate-700">Assignment Rules & Priorities</span>
             </div>
             <span class="section-chevron text-slate-500 text-xl" style="display: inline-block; transition: transform 0.3s ease; transform: rotate(0deg);">▶</span>
           </button>
           <div class="section-content border-t border-slate-200 bg-white transition-all overflow-hidden" style="max-height: 0px; padding: 0; border: none;">
             <div class="space-y-3 p-4">
+              <div class="p-3 bg-blue-50 border border-blue-200 rounded mb-3">
+                <div class="text-xs font-semibold text-blue-900 mb-2">Assignment Priority Order:</div>
+                <ol class="text-xs text-blue-800 space-y-1 ml-4 list-decimal">
+                  <li><strong>Specialization Match</strong> - Assign based on teacher qualifications first</li>
+                  <li><strong>Fair Load Distribution</strong> - Balance workload across faculty</li>
+                  <li><strong>Schedule Optimization</strong> - Minimize gaps, cluster subjects</li>
+                </ol>
+              </div>
+
               <label class="flex items-center gap-3 p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer transition">
                 <input type="checkbox" checked class="rounded w-4 h-4" />
                 <div class="flex-1">
                   <div class="font-semibold text-sm text-slate-800">Specialization-First Matching</div>
-                  <div class="text-xs text-slate-500">Assign subjects teachers are qualified/experienced in first</div>
+                  <div class="text-xs text-slate-500">Prioritize assigning subjects teachers are qualified in</div>
                 </div>
               </label>
+
               <label class="flex items-center gap-3 p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer transition">
                 <input type="checkbox" checked class="rounded w-4 h-4" />
                 <div class="flex-1">
                   <div class="font-semibold text-sm text-slate-800">Fair Workload Distribution</div>
-                  <div class="text-xs text-slate-500">Balance teaching load evenly across all faculty members</div>
+                  <div class="text-xs text-slate-500">Keep teaching loads within 12-18 unit safe zone</div>
                 </div>
               </label>
+
               <label class="flex items-center gap-3 p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer transition">
                 <input type="checkbox" checked class="rounded w-4 h-4" />
                 <div class="flex-1">
                   <div class="font-semibold text-sm text-slate-800">Minimize Schedule Gaps</div>
-                  <div class="text-xs text-slate-500">Cluster teaching periods to reduce unproductive time</div>
+                  <div class="text-xs text-slate-500">Cluster teaching periods & reduce unproductive time between classes</div>
                 </div>
               </label>
+
+              <label class="flex items-center gap-3 p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer transition">
+                <input type="checkbox" checked class="rounded w-4 h-4" />
+                <div class="flex-1">
+                  <div class="font-semibold text-sm text-slate-800">Core Subjects in AM Periods</div>
+                  <div class="text-xs text-slate-500">Schedule Math, Science, English in morning (P1-P4)</div>
+                </div>
+              </label>
+
               <label class="flex items-center gap-3 p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer transition">
                 <input type="checkbox" class="rounded w-4 h-4" />
                 <div class="flex-1">
                   <div class="font-semibold text-sm text-slate-800">Honor Seniority Preferences</div>
-                  <div class="text-xs text-slate-500">Consider tenure and experience in assignment priority</div>
+                  <div class="text-xs text-slate-500">Consider tenure in subject/period preferences</div>
                 </div>
               </label>
+
               <label class="flex items-center gap-3 p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer transition">
-                <input type="checkbox" class="rounded w-4 h-4" />
+                <input type="checkbox" checked class="rounded w-4 h-4" />
                 <div class="flex-1">
-                  <div class="font-semibold text-sm text-slate-800">Core Subjects in AM Periods</div>
-                  <div class="text-xs text-slate-500">Schedule Mathematics, Science, and English in morning periods</div>
+                  <div class="font-semibold text-sm text-slate-800">Prevent Back-to-Back Fatigue</div>
+                  <div class="text-xs text-slate-500">Ensure minimum 15-30 min breaks between classes</div>
+                </div>
+              </label>
+
+              <label class="flex items-center gap-3 p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer transition">
+                <input type="checkbox" checked class="rounded w-4 h-4" />
+                <div class="flex-1">
+                  <div class="font-semibold text-sm text-slate-800">Enforce 6-Hour Daily Limit</div>
+                  <div class="text-xs text-slate-500">Respect DepEd standard teaching hours per day</div>
+                </div>
+              </label>
+
+              <label class="flex items-center gap-3 p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer transition">
+                <input type="checkbox" checked class="rounded w-4 h-4" />
+                <div class="flex-1">
+                  <div class="font-semibold text-sm text-slate-800">Balance Ancillary Duties</div>
+                  <div class="text-xs text-slate-500">Distribute special roles (coordinator, adviser) fairly</div>
                 </div>
               </label>
             </div>
@@ -1134,27 +1252,58 @@
           </button>
           <div class="section-content border-t border-slate-200 bg-white transition-all overflow-hidden" style="max-height: 0px; padding: 0; border: none;">
             <div class="space-y-3 p-4">
-              <label class="flex items-center gap-3 p-3 border-2 border-blue-300 rounded-lg bg-blue-50 cursor-pointer transition">
+              <p class="text-xs text-slate-600 mb-3 p-3 bg-slate-100 rounded border border-slate-300">
+                <strong>Algorithm Impact on Workload Balance:</strong> Choose based on your scheduling priority. Recommendations are for balanced teaching loads as primary goal.
+              </p>
+
+              <label class="flex items-center gap-3 p-3 border-2 border-green-300 rounded-lg bg-green-50 cursor-pointer transition">
                 <input type="radio" name="algorithm" value="round-robin" checked class="rounded w-4 h-4" />
                 <div class="flex-1">
-                  <div class="font-semibold text-sm text-slate-800">Round-Robin Distribution</div>
+                  <div class="font-semibold text-sm text-slate-800">✓ Round-Robin Distribution</div>
                   <div class="text-xs text-slate-600">Cycle through faculty sequentially, ensuring fair rotation</div>
+                  <div class="text-xs text-green-700 font-semibold mt-1">💡 Best for: Balanced workload when specialization is flexible</div>
                 </div>
               </label>
-              <label class="flex items-center gap-3 p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer transition">
+
+              <label class="flex items-center gap-3 p-3 border-2 border-blue-300 rounded-lg bg-blue-50 cursor-pointer transition">
                 <input type="radio" name="algorithm" value="weighted" class="rounded w-4 h-4" />
                 <div class="flex-1">
-                  <div class="font-semibold text-sm text-slate-800">Weighted Distribution</div>
-                  <div class="text-xs text-slate-600">Use specialization, seniority, and preferences as weights</div>
+                  <div class="font-semibold text-sm text-slate-800">⭐ Weighted Distribution</div>
+                  <div class="text-xs text-slate-600">Use specialization, current load, and preferences as factors</div>
+                  <div class="text-xs text-blue-700 font-semibold mt-1">💡 Best for: Realistic scenarios with mixed faculty abilities</div>
                 </div>
               </label>
-              <label class="flex items-center gap-3 p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer transition">
+
+              <label class="flex items-center gap-3 p-3 border-2 border-amber-300 rounded-lg bg-amber-50 cursor-pointer transition">
                 <input type="radio" name="algorithm" value="demand-driven" class="rounded w-4 h-4" />
                 <div class="flex-1">
-                  <div class="font-semibold text-sm text-slate-800">Demand-Driven Allocation</div>
+                  <div class="font-semibold text-sm text-slate-800">⚠️ Demand-Driven Allocation</div>
                   <div class="text-xs text-slate-600">Prioritize sections with high enrollment or critical needs</div>
+                  <div class="text-xs text-amber-700 font-semibold mt-1">💡 Use when: Enrollment/specialization trumps load balance</div>
                 </div>
               </label>
+
+              <div class="p-3 bg-slate-100 rounded border border-slate-300 mt-3">
+                <div class="text-xs font-semibold text-slate-800 mb-2">⚙️ Algorithm Factors (if weighted):</div>
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                  <label class="flex items-center gap-2">
+                    <input type="checkbox" checked class="rounded" />
+                    <span>Specialization match (primary)</span>
+                  </label>
+                  <label class="flex items-center gap-2">
+                    <input type="checkbox" checked class="rounded" />
+                    <span>Current load (secondary)</span>
+                  </label>
+                  <label class="flex items-center gap-2">
+                    <input type="checkbox" class="rounded" />
+                    <span>Teacher preferences</span>
+                  </label>
+                  <label class="flex items-center gap-2">
+                    <input type="checkbox" class="rounded" />
+                    <span>Seniority/experience</span>
+                  </label>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -1164,16 +1313,120 @@
           <button type="button" onclick="toggleSection(this)" class="w-full flex items-center justify-between p-4 hover:bg-slate-100 transition cursor-pointer">
             <div class="flex items-center gap-2">
               <span class="text-lg">⚠️</span>
-              <span class="font-semibold text-slate-700">Conflict Handling</span>
+              <span class="font-semibold text-slate-700">Load Balancing Conflicts</span>
             </div>
             <span class="section-chevron text-slate-500 text-xl" style="display: inline-block; transition: transform 0.3s ease; transform: rotate(0deg);">▶</span>
           </button>
           <div class="section-content border-t border-slate-200 bg-white transition-all overflow-hidden" style="max-height: 0px; padding: 0; border: none;">
-            <div class="mb-3 p-4">
-              <p class="text-xs text-slate-600 mb-3">See <span class="font-semibold">Conflict Detection & Resolution</span> section below for detailed conflict rules and handling strategies.</p>
+            <div class="space-y-3 p-4">
+              <p class="text-xs text-slate-600 mb-3 p-3 bg-slate-100 rounded border border-slate-300">
+                <strong>Conflict Priority:</strong> Load balancing conflicts are secondary to critical scheduling conflicts (double-booking, missing teachers, etc.).
+              </p>
+
+              <div class="p-3 border-2 border-red-300 bg-red-50 rounded-lg">
+                <div class="font-semibold text-sm text-red-900 mb-2">🚫 Critical Conflicts (Always Block)</div>
+                <ul class="text-xs text-red-800 space-y-1 ml-4 list-disc">
+                  <li>Teacher double-booked in same period</li>
+                  <li>Room double-booked in same period</li>
+                  <li>Teacher assigned class when unavailable</li>
+                  <li>Missing teacher for assignment</li>
+                </ul>
+              </div>
+
+              <div class="p-3 border-2 border-amber-300 bg-amber-50 rounded-lg">
+                <div class="font-semibold text-sm text-amber-900 mb-2">⚠️ Load Balancing Warnings</div>
+                <div class="space-y-2">
+                  <label class="flex items-center gap-2 text-xs cursor-pointer">
+                    <input type="checkbox" checked class="rounded" />
+                    <span>Teacher exceeds <strong>6 hours/day</strong> (without overload approval)</span>
+                  </label>
+                  <label class="flex items-center gap-2 text-xs cursor-pointer">
+                    <input type="checkbox" checked class="rounded" />
+                    <span>Teacher load <strong>below 12 units/week</strong> (underutilized)</span>
+                  </label>
+                  <label class="flex items-center gap-2 text-xs cursor-pointer">
+                    <input type="checkbox" checked class="rounded" />
+                    <span>Teacher load <strong>above 18 units/week</strong> (overloaded)</span>
+                  </label>
+                  <label class="flex items-center gap-2 text-xs cursor-pointer">
+                    <input type="checkbox" checked class="rounded" />
+                    <span><strong>More than 4 consecutive periods</strong> without break</span>
+                  </label>
+                  <label class="flex items-center gap-2 text-xs cursor-pointer">
+                    <input type="checkbox" checked class="rounded" />
+                    <span>Teacher has <strong>more than max ancillary roles</strong></span>
+                  </label>
+                  <label class="flex items-center gap-2 text-xs cursor-pointer">
+                    <input type="checkbox" checked class="rounded" />
+                    <span>Assignment is <strong>out of specialization</strong> (no qualified teacher available)</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="p-3 border-2 border-blue-300 bg-blue-50 rounded-lg">
+                <div class="font-semibold text-sm text-blue-900 mb-2">ℹ️ Informational</div>
+                <div class="space-y-2">
+                  <label class="flex items-center gap-2 text-xs cursor-pointer">
+                    <input type="checkbox" class="rounded" />
+                    <span>Workload variance <strong>above acceptable range</strong> (imbalanced)</span>
+                  </label>
+                  <label class="flex items-center gap-2 text-xs cursor-pointer">
+                    <input type="checkbox" class="rounded" />
+                    <span><strong>Multiple schedule gaps</strong> in teacher's day</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Overload Management Section -->
+        <div class="border rounded-lg mb-4 bg-slate-50">
+          <button type="button" onclick="toggleSection(this)" class="w-full flex items-center justify-between p-4 hover:bg-slate-100 transition cursor-pointer">
+            <div class="flex items-center gap-2">
+              <span class="text-lg">💰</span>
+              <span class="font-semibold text-slate-700">Overload Management</span>
+            </div>
+            <span class="section-chevron text-slate-500 text-xl" style="display: inline-block; transition: transform 0.3s ease; transform: rotate(0deg);">▶</span>
+          </button>
+          <div class="section-content border-t border-slate-200 bg-white transition-all overflow-hidden" style="max-height: 0px; padding: 0; border: none;">
+            <div class="space-y-4 p-4">
+              <label class="flex items-center gap-3 p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer">
+                <input type="checkbox" class="rounded w-4 h-4" />
+                <div class="flex-1">
+                  <div class="font-semibold text-sm text-slate-800">Allow Overload Assignments</div>
+                  <div class="text-xs text-slate-500">Permit teachers to exceed 6 hrs/day when necessary (must be approved)</div>
+                </div>
+              </label>
+
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="text-xs font-semibold text-slate-600 block mb-2">Overload Threshold (Daily)</label>
+                  <div class="flex items-center gap-2">
+                    <input type="number" value="6" class="border border-slate-300 rounded px-3 py-2 flex-1 text-sm" min="4" max="8" disabled />
+                    <span class="text-xs text-slate-500 whitespace-nowrap">hrs</span>
+                  </div>
+                  <p class="text-xs text-slate-500 mt-1">Hours beyond this require compensation</p>
+                </div>
+                <div>
+                  <label class="text-xs font-semibold text-slate-600 block mb-2">Max Overload Per Teacher</label>
+                  <div class="flex items-center gap-2">
+                    <input type="number" value="2" class="border border-slate-300 rounded px-3 py-2 flex-1 text-sm" min="1" max="4" />
+                    <span class="text-xs text-slate-500 whitespace-nowrap">extra hrs</span>
+                  </div>
+                  <p class="text-xs text-slate-500 mt-1">Maximum additional hours per day</p>
+                </div>
+              </div>
+
               <div class="p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                <div class="text-xs font-semibold text-amber-900">Load Balancing Conflict Priority</div>
-                <div class="text-xs text-amber-800 mt-1">Conflicts in achieving optimal load (12-18 units) are secondary to critical scheduling conflicts.</div>
+                <div class="text-xs font-semibold text-amber-900 mb-2">📝 Overload Documentation</div>
+                <p class="text-xs text-amber-800 mb-2">When load exceeds 6 hours/day:</p>
+                <ul class="text-xs text-amber-800 ml-4 list-disc space-y-1">
+                  <li>Require approval from school principal</li>
+                  <li>Track overload hours for compensation calculation</li>
+                  <li>Limit overload to <strong>maximum 2 hours/day</strong></li>
+                  <li>Note reason: temporary staff shortage, critical subject demand, etc.</li>
+                </ul>
               </div>
             </div>
           </div>
@@ -1184,31 +1437,107 @@
           <button type="button" onclick="toggleSection(this)" class="w-full flex items-center justify-between p-4 hover:bg-slate-100 transition cursor-pointer">
             <div class="flex items-center gap-2">
               <span class="text-lg">📈</span>
-              <span class="font-semibold text-slate-700">Metrics & Tracking</span>
+              <span class="font-semibold text-slate-700">Load Balance Metrics & Tracking</span>
             </div>
             <span class="section-chevron text-slate-500 text-xl" style="display: inline-block; transition: transform 0.3s ease; transform: rotate(0deg);">▶</span>
           </button>
           <div class="section-content border-t border-slate-200 bg-white transition-all overflow-hidden" style="max-height: 0px; padding: 0; border: none;">
-            <div class="space-y-2 text-sm p-4">
-              <div class="flex items-center gap-2 p-2 bg-slate-100 rounded">
-                <span class="text-lg">✓</span>
-                <span class="text-xs text-slate-700"><strong>Average teaching load:</strong> Mean units per faculty member</span>
+            <div class="space-y-3 p-4">
+              <div class="p-3 bg-blue-50 border border-blue-200 rounded">
+                <div class="text-xs font-semibold text-blue-900 mb-2">📊 Key Performance Indicators (KPIs)</div>
+                <p class="text-xs text-blue-800">These metrics help measure scheduling fairness and workload balance:</p>
               </div>
-              <div class="flex items-center gap-2 p-2 bg-slate-100 rounded">
-                <span class="text-lg">✓</span>
-                <span class="text-xs text-slate-700"><strong>Load variance:</strong> Std deviation from average (lower = fairer)</span>
+
+              <div class="space-y-2">
+                <div class="flex items-center gap-2 p-3 bg-slate-100 rounded border-l-4 border-green-500">
+                  <span class="text-lg">✓</span>
+                  <div class="flex-1">
+                    <div class="text-xs font-semibold text-slate-800"><strong>Average Teaching Load</strong></div>
+                    <div class="text-xs text-slate-600">Mean units per faculty member (target: 15 units)</div>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-2 p-3 bg-slate-100 rounded border-l-4 border-green-500">
+                  <span class="text-lg">✓</span>
+                  <div class="flex-1">
+                    <div class="text-xs font-semibold text-slate-800"><strong>Load Variance/Fairness</strong></div>
+                    <div class="text-xs text-slate-600">Std deviation from average (lower = fairer distribution)</div>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-2 p-3 bg-slate-100 rounded border-l-4 border-green-500">
+                  <span class="text-lg">✓</span>
+                  <div class="flex-1">
+                    <div class="text-xs font-semibold text-slate-800"><strong>Safe Zone Compliance</strong></div>
+                    <div class="text-xs text-slate-600">% of teachers in 12-18 units/week range (target: >80%)</div>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-2 p-3 bg-slate-100 rounded border-l-4 border-amber-500">
+                  <span class="text-lg">⚠️</span>
+                  <div class="flex-1">
+                    <div class="text-xs font-semibold text-slate-800"><strong>Underutilized Teachers</strong></div>
+                    <div class="text-xs text-slate-600">% of teachers below 12 units/week (should be <5%)</div>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-2 p-3 bg-slate-100 rounded border-l-4 border-red-500">
+                  <span class="text-lg">!</span>
+                  <div class="flex-1">
+                    <div class="text-xs font-semibold text-slate-800"><strong>Overloaded Teachers</strong></div>
+                    <div class="text-xs text-slate-600">% of teachers exceeding 18 units/week (should be <10%)</div>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-2 p-3 bg-slate-100 rounded border-l-4 border-blue-500">
+                  <span class="text-lg">📊</span>
+                  <div class="flex-1">
+                    <div class="text-xs font-semibold text-slate-800"><strong>Daily Hours Compliance</strong></div>
+                    <div class="text-xs text-slate-600">% of teachers within 6-hour/day limit (target: >90%)</div>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-2 p-3 bg-slate-100 rounded border-l-4 border-blue-500">
+                  <span class="text-lg">📊</span>
+                  <div class="flex-1">
+                    <div class="text-xs font-semibold text-slate-800"><strong>Specialization Match Rate</strong></div>
+                    <div class="text-xs text-slate-600">% of assignments matching teacher qualifications (target: >85%)</div>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-2 p-3 bg-slate-100 rounded border-l-4 border-blue-500">
+                  <span class="text-lg">📊</span>
+                  <div class="flex-1">
+                    <div class="text-xs font-semibold text-slate-800"><strong>Schedule Efficiency</strong></div>
+                    <div class="text-xs text-slate-600">Average gap time between classes (target: <30 min)</div>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-2 p-3 bg-slate-100 rounded border-l-4 border-purple-500">
+                  <span class="text-lg">📊</span>
+                  <div class="flex-1">
+                    <div class="text-xs font-semibold text-slate-800"><strong>Ancillary Distribution</strong></div>
+                    <div class="text-xs text-slate-600">Average roles per teacher (should be ≤ max configured)</div>
+                  </div>
+                </div>
               </div>
-              <div class="flex items-center gap-2 p-2 bg-slate-100 rounded">
-                <span class="text-lg">✓</span>
-                <span class="text-xs text-slate-700"><strong>Faculty within safe zone:</strong> % of teachers in 12-18 unit range</span>
-              </div>
-              <div class="flex items-center gap-2 p-2 bg-slate-100 rounded">
-                <span class="text-lg">✓</span>
-                <span class="text-xs text-slate-700"><strong>Specialization match rate:</strong> % of assignments matching qualifications</span>
-              </div>
-              <div class="flex items-center gap-2 p-2 bg-slate-100 rounded">
-                <span class="text-lg">✓</span>
-                <span class="text-xs text-slate-700"><strong>Schedule efficiency:</strong> Avg gap time (lower = better continuity)</span>
+
+              <div class="p-3 bg-slate-100 border border-slate-300 rounded mt-3">
+                <div class="text-xs font-semibold text-slate-800 mb-2">📋 Track & Export</div>
+                <div class="space-y-2">
+                  <label class="flex items-center gap-2 text-xs cursor-pointer">
+                    <input type="checkbox" class="rounded" />
+                    <span>Generate load balance report after scheduling</span>
+                  </label>
+                  <label class="flex items-center gap-2 text-xs cursor-pointer">
+                    <input type="checkbox" class="rounded" />
+                    <span>Compare previous/current schedules (delta analysis)</span>
+                  </label>
+                  <label class="flex items-center gap-2 text-xs cursor-pointer">
+                    <input type="checkbox" class="rounded" />
+                    <span>Export per-teacher load breakdown (for principal approval)</span>
+                  </label>
+                </div>
               </div>
             </div>
           </div>
