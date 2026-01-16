@@ -2886,20 +2886,34 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const config = `jh-${sessionType}`;
     
+    // Collect break data from the break-enabled checkboxes (they don't have name attribute)
+    const morningBreakEnabled = document.querySelector(`.break-enabled[data-config="${config}"][data-break="morning"]`)?.checked || false;
+    const lunchBreakEnabled = document.querySelector(`.break-enabled[data-config="${config}"][data-break="lunch"]`)?.checked || false;
+    const afternoonBreakEnabled = document.querySelector(`.break-enabled[data-config="${config}"][data-break="afternoon"]`)?.checked || false;
+    
+    const morningBreakAfter = document.querySelector(`.break-after[data-config="${config}"][data-break="morning"]`)?.value || 3;
+    const morningBreakDuration = document.querySelector(`.break-duration[data-config="${config}"][data-break="morning"]`)?.value || 20;
+    
+    const lunchBreakAfter = document.querySelector(`.break-after[data-config="${config}"][data-break="lunch"]`)?.value || 6;
+    const lunchBreakDuration = document.querySelector(`.break-duration[data-config="${config}"][data-break="lunch"]`)?.value || 60;
+    
+    const afternoonBreakAfter = document.querySelector(`.break-after[data-config="${config}"][data-break="afternoon"]`)?.value || 7;
+    const afternoonBreakDuration = document.querySelector(`.break-duration[data-config="${config}"][data-break="afternoon"]`)?.value || 15;
+    
     return {
       session_type: sessionType,
       period_duration: document.querySelector(`[name="period_duration"][data-config="${config}"]`)?.value || 50,
       total_periods: document.querySelector(`[name="total_periods"][data-config="${config}"]`)?.value || 9,
       active_days: getActiveDays(config),
-      morning_break_enabled: document.querySelector(`[name="morning_break_enabled"][data-config="${config}"]`)?.checked || false,
-      morning_break_after_period: document.querySelector(`[name="morning_break_after_period"][data-config="${config}"]`)?.value || 2,
-      morning_break_duration: document.querySelector(`[name="morning_break_duration"][data-config="${config}"]`)?.value || 15,
-      lunch_break_enabled: document.querySelector(`[name="lunch_break_enabled"][data-config="${config}"]`)?.checked || false,
-      lunch_break_after_period: document.querySelector(`[name="lunch_break_after_period"][data-config="${config}"]`)?.value || 4,
-      lunch_break_duration: document.querySelector(`[name="lunch_break_duration"][data-config="${config}"]`)?.value || 60,
-      afternoon_break_enabled: document.querySelector(`[name="afternoon_break_enabled"][data-config="${config}"]`)?.checked || false,
-      afternoon_break_after_period: document.querySelector(`[name="afternoon_break_after_period"][data-config="${config}"]`)?.value || 5,
-      afternoon_break_duration: document.querySelector(`[name="afternoon_break_duration"][data-config="${config}"]`)?.value || 10,
+      morning_break_enabled: morningBreakEnabled,
+      morning_break_after_period: morningBreakAfter,
+      morning_break_duration: morningBreakDuration,
+      lunch_break_enabled: lunchBreakEnabled,
+      lunch_break_after_period: lunchBreakAfter,
+      lunch_break_duration: lunchBreakDuration,
+      afternoon_break_enabled: afternoonBreakEnabled,
+      afternoon_break_after_period: afternoonBreakAfter,
+      afternoon_break_duration: afternoonBreakDuration,
     };
   }
 

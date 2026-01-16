@@ -48,6 +48,7 @@
         periodsShortened: <?php echo json_encode($periodsShortened, 15, 512) ?>,
         sections: <?php echo json_encode($sections, 15, 512) ?>,
         specializedSubjectCodes: ['SPA', 'SPJ'], // Specialized subjects for special sections
+        generatedSchedule: {}, // Will store: section_id_period_day -> {subject_id, teacher_id}
         // Build teacher ancillary assignments map for restriction checking
         teacherAncillaries: (function() {
           const map = {};
@@ -396,31 +397,55 @@
 
           <!-- Tab Content: Master Schedule -->
           <div id="tab-master" class="tab-content p-6">
-            <h3 class="text-lg font-bold text-slate-900 mb-4">📊 Master Schedule - SY 2024-2025</h3>
+            <div class="mb-2 bg-slate-50 border border-slate-200 rounded-lg p-2">
+              <h3 class="text-base font-bold text-slate-900 mb-2">📊 Master Schedule - SY 2024-2025</h3>
+              
+              <!-- Session Selection Panel -->
+              <div class="mb-2 p-2 bg-white border border-blue-200 rounded-lg">
+                <div class="flex items-center justify-between mb-2">
+                  <h4 class="text-sm font-semibold text-slate-700">📋 Select Schedule to Generate</h4>
+                  <span id="sessionStatus" class="text-xs font-semibold px-2 py-1 bg-yellow-100 text-yellow-800 rounded">⚙️ Not configured</span>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
+                  <!-- Level Selector -->
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">School Level</label>
+                    <select id="scheduleLevelSelector" class="w-full px-3 py-2 border border-slate-300 rounded text-sm font-semibold">
+                      <option value="">-- Select Level --</option>
+                      <option value="junior_high">Junior High (Full Year)</option>
+                      <option value="senior_high_sem1" disabled title="Coming Soon">Senior High Sem 1 (Coming Soon)</option>
+                      <option value="senior_high_sem2" disabled title="Coming Soon - Requires SHS Sem1 completion">Senior High Sem 2 (Coming Soon)</option>
+                    </select>
+                  </div>
+                  
+                  <!-- Generate Button -->
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">&nbsp;</label>
+                    <div class="flex gap-2">
+                      <button id="generateScheduleBtn" class="w-full px-3 py-2 bg-blue-600 text-white rounded text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                        ✨ Generate Schedule
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
             
-            <div class="mb-4 flex flex-wrap gap-2 items-center">
-              <!-- Session Type Selector -->
+            <div class="mb-2 flex flex-wrap gap-2 items-center">
+              <!-- Session Display Filter -->
               <div>
-                <label class="text-xs text-slate-600 block mb-1">Session Type</label>
-                <select id="sessionTypeFilter" class="px-3 py-2 border border-slate-300 rounded text-sm font-semibold">
+                <label class="text-xs text-slate-600 block mb-1">Display Session (view only)</label>
+                <select id="sessionTypeFilter" class="px-3 py-2 border border-slate-300 rounded text-sm">
                   <option value="regular" selected>Regular Session</option>
                   <option value="shortened">Shortened Session</option>
                 </select>
               </div>
-              
-              <!-- Level Filter -->
-              <div>
-                <label class="text-xs text-slate-600 block mb-1">School Level</label>
-                <select id="schoolLevelFilter" class="px-3 py-2 border border-slate-300 rounded text-sm">
-                  <option value="all" selected>All Levels</option>
-                  <option value="jh">Junior High Only</option>
-                  <option value="sh" disabled class="text-slate-400">Senior High Only (Coming Soon)</option>
-                </select>
-              </div>
-              
+
               <!-- Grade Filter -->
               <div>
-                <label class="text-xs text-slate-600 block mb-1">Grade Level</label>
+                <label class="text-xs text-slate-600 block mb-1">Filter View by Grade</label>
                 <select id="gradeLevelFilter" class="px-3 py-2 border border-slate-300 rounded text-sm">
                   <option value="all" selected>All Grades</option>
                   <option value="7" data-level="jh">Grade 7</option>
@@ -434,10 +459,13 @@
               
               <div class="flex-1"></div>
               
-              <button class="px-4 py-2 bg-blue-600 text-white rounded text-sm font-semibold hover:bg-blue-700">
-                ✨ Autofill
+              <button id="saveScheduleBtn" class="px-4 py-2 bg-green-600 text-white rounded text-sm font-semibold hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed" disabled title="Save the generated schedule">
+                💾 Save Schedule
               </button>
-              <button class="px-4 py-2 bg-slate-200 text-slate-700 rounded text-sm font-semibold hover:bg-slate-300">
+              <button id="viewDraftsBtn" class="px-4 py-2 bg-purple-600 text-white rounded text-sm font-semibold hover:bg-purple-700" title="View saved schedules">
+                📋 View Drafts
+              </button>
+              <button id="exportBtn" class="px-4 py-2 bg-slate-200 text-slate-700 rounded text-sm font-semibold hover:bg-slate-300">
                 📥 Export
               </button>
             </div>
@@ -451,28 +479,8 @@
                     
                   </tr>
                 </thead>
-                <tbody>
-                  <?php $__currentLoopData = $sections; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $section): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                  <!-- Row for <?php echo e($section->name); ?> -->
-                  <tr class="border-b hover:bg-blue-50" data-section-id="<?php echo e($section->id); ?>" data-is-special="<?php echo e($section->is_special ? '1' : '0'); ?>" data-grade-level="<?php echo e($section->grade_level_id + 6); ?>" data-school-level="jh">
-                    <td class="px-4 py-3 font-semibold text-slate-900"><?php echo e($section->grade_level_id + 6); ?>-<?php echo e($section->name); ?></td>
-                    <?php $__currentLoopData = $periodsRegular; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $period): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                    <td class="px-2 py-2 text-center schedule-cell" data-section="<?php echo e($section->name); ?>" data-period="<?php echo e($period['number']); ?>">
-                      <div class="p-1">
-                        <select class="subject-dropdown w-full px-1 py-1 text-xs text-center border border-slate-300 rounded mb-1 text-slate-400">
-                          <option value="">Select Subject</option>
-                          <?php $__currentLoopData = $subjects; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $subject): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                            <option value="<?php echo e($subject->id); ?>"><?php echo e($subject->name); ?></option>
-                          <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                        </select>
-                        <select class="teacher-dropdown w-full px-1 py-1 text-xs text-center border border-slate-300 rounded text-slate-400">
-                          <option value="">Assign Teacher</option>
-                        </select>
-                      </div>
-                    </td>
-                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                  </tr>
-                  <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                <tbody id="schedule-tbody">
+                  
                 </tbody>
               </table>
             </div>
@@ -750,10 +758,419 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
   const sessionTypeFilter = document.getElementById('sessionTypeFilter');
-  const schoolLevelFilter = document.getElementById('schoolLevelFilter');
   const gradeLevelFilter = document.getElementById('gradeLevelFilter');
   
+  // Session selector logic
+  const scheduleLevelSelector = document.getElementById('scheduleLevelSelector');
+  const generateScheduleBtn = document.getElementById('generateScheduleBtn');
+  const saveScheduleBtn = document.getElementById('saveScheduleBtn');
+  const viewDraftsBtn = document.getElementById('viewDraftsBtn');
+  const sessionStatus = document.getElementById('sessionStatus');
+  const exportBtn = document.getElementById('exportBtn');
+  
+  // Handle schedule level selection
+  scheduleLevelSelector.addEventListener('change', function() {
+    const selectedLevel = this.value;
+    
+    if (!selectedLevel) {
+      generateScheduleBtn.disabled = true;
+      sessionStatus.className = 'text-xs font-semibold px-2 py-1 bg-yellow-100 text-yellow-800 rounded';
+      sessionStatus.textContent = '⚙️ Not configured';
+      return;
+    }
+    
+    // Check if SHS Sem2 and disable if SHS Sem1 not complete
+    if (selectedLevel === 'senior_high_sem2') {
+      generateScheduleBtn.disabled = true;
+      sessionStatus.className = 'text-xs font-semibold px-2 py-1 bg-red-100 text-red-800 rounded';
+      sessionStatus.textContent = '🔒 Requires SHS Sem1 completion';
+      alert('Senior High Sem 2 schedule generation requires SHS Sem 1 to be completed first.');
+      scheduleLevelSelector.value = '';
+      return;
+    }
+    
+    generateScheduleBtn.disabled = false;
+    sessionStatus.className = 'text-xs font-semibold px-2 py-1 bg-green-100 text-green-800 rounded';
+    sessionStatus.textContent = `✅ Ready: ${selectedLevel.replace(/_/g, ' ')}`;
+  });
+  
+  // Handle generate schedule button
+  generateScheduleBtn.addEventListener('click', function() {
+    const selectedLevel = scheduleLevelSelector.value;
+    
+    if (!selectedLevel) {
+      alert('Please select a schedule level first');
+      return;
+    }
+    
+    generateScheduleBtn.disabled = true;
+    generateScheduleBtn.textContent = '⏳ Generating...';
+    
+    // Call backend to generate schedule
+    fetch('<?php echo e(route("admin.schedule-maker.generate")); ?>', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+      },
+      body: JSON.stringify({
+        level: selectedLevel,
+        year: '2024-2025'
+      })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        sessionStatus.className = 'text-xs font-semibold px-2 py-1 bg-green-100 text-green-800 rounded';
+        sessionStatus.textContent = `✅ Generated: ${data.entries_created} assignments`;
+        
+        // Fetch and display the generated schedule
+        fetch(`<?php echo e(route('admin.schedule-maker.settings.get-schedule-entries')); ?>?run_id=${data.run_id}`)
+          .then(res => res.json())
+          .then(scheduleData => {
+            if (scheduleData.success && scheduleData.entries) {
+              // Store entries indexed by key: section_period_day
+              scheduleData.entries.forEach(entry => {
+                const key = `${entry.section_id}_${entry.period}_${entry.day}`;
+                window.schedulerData.generatedSchedule[key] = {
+                  subject_id: entry.subject_id,
+                  teacher_id: entry.teacher_id
+                };
+              });
+              
+              // Populate all cells with generated data
+              document.querySelectorAll('.schedule-cell').forEach(cell => {
+                const sectionRow = cell.closest('tr');
+                const sectionId = parseInt(sectionRow.dataset.sectionId);
+                const period = parseInt(cell.getAttribute('data-period'));
+                
+                // For now, using day 1 (Monday) - in future, support multiple days
+                const key = `${sectionId}_${period}_1`;
+                const assignment = window.schedulerData.generatedSchedule[key];
+                
+                if (assignment && assignment.subject_id) {
+                  const subjectDropdown = cell.querySelector('.subject-dropdown');
+                  const teacherDropdown = cell.querySelector('.teacher-dropdown');
+                  
+                  if (subjectDropdown && teacherDropdown) {
+                    // Get subject data
+                    const subject = window.schedulerData.subjects.find(s => s.id == assignment.subject_id);
+                    
+                    if (subject) {
+                      // Set subject value
+                      subjectDropdown.value = assignment.subject_id;
+                      subjectDropdown.classList.remove('text-slate-400');
+                      
+                      // Populate teacher dropdown with teachers from this subject
+                      const teachers = subject.teachers || [];
+                      teacherDropdown.innerHTML = '<option value="">Assign Teacher</option>';
+                      teachers.forEach(teacher => {
+                        const option = document.createElement('option');
+                        option.value = teacher.id;
+                        option.textContent = teacher.name;
+                        teacherDropdown.appendChild(option);
+                      });
+                      
+                      // Set teacher value if available
+                      if (assignment.teacher_id) {
+                        teacherDropdown.value = assignment.teacher_id;
+                        teacherDropdown.classList.remove('text-slate-400');
+                      }
+                    }
+                  }
+                }
+              });
+              
+              console.log('Schedule populated with', Object.keys(window.schedulerData.generatedSchedule).length, 'entries');
+              
+              // Enable Save button now that schedule is generated
+              saveScheduleBtn.disabled = false;
+            }
+          })
+          .catch(err => console.error('Error loading schedule entries:', err));
+        
+        // Optionally reload page after delay
+        // setTimeout(() => location.reload(), 2000);
+      } else {
+        throw new Error(data.message || 'Generation failed');
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      alert(`Error: ${error.message}`);
+      sessionStatus.className = 'text-xs font-semibold px-2 py-1 bg-red-100 text-red-800 rounded';
+      sessionStatus.textContent = '❌ Generation failed';
+    })
+    .finally(() => {
+      generateScheduleBtn.disabled = false;
+      generateScheduleBtn.textContent = '✨ Generate Schedule';
+    });
+  });
+  
+  // Export button
+  exportBtn.addEventListener('click', function() {
+    alert('Export feature coming soon');
+  });
+  
+  // Save Schedule button
+  saveScheduleBtn.addEventListener('click', function() {
+    const selectedLevel = scheduleLevelSelector.value;
+    
+    if (!selectedLevel) {
+      alert('Please select a schedule level first');
+      return;
+    }
+    
+    if (Object.keys(window.schedulerData.generatedSchedule).length === 0) {
+      alert('No schedule has been generated yet');
+      return;
+    }
+    
+    saveScheduleBtn.disabled = true;
+    saveScheduleBtn.textContent = '⏳ Saving...';
+    
+    // Call backend to save the schedule (update status from draft to locked)
+    fetch('<?php echo e(route("admin.schedule-maker.save")); ?>', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+      },
+      body: JSON.stringify({
+        level: selectedLevel,
+        year: '2024-2025'
+      })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        sessionStatus.className = 'text-xs font-semibold px-2 py-1 bg-green-100 text-green-800 rounded';
+        sessionStatus.textContent = `✅ Saved: ${data.run_id ? 'Run #' + data.run_id : 'Schedule saved'}`;
+        alert('Schedule saved successfully!');
+      } else {
+        throw new Error(data.message || 'Save failed');
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      alert(`Error: ${error.message}`);
+      sessionStatus.className = 'text-xs font-semibold px-2 py-1 bg-red-100 text-red-800 rounded';
+      sessionStatus.textContent = '❌ Save failed';
+    })
+    .finally(() => {
+      saveScheduleBtn.disabled = false;
+      saveScheduleBtn.textContent = '💾 Save Schedule';
+    });
+  });
+  
+  // View Drafts button
+  viewDraftsBtn.addEventListener('click', function() {
+    const selectedLevel = scheduleLevelSelector.value || 'junior_high';
+    
+    // Fetch all drafts for this level
+    fetch(`<?php echo e(route('admin.schedule-maker.get-drafts')); ?>?level=${selectedLevel}`)
+      .then(response => response.json())
+      .then(data => {
+        if (data.success && data.drafts && data.drafts.length > 0) {
+          // Display drafts in a modal or list
+          let draftList = 'Available Drafts:\n\n';
+          data.drafts.forEach((draft, index) => {
+            draftList += `${index + 1}. ${draft.name}\n   Created: ${new Date(draft.created_at).toLocaleString()}\n   Entries: ${draft.meta?.entries_created || 0}\n\n`;
+          });
+          alert(draftList);
+        } else {
+          alert('No saved drafts found for this level');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('Error loading drafts');
+      });
+  });
+  
   // Helper functions already defined above in the script block
+  
+  // Function to initialize dropdowns for a cell
+  function initializeCellDropdowns(cell) {
+    const subjectDropdown = cell.querySelector('.subject-dropdown');
+    const teacherDropdown = cell.querySelector('.teacher-dropdown');
+    
+    if (!subjectDropdown || !teacherDropdown) return;
+    
+    // Get section info from parent row
+    const sectionRow = cell.closest('tr');
+    const isSpecial = sectionRow.dataset.isSpecial === '1';
+    const sectionId = sectionRow.dataset.sectionId;
+    
+    // Function to update teacher dropdown based on selected subject
+    function updateTeacherDropdown() {
+      const selectedSubjectId = parseInt(subjectDropdown.value);
+      const currentTeacher = teacherDropdown.value;
+      const periodNumber = parseInt(cell.getAttribute('data-period'));
+      
+      teacherDropdown.innerHTML = '<option value="">Assign Teacher</option>';
+      
+      if (selectedSubjectId) {
+        const selectedSubject = window.schedulerData.subjects.find(s => s.id === selectedSubjectId);
+        
+        if (selectedSubject && selectedSubject.teachers) {
+          selectedSubject.teachers.forEach(teacher => {
+            const option = document.createElement('option');
+            option.value = teacher.id;
+            
+            // Check if teacher is restricted for this period
+            const isRestricted = window.isTeacherRestricted(teacher, periodNumber);
+            const restrictionReason = window.getRestrictionReason(teacher, periodNumber);
+            
+            if (isRestricted) {
+              option.textContent = teacher.name + ' ❌ (RESTRICTED)';
+              option.disabled = true;
+              option.style.color = '#a1a1a1';
+              option.title = `Restriction: ${restrictionReason}`;
+              option.className = 'restricted-option';
+            } else {
+              option.textContent = teacher.name;
+            }
+            
+            if (teacher.id == currentTeacher) {
+              option.selected = true;
+            }
+            teacherDropdown.appendChild(option);
+          });
+        }
+      }
+      
+      styleDropdown(teacherDropdown, false);
+    }
+    
+    updateTeacherDropdown();
+    styleDropdown(subjectDropdown, true);
+    styleDropdown(teacherDropdown, false);
+    
+    // Handle subject change with validation
+    subjectDropdown.addEventListener('change', function() {
+      const selectedSubjectId = parseInt(this.value);
+      
+      if (isSpecial && selectedSubjectId && isSpecializedSubject(selectedSubjectId)) {
+        const specializedCount = countSpecializedSubjects(sectionRow);
+        
+        if (specializedCount > 1) {
+          alert('Special sections can only have 1 specialized subject (SPA or SPJ) across all periods.');
+          this.value = '';
+          styleDropdown(subjectDropdown, true);
+          return;
+        }
+      }
+      
+      updateTeacherDropdown();
+      styleDropdown(subjectDropdown, true);
+      styleDropdown(teacherDropdown, false);
+    });
+    
+    teacherDropdown.addEventListener('change', function() {
+      styleDropdown(teacherDropdown, false);
+    });
+    
+    subjectDropdown.addEventListener('change', function() {
+      updateTeacherDropdown();
+      styleDropdown(subjectDropdown, true);
+      styleDropdown(teacherDropdown, false);
+      saveScheduleChange(cell, subjectDropdown, teacherDropdown);
+    });
+    
+    teacherDropdown.addEventListener('change', function() {
+      styleDropdown(teacherDropdown, false);
+      saveScheduleChange(cell, subjectDropdown, teacherDropdown);
+    });
+  }
+  
+  // Function to render schedule table with dynamic period count
+  function renderScheduleTable(sessionType) {
+    const tbody = document.getElementById('schedule-tbody');
+    const periods = sessionType === 'regular' ? window.schedulerData.periodsRegular : window.schedulerData.periodsShortened;
+    const sections = window.schedulerData.sections;
+    const subjects = window.schedulerData.subjects;
+    
+    tbody.innerHTML = ''; // Clear existing rows
+    
+    // Generate rows for each section
+    sections.forEach(section => {
+      const tr = document.createElement('tr');
+      tr.className = 'border-b hover:bg-blue-50';
+      tr.setAttribute('data-section-id', section.id);
+      tr.setAttribute('data-is-special', section.is_special ? '1' : '0');
+      tr.setAttribute('data-grade-level', section.grade_level_id + 6);
+      tr.setAttribute('data-school-level', 'jh');
+      
+      // Add section name cell
+      const sectionTd = document.createElement('td');
+      sectionTd.className = 'px-4 py-3 font-semibold text-slate-900';
+      sectionTd.textContent = `${section.grade_level_id + 6}-${section.name}`;
+      tr.appendChild(sectionTd);
+      
+      // Add period cells
+      periods.forEach(period => {
+        // Skip period 9 for non-special sections
+        if (period.number === 9 && !section.is_special) {
+          return;
+        }
+        
+        const td = document.createElement('td');
+        td.className = 'px-2 py-2 text-center schedule-cell';
+        td.setAttribute('data-section', section.name);
+        td.setAttribute('data-period', period.number);
+        
+        // Create cell content with dropdowns
+        const div = document.createElement('div');
+        div.className = 'p-1';
+        
+        // Subject dropdown
+        const subjectDropdown = document.createElement('select');
+        subjectDropdown.className = 'subject-dropdown w-full px-1 py-1 text-xs text-center border border-slate-300 rounded mb-1 text-slate-400';
+        
+        const subjectOption = document.createElement('option');
+        subjectOption.value = '';
+        subjectOption.textContent = 'Select Subject';
+        subjectDropdown.appendChild(subjectOption);
+        
+        subjects.forEach(subject => {
+          const option = document.createElement('option');
+          option.value = subject.id;
+          option.textContent = subject.name;
+          subjectDropdown.appendChild(option);
+        });
+        
+        // Teacher dropdown
+        const teacherDropdown = document.createElement('select');
+        teacherDropdown.className = 'teacher-dropdown w-full px-1 py-1 text-xs text-center border border-slate-300 rounded text-slate-400';
+        
+        const teacherOption = document.createElement('option');
+        teacherOption.value = '';
+        teacherOption.textContent = 'Assign Teacher';
+        teacherDropdown.appendChild(teacherOption);
+        
+        div.appendChild(subjectDropdown);
+        div.appendChild(teacherDropdown);
+        td.appendChild(div);
+        
+        tr.appendChild(td);
+        
+        // Initialize dropdown functionality for this cell
+        initializeCellDropdowns(td);
+      });
+      
+      tbody.appendChild(tr);
+    });
+  }
+  
+  // Helper function to format time to 12-hour AM/PM format
+  function formatTime12Hour(time24) {
+    const [hours, minutes] = time24.split(':');
+    let hour = parseInt(hours);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    hour = hour % 12 || 12; // Convert 0 to 12 for midnight, 13-23 to 1-11
+    return `${hour}:${minutes} ${ampm}`;
+  }
   
   // Function to render period headers
   function renderPeriodHeaders(sessionType) {
@@ -778,23 +1195,29 @@ document.addEventListener('DOMContentLoaded', function() {
       const th = document.createElement('th');
       th.className = `px-4 py-2 text-center font-bold text-slate-700 ${bgClass}`;
       th.setAttribute('data-period', period.number);
-      th.innerHTML = `P${period.number}<br/><span class=\"text-xs font-normal period-time whitespace-nowrap\">${period.start}-${period.end}</span>`;
+      
+      // Format times to 12-hour AM/PM format
+      const startFormatted = formatTime12Hour(period.start);
+      const endFormatted = formatTime12Hour(period.end);
+      
+      th.innerHTML = `P${period.number}<br/><span class=\"text-xs font-normal period-time whitespace-nowrap\">${startFormatted} - ${endFormatted}</span>`;
       headerRow.appendChild(th);
     });
   }
   
-  // Initialize period headers on page load
+  // Initialize table and period headers on page load
+  renderScheduleTable('regular');
   renderPeriodHeaders('regular');
   
   // Handle session type changes (Regular vs Shortened)
   sessionTypeFilter.addEventListener('change', function() {
     const sessionType = this.value;
+    renderScheduleTable(sessionType);
     renderPeriodHeaders(sessionType);
   });
   
   // Function to apply filters to section rows
   function applyFilters() {
-    const schoolLevel = schoolLevelFilter.value;
     const gradeLevel = gradeLevelFilter.value;
     const sectionRows = document.querySelectorAll('tbody tr[data-section-id]');
     
@@ -802,14 +1225,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     sectionRows.forEach(row => {
       let showRow = true;
-      
-      // Filter by school level
-      if (schoolLevel !== 'all') {
-        const rowSchoolLevel = row.getAttribute('data-school-level');
-        if (rowSchoolLevel !== schoolLevel) {
-          showRow = false;
-        }
-      }
       
       // Filter by grade level
       if (gradeLevel !== 'all') {
@@ -834,32 +1249,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     return visibleCount;
   }
-  
-  // Handle school level changes (JH/SH filtering)
-  schoolLevelFilter.addEventListener('change', function() {
-    const selectedLevel = this.value;
-    const gradeOptions = gradeLevelFilter.querySelectorAll('option[data-level]');
-    
-    // Reset to "All Grades"
-    gradeLevelFilter.value = 'all';
-    
-    // Show/hide grade options based on school level
-    gradeOptions.forEach(option => {
-      if (selectedLevel === 'all') {
-        // Show all grades
-        option.style.display = '';
-      } else if (option.dataset.level === selectedLevel) {
-        // Show matching grades (JH: 7-10, SH: 11-12)
-        option.style.display = '';
-      } else {
-        // Hide non-matching grades
-        option.style.display = 'none';
-      }
-    });
-    
-    // Apply filters to sections
-    applyFilters();
-  });
   
   // Handle grade level changes
   gradeLevelFilter.addEventListener('change', function() {
@@ -914,8 +1303,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
   
-  // Initialize all schedule cells with dropdown functionality
-  // NOTE: Subject dropdowns are populated by window.initializeDropdowns() after constraints load
+  // NOTE: Cell dropdowns are now initialized dynamically in renderScheduleTable()
+  // and initializeCellDropdowns() function
+  
+  /* OLD CODE - REPLACED BY DYNAMIC INITIALIZATION
   document.querySelectorAll('.schedule-cell').forEach(cell => {
     const subjectDropdown = cell.querySelector('.subject-dropdown');
     const teacherDropdown = cell.querySelector('.teacher-dropdown');
@@ -1017,6 +1408,7 @@ document.addEventListener('DOMContentLoaded', function() {
       saveScheduleChange(cell, subjectDropdown, teacherDropdown);
     });
   });
+  */
   
   // Function to save schedule changes
   function saveScheduleChange(cell, subjectDropdown, teacherDropdown) {

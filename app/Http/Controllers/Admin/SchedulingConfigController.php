@@ -462,6 +462,52 @@ class SchedulingConfigController extends Controller
 
         \Log::info('Saved JH config:', ['jh_config' => $jhConfig]);
 
+        // Also update DayConfig table for the scheduler to use
+        $breaks = [
+            'morning' => [
+                'enabled' => $validated['morning_break_enabled'] ?? false,
+                'duration' => $validated['morning_break_duration'] ?? 0,
+                'after_period' => $validated['morning_break_after_period'] ?? 0,
+            ],
+            'lunch' => [
+                'enabled' => $validated['lunch_break_enabled'] ?? false,
+                'duration' => $validated['lunch_break_duration'] ?? 0,
+                'after_period' => $validated['lunch_break_after_period'] ?? 0,
+            ],
+            'afternoon' => [
+                'enabled' => $validated['afternoon_break_enabled'] ?? false,
+                'duration' => $validated['afternoon_break_duration'] ?? 0,
+                'after_period' => $validated['afternoon_break_after_period'] ?? 0,
+            ],
+        ];
+
+        // Update DayConfig for all active days - specific to this session type
+        $activeDays = $validated['active_days'] ?? [];
+        $sessionType = $validated['session_type'];
+        
+        foreach ($activeDays as $dayOfWeek) {
+            \App\Models\DayConfig::updateOrCreate(
+                [
+                    'scheduling_config_id' => $config->id,
+                    'day_of_week' => $dayOfWeek,
+                    'session_type' => $sessionType,  // Keep session type in the unique constraint
+                ],
+                [
+                    'is_active' => true,
+                    'period_count' => $validated['total_periods'],
+                    'start_time' => '07:30',
+                    'period_duration' => $validated['period_duration'],
+                    'breaks' => json_encode($breaks),
+                ]
+            );
+        }
+
+        // Deactivate days not in active_days for this specific session type
+        \App\Models\DayConfig::where('scheduling_config_id', $config->id)
+            ->where('session_type', $sessionType)
+            ->whereNotIn('day_of_week', $activeDays)
+            ->update(['is_active' => false]);
+
         return response()->json([
             'success' => true,
             'message' => 'Junior High configuration saved successfully',
@@ -735,5 +781,358 @@ class SchedulingConfigController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Generate schedule for selected level, term, and year
+     */
+    public function generateSchedule(Request $request)
+    {
+        try {
+            // Validate input
+            $validated = $request->validate([
+                'level' => 'required|string|in:junior_high,senior_high_sem1,senior_high_sem2',
+                'year' => 'required|string'
+            ]);
+
+            $level = $validated['level'];
+            $year = $validated['year'];
+
+            // Check gating: SHS Sem2 can only generate if SHS Sem1 is complete
+            if ($level === 'senior_high_sem2') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Senior High Sem 2 schedule generation requires SHS Sem 1 to be completed first.'
+                ], 422);
+            }
+
+            // Determine which schedule level to use
+            $scheduleLevel = in_array($level, ['senior_high_sem1', 'senior_high_sem2']) ? 'senior_high' : 'junior_high';
+
+            // Load configuration
+            $config = SchedulingConfig::where('level', $scheduleLevel)->first();
+            if (!$config) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Schedule configuration not found for ' . $scheduleLevel
+                ], 404);
+            }
+
+            // Load weekly calendar and constraints
+            $dayConfigs = DayConfig::where('scheduling_config_id', $config->id)->get();
+            $activeDays = $dayConfigs->where('is_active', true)->pluck('day_of_week')->toArray();
+            $facultyRestrictions = $config->faculty_restrictions ? json_decode($config->faculty_restrictions, true) : [];
+            $subjectConstraints = $config->subject_constraints ? json_decode($config->subject_constraints, true) : [];
+
+            // Map schedule level to school_stage for joining with GradeLevel
+            $stageMap = [
+                'junior_high' => 'junior',
+                'senior_high' => 'senior'
+            ];
+            $schoolStage = $stageMap[$scheduleLevel] ?? 'junior';
+
+            // Get sections by joining through GradeLevel (which has school_stage)
+            $sections = \App\Models\Section::whereHas('gradeLevel', function ($query) use ($schoolStage) {
+                $query->where('school_stage', $schoolStage);
+            })->with('gradeLevel')->get();
+            
+            $subjects = \App\Models\Subject::with('teachers')->get();
+            $teachers = \App\Models\Teacher::all();
+
+            // Create a SchedulingRun record
+            $runName = "{$level} - {$year} - " . now()->format('Y-m-d H:i:s');
+            $schedulingRun = \App\Models\SchedulingRun::create([
+                'name' => $runName,
+                'status' => 'draft',
+                'created_by' => auth()->id() ?? 1,
+                'meta' => [
+                    'level' => $level,
+                    'schedule_level' => $scheduleLevel,
+                    'year' => $year,
+                    'active_days' => $activeDays,
+                ]
+            ]);
+
+            Log::info('Schedule generation started', [
+                'run_id' => $schedulingRun->id,
+                'level' => $level,
+                'sections_count' => $sections->count(),
+                'days_count' => count($activeDays),
+                'active_days' => $activeDays,
+                'subjects_count' => $subjects->count(),
+                'teachers_count' => $teachers->count(),
+                'day_configs' => $dayConfigs->count()
+            ]);
+
+            // Simple scheduling algorithm
+            $entriesCreated = 0;
+            $entriesFailed = 0;
+
+            foreach ($sections as $section) {
+                Log::debug("Processing section", ['section_id' => $section->id, 'section_name' => $section->name]);
+                // For each active day
+                foreach ($activeDays as $dayOfWeek) {
+                    $dayConfig = $dayConfigs->where('day_of_week', $dayOfWeek)->first();
+                    $periodCount = $dayConfig ? ($dayConfig->period_count ?? 8) : 8;
+
+                    Log::debug("Processing day", ['day' => $dayOfWeek, 'periods' => $periodCount]);
+
+                    // For each period
+                    for ($period = 1; $period <= $periodCount; $period++) {
+                        try {
+                            // Pick a subject (simple round-robin for demo)
+                            $availableSubjects = $subjects->filter(function ($subject) use ($section, $period, $subjectConstraints) {
+                                // Filter out specialized subjects for regular sections
+                                if (!$section->is_special && in_array($subject->code, ['SPA', 'SPJ'])) {
+                                    return false;
+                                }
+
+                                // Check subject constraints
+                                foreach ($subjectConstraints as $constraint) {
+                                    if ($constraint['subject_id'] == $subject->id) {
+                                        $constraintPeriods = $constraint['periods'] ?? [];
+                                        if (in_array($period, $constraintPeriods)) {
+                                            return false; // Subject restricted for this period
+                                        }
+                                    }
+                                }
+
+                                return true;
+                            });
+
+                            if ($availableSubjects->isEmpty()) {
+                                Log::debug("No available subjects", ['period' => $period]);
+                                $entriesFailed++;
+                                continue;
+                            }
+
+                            // Pick a random available subject
+                            $subject = $availableSubjects->random();
+
+                            // Pick a qualified teacher for this subject
+                            $availableTeachers = $subject->teachers->filter(function ($teacher) use ($period, $facultyRestrictions) {
+                                // Check faculty restrictions
+                                if (is_array($facultyRestrictions)) {
+                                    foreach ($facultyRestrictions as $restriction) {
+                                        if ($restriction['type'] === 'teacher' && 
+                                            isset($restriction['metadata']['teacherId']) &&
+                                            $restriction['metadata']['teacherId'] == $teacher->id &&
+                                            in_array($period, $restriction['periods'] ?? [])) {
+                                            return false; // Teacher restricted for this period
+                                        }
+                                    }
+                                }
+                                return true;
+                            });
+
+                            if ($availableTeachers->isEmpty()) {
+                                Log::debug("No available teachers for subject", ['subject_id' => $subject->id, 'period' => $period, 'subject_teachers_count' => $subject->teachers->count()]);
+                                $entriesFailed++;
+                                continue;
+                            }
+
+                            // Pick a random available teacher
+                            $teacher = $availableTeachers->random();
+
+                            // Create schedule entry
+                            \App\Models\ScheduleEntry::create([
+                                'scheduling_run_id' => $schedulingRun->id,
+                                'section_id' => $section->id,
+                                'day' => $dayOfWeek,
+                                'period' => $period,
+                                'subject_id' => $subject->id,
+                                'teacher_id' => $teacher->id,
+                                'conflict' => null,
+                            ]);
+
+                            $entriesCreated++;
+
+                        } catch (\Exception $e) {
+                            Log::warning("Failed to create entry for section {$section->id}, day {$dayOfWeek}, period {$period}: {$e->getMessage()}");
+                            $entriesFailed++;
+                        }
+                    }
+                }
+            }
+
+            // Update scheduling run status
+            $schedulingRun->update([
+                'status' => 'locked',
+                'meta' => array_merge($schedulingRun->meta ?? [], [
+                    'entries_created' => $entriesCreated,
+                    'entries_failed' => $entriesFailed,
+                ])
+            ]);
+
+            Log::info('Schedule generation completed', [
+                'run_id' => $schedulingRun->id,
+                'entries_created' => $entriesCreated,
+                'entries_failed' => $entriesFailed
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => "Schedule generated successfully! Created {$entriesCreated} assignments.",
+                'run_id' => $schedulingRun->id,
+                'level' => $level,
+                'year' => $year,
+                'entries_created' => $entriesCreated,
+                'entries_failed' => $entriesFailed
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('Error generating schedule: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error generating schedule: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get schedule entries from a scheduling run
+     */
+    public function getScheduleEntries(Request $request)
+    {
+        try {
+            $runId = $request->query('run_id');
+            
+            if (!$runId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'run_id is required'
+                ], 400);
+            }
+
+            $entries = \App\Models\ScheduleEntry::where('scheduling_run_id', $runId)
+                ->with(['section', 'subject', 'teacher'])
+                ->get()
+                ->map(function ($entry) {
+                    return [
+                        'id' => $entry->id,
+                        'section_id' => $entry->section_id,
+                        'day' => $entry->day,
+                        'period' => $entry->period,
+                        'subject_id' => $entry->subject_id,
+                        'subject_name' => $entry->subject?->name,
+                        'teacher_id' => $entry->teacher_id,
+                        'teacher_name' => $entry->teacher?->name,
+                    ];
+                });
+
+            return response()->json([
+                'success' => true,
+                'entries' => $entries,
+                'count' => $entries->count()
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error getting schedule entries: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error getting schedule entries: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Save a generated schedule (change status from draft to locked)
+     */
+    public function saveSchedule(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'level' => 'required|string|in:junior_high,senior_high_sem1,senior_high_sem2',
+                'year' => 'required|string'
+            ]);
+
+            $level = $validated['level'];
+            
+            // Find the most recent draft (locked status) for this level
+            $scheduleLevel = in_array($level, ['senior_high_sem1', 'senior_high_sem2']) ? 'senior_high' : 'junior_high';
+            
+            $schedulingRun = \App\Models\SchedulingRun::where('status', 'draft')
+                ->where(function ($query) {
+                    $query->where('meta->level', $level)
+                        ->orWhere('meta->schedule_level', $level);
+                })
+                ->orderBy('created_at', 'desc')
+                ->first();
+            
+            if (!$schedulingRun) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No draft schedule found to save'
+                ], 404);
+            }
+            
+            // Update status to locked
+            $schedulingRun->update([
+                'status' => 'locked',
+                'locked_at' => now()
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Schedule saved successfully',
+                'run_id' => $schedulingRun->id,
+                'status' => $schedulingRun->status
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Error saving schedule: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error saving schedule: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get all saved drafts for a level
+     */
+    public function getDrafts(Request $request)
+    {
+        try {
+            $level = $request->query('level', 'junior_high');
+            
+            // Get all non-draft schedules (saved/locked ones)
+            $drafts = \App\Models\SchedulingRun::whereIn('status', ['locked', 'published'])
+                ->where(function ($query) use ($level) {
+                    $query->where('meta->level', $level)
+                        ->orWhere('meta->schedule_level', $level);
+                })
+                ->orderBy('created_at', 'desc')
+                ->get()
+                ->map(function ($draft) {
+                    return [
+                        'id' => $draft->id,
+                        'name' => $draft->name,
+                        'status' => $draft->status,
+                        'created_at' => $draft->created_at,
+                        'meta' => $draft->meta
+                    ];
+                });
+            
+            return response()->json([
+                'success' => true,
+                'drafts' => $drafts,
+                'count' => $drafts->count()
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Error getting drafts: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error getting drafts: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     //
 }

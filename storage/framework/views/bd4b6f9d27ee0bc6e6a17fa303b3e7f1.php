@@ -48,6 +48,7 @@
         periodsShortened: <?php echo json_encode($periodsShortened, 15, 512) ?>,
         sections: <?php echo json_encode($sections, 15, 512) ?>,
         specializedSubjectCodes: ['SPA', 'SPJ'], // Specialized subjects for special sections
+        generatedSchedule: {}, // Will store: section_id_period_day -> {subject_id, teacher_id}
         // Build teacher ancillary assignments map for restriction checking
         teacherAncillaries: (function() {
           const map = {};
@@ -93,30 +94,288 @@
             console.log('Using cached restrictions from localStorage');
           }
         });
-
+      
+      // Helper function to filter subjects based on section type
+      function getFilteredSubjects(isSpecial) {
+        const specializedCodes = window.schedulerData.specializedSubjectCodes;
+        
+        if (isSpecial) {
+          // Special sections: show all subjects (core + specialized)
+          return window.schedulerData.subjects;
+        } else {
+          // Regular sections: show only core subjects (exclude SPA, SPJ)
+          return window.schedulerData.subjects.filter(subject => 
+            !specializedCodes.includes(subject.code)
+          );
+        }
+      }
+      
+      // Helper function to check if a subject is specialized
+      function isSpecializedSubject(subjectId) {
+        const subject = window.schedulerData.subjects.find(s => s.id == subjectId);
+        return subject && window.schedulerData.specializedSubjectCodes.includes(subject.code);
+      }
+      
+      // Helper function to count specialized subjects in a section row
+      function countSpecializedSubjects(sectionRow) {
+        let count = 0;
+        const subjectDropdowns = sectionRow.querySelectorAll('.subject-dropdown');
+        subjectDropdowns.forEach(dropdown => {
+          if (dropdown.value && isSpecializedSubject(parseInt(dropdown.value))) {
+            count++;
+          }
+        });
+        return count;
+      }
+      
+      // Function to initialize all dropdowns
+      window.initializeDropdowns = function() {
+        console.log('=== INITIALIZING DROPDOWNS ===');
+        console.log('Subject constraints:', window.schedulerData.subjectConstraints);
+        console.log('Number of constraints:', Object.keys(window.schedulerData.subjectConstraints || {}).length);
+        
+        // Debug: Show all constraint details
+        for (const key in window.schedulerData.subjectConstraints) {
+          const c = window.schedulerData.subjectConstraints[key];
+          console.log(`Constraint ${key}: subject_id=${c.subject_id} (type: ${typeof c.subject_id}), name="${c.subject_name}", periods=[${c.periods}]`);
+        }
+        
+        // Debug: Show first few subjects from scheduler data
+        console.log('First 3 subjects in schedulerData:', window.schedulerData.subjects.slice(0, 3).map(s => `${s.name} (id=${s.id}, type=${typeof s.id})`));
+        
+        document.querySelectorAll('.schedule-cell').forEach(cell => {
+          const subjectDropdown = cell.querySelector('.subject-dropdown');
+          const teacherDropdown = cell.querySelector('.teacher-dropdown');
+          
+          if (!subjectDropdown || !teacherDropdown) return;
+          
+          // Get section info from parent row
+          const sectionRow = cell.closest('tr');
+          const isSpecial = sectionRow.dataset.isSpecial === '1';
+          const sectionId = sectionRow.dataset.sectionId;
+          
+          // Populate subject dropdown based on section type
+          const filteredSubjects = getFilteredSubjects(isSpecial);
+          const currentSubject = subjectDropdown.value;
+          const periodNumber = parseInt(cell.getAttribute('data-period'));
+          
+          subjectDropdown.innerHTML = '<option value="">Select Subject</option>';
+          filteredSubjects.forEach(subject => {
+            const option = document.createElement('option');
+            option.value = subject.id;
+            
+            // Check if subject is restricted for this period
+            const isRestricted = window.isSubjectRestricted(subject, periodNumber);
+            const constraintReason = window.getSubjectConstraintReason(subject, periodNumber);
+            
+            // Debug logging for period 1 only to reduce noise
+            if (periodNumber === 1 && (isRestricted || Object.keys(window.schedulerData.subjectConstraints || {}).length > 0)) {
+              console.log(`P${periodNumber} Subject: "${subject.name}" (id=${subject.id}, type=${typeof subject.id}) → restricted=${isRestricted}`);
+            }
+            
+            if (isRestricted) {
+              // Show but disable restricted subjects
+              option.textContent = subject.name + ' ⛔ (RESTRICTED)';
+              option.disabled = true;
+              option.style.color = '#a1a1a1';
+              option.title = `Subject Constraint: ${constraintReason}`;
+              option.className = 'restricted-option';
+            } else {
+              option.textContent = subject.name;
+            }
+            
+            if (subject.id == currentSubject) {
+              option.selected = true;
+            }
+            subjectDropdown.appendChild(option);
+          });
+        });
+        
+        console.log('=== DROPDOWNS INITIALIZED ===');
+      };
+      
       // Load subject constraints from database
       fetch('<?php echo e(route("admin.schedule-maker.settings.get-subject-constraints")); ?>')
         .then(response => response.json())
         .then(data => {
-          if (data && data.success && Array.isArray(data.constraints)) {
-            window.schedulerData.subjectConstraints = data.constraints;
-            try { localStorage.setItem('subjectConstraints', JSON.stringify(data.constraints)); } catch(e) {}
-            window.dispatchEvent(new CustomEvent('subjectConstraintsLoaded', { detail: data.constraints }));
-            console.log('Subject constraints loaded:', data.constraints);
+          if (data.success && data.constraints) {
+            // Convert array to object if needed (PHP returns JSON arrays as arrays, not objects)
+            let constraints = data.constraints;
+            if (Array.isArray(constraints)) {
+              const constraintsObj = {};
+              constraints.forEach((constraint, index) => {
+                constraintsObj[index] = constraint;
+              });
+              constraints = constraintsObj;
+            }
+            window.schedulerData.subjectConstraints = constraints;
+            console.log('Subject constraints loaded:', Object.keys(constraints).length, 'constraints');
+            
+            // Re-initialize all dropdowns now that constraints are loaded
+            window.initializeDropdowns();
+          } else {
+            window.schedulerData.subjectConstraints = {};
+            window.initializeDropdowns();
           }
         })
         .catch(error => {
           console.error('Error loading subject constraints:', error);
-          // Fallback to localStorage
-          try {
-            const cached = JSON.parse(localStorage.getItem('subjectConstraints') || '[]');
-            if (Array.isArray(cached)) {
-              window.schedulerData.subjectConstraints = cached;
-              window.dispatchEvent(new CustomEvent('subjectConstraintsLoaded', { detail: cached }));
-              console.log('Using cached subject constraints from localStorage');
-            }
-          } catch(e) {}
+          window.schedulerData.subjectConstraints = {};
+          window.initializeDropdowns();
         });
+      
+      // Listen for constraint updates from settings page
+      window.addEventListener('constraintsUpdated', function(e) {
+        window.schedulerData.subjectConstraints = e.detail;
+        console.log('Subject constraints updated:', e.detail);
+        // Re-initialize dropdowns to reflect new constraints
+        window.initializeDropdowns();
+      });
+
+      // Global function to check if a teacher is restricted for a period
+      window.isTeacherRestricted = function(teacher, period) {
+        const restrictions = window.schedulerData.facultyRestrictions;
+        const teacherAncillaries = window.schedulerData.teacherAncillaries[teacher.id] || [];
+        
+        // Check all restrictions
+        for (const restrictionId in restrictions) {
+          const restriction = restrictions[restrictionId];
+          
+          // Skip if periods don't include this period
+          if (!restriction.periods || !restriction.periods.includes(period)) {
+            continue;
+          }
+          
+          // Check restriction type
+          if (restriction.type === 'teacher') {
+            // Specific teacher restriction
+            if (restriction.metadata.teacherId === teacher.id) {
+              return true;
+            }
+          } else if (restriction.type === 'all-ancillary') {
+            // All teachers with ANY ancillary task
+            if (teacherAncillaries.length > 0) {
+              return true;
+            }
+          } else if (restriction.type === 'ancillary-role') {
+            // Specific ancillary role
+            const roleName = restriction.metadata.roleName;
+            if (teacherAncillaries.includes(roleName)) {
+              return true;
+            }
+          }
+        }
+        
+        return false;
+      };
+
+      // Global function to get restriction reason for a teacher
+      window.getRestrictionReason = function(teacher, period) {
+        const restrictions = window.schedulerData.facultyRestrictions;
+        const teacherAncillaries = window.schedulerData.teacherAncillaries[teacher.id] || [];
+        
+        // Check all restrictions
+        for (const restrictionId in restrictions) {
+          const restriction = restrictions[restrictionId];
+          
+          // Skip if periods don't include this period
+          if (!restriction.periods || !restriction.periods.includes(period)) {
+            continue;
+          }
+          
+          // Check if this restriction applies to this teacher
+          let applies = false;
+          
+          if (restriction.type === 'teacher') {
+            if (restriction.metadata.teacherId === teacher.id) {
+              applies = true;
+            }
+          } else if (restriction.type === 'all-ancillary') {
+            if (teacherAncillaries.length > 0) {
+              applies = true;
+            }
+          } else if (restriction.type === 'ancillary-role') {
+            const roleName = restriction.metadata.roleName;
+            if (teacherAncillaries.includes(roleName)) {
+              applies = true;
+            }
+          }
+          
+          if (applies) {
+            return restriction.reason;
+          }
+        }
+        
+        return '';
+      };
+
+      // Global function to check if a subject is restricted for a period
+      window.isSubjectRestricted = function(subject, period) {
+        const constraints = window.schedulerData.subjectConstraints;
+        
+        if (!constraints || Object.keys(constraints).length === 0) {
+          return false;
+        }
+        
+        // Normalize subject.id to number
+        const subjectId = parseInt(subject.id);
+        const periodNum = parseInt(period);
+        
+        // Check all constraints
+        for (const constraintId in constraints) {
+          const constraint = constraints[constraintId];
+          
+          // Normalize constraint.subject_id to number for comparison
+          const constraintSubjectId = parseInt(constraint.subject_id);
+          
+          // Check if this constraint applies to this subject and period
+          const subjectIdMatch = constraintSubjectId === subjectId;
+          const periodMatch = constraint.periods && Array.isArray(constraint.periods) && constraint.periods.map(p => parseInt(p)).includes(periodNum);
+          
+          // Debug logging for matching subjects
+          if (subjectIdMatch) {
+            console.log(`🔍 Match found for "${subject.name}" (id=${subjectId}): constraint.subject_id=${constraintSubjectId}, period=${periodNum}, periods=${JSON.stringify(constraint.periods)}, periodMatch=${periodMatch}`);
+          }
+          
+          if (subjectIdMatch && periodMatch) {
+            console.log(`✅ Subject "${subject.name}" IS RESTRICTED for period ${periodNum}`);
+            return true;
+          }
+        }
+        
+        return false;
+      };
+
+      // Global function to get constraint reason for a subject
+      window.getSubjectConstraintReason = function(subject, period) {
+        const constraints = window.schedulerData.subjectConstraints;
+        
+        if (!constraints || Object.keys(constraints).length === 0) {
+          return '';
+        }
+        
+        // Normalize IDs to numbers
+        const subjectId = parseInt(subject.id);
+        const periodNum = parseInt(period);
+        
+        // Check all constraints
+        for (const constraintId in constraints) {
+          const constraint = constraints[constraintId];
+          
+          // Normalize constraint.subject_id to number for comparison
+          const constraintSubjectId = parseInt(constraint.subject_id);
+          
+          // Check if this constraint applies to this subject and period
+          const subjectIdMatch = constraintSubjectId === subjectId;
+          const periodMatch = constraint.periods && Array.isArray(constraint.periods) && constraint.periods.map(p => parseInt(p)).includes(periodNum);
+          
+          if (subjectIdMatch && periodMatch) {
+            return constraint.reason || 'Restricted by subject constraint';
+          }
+        }
+        
+        return '';
+      };
     </script>
 
     <!-- Main Content: Full Width Schedule -->
@@ -138,31 +397,61 @@
 
           <!-- Tab Content: Master Schedule -->
           <div id="tab-master" class="tab-content p-6">
-            <h3 class="text-lg font-bold text-slate-900 mb-4">📊 Master Schedule - SY 2024-2025</h3>
+            <div class="mb-2 bg-slate-50 border border-slate-200 rounded-lg p-2">
+              <h3 class="text-base font-bold text-slate-900 mb-2">📊 Master Schedule - SY 2024-2025</h3>
+              
+              <!-- Session Selection Panel -->
+              <div class="mb-2 p-2 bg-white border border-blue-200 rounded-lg">
+                <div class="flex items-center justify-between mb-2">
+                  <h4 class="text-sm font-semibold text-slate-700">📋 Select Schedule to Generate</h4>
+                  <span id="sessionStatus" class="text-xs font-semibold px-2 py-1 bg-yellow-100 text-yellow-800 rounded">⚙️ Not configured</span>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
+                  <!-- Level Selector -->
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">School Level</label>
+                    <select id="scheduleLevelSelector" class="w-full px-3 py-2 border border-slate-300 rounded text-sm font-semibold">
+                      <option value="">-- Select Level --</option>
+                      <option value="junior_high">Junior High (Full Year)</option>
+                      <option value="senior_high_sem1" disabled title="Coming Soon">Senior High Sem 1 (Coming Soon)</option>
+                      <option value="senior_high_sem2" disabled title="Coming Soon - Requires SHS Sem1 completion">Senior High Sem 2 (Coming Soon)</option>
+                    </select>
+                  </div>
+                  
+                  <!-- Action Buttons -->
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">&nbsp;</label>
+                    <div class="flex gap-2">
+                      <button id="generateScheduleBtn" class="flex-1 px-3 py-2 bg-blue-600 text-white rounded text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                        ✨ Generate Schedule
+                      </button>
+                      <button id="saveScheduleBtn" class="flex-1 px-3 py-2 bg-green-600 text-white rounded text-sm font-semibold hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed" disabled title="Save the generated schedule">
+                        💾 Save Schedule
+                      </button>
+                      <button id="viewDraftsBtn" class="flex-1 px-3 py-2 bg-purple-600 text-white rounded text-sm font-semibold hover:bg-purple-700" title="View saved schedules">
+                        📋 View Drafts
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
             
-            <div class="mb-4 flex flex-wrap gap-2 items-center">
-              <!-- Session Type Selector -->
+            <div class="mb-2 flex flex-wrap gap-2 items-center">
+              <!-- Session Display Filter -->
               <div>
-                <label class="text-xs text-slate-600 block mb-1">Session Type</label>
-                <select id="sessionTypeFilter" class="px-3 py-2 border border-slate-300 rounded text-sm font-semibold">
+                <label class="text-xs text-slate-600 block mb-1">Display Session (view only)</label>
+                <select id="sessionTypeFilter" class="px-3 py-2 border border-slate-300 rounded text-sm">
                   <option value="regular" selected>Regular Session</option>
                   <option value="shortened">Shortened Session</option>
                 </select>
               </div>
-              
-              <!-- Level Filter -->
-              <div>
-                <label class="text-xs text-slate-600 block mb-1">School Level</label>
-                <select id="schoolLevelFilter" class="px-3 py-2 border border-slate-300 rounded text-sm">
-                  <option value="all" selected>All Levels</option>
-                  <option value="jh">Junior High Only</option>
-                  <option value="sh" disabled class="text-slate-400">Senior High Only (Coming Soon)</option>
-                </select>
-              </div>
-              
+
               <!-- Grade Filter -->
               <div>
-                <label class="text-xs text-slate-600 block mb-1">Grade Level</label>
+                <label class="text-xs text-slate-600 block mb-1">Filter View by Grade</label>
                 <select id="gradeLevelFilter" class="px-3 py-2 border border-slate-300 rounded text-sm">
                   <option value="all" selected>All Grades</option>
                   <option value="7" data-level="jh">Grade 7</option>
@@ -176,10 +465,7 @@
               
               <div class="flex-1"></div>
               
-              <button class="px-4 py-2 bg-blue-600 text-white rounded text-sm font-semibold hover:bg-blue-700">
-                ✨ Autofill
-              </button>
-              <button class="px-4 py-2 bg-slate-200 text-slate-700 rounded text-sm font-semibold hover:bg-slate-300">
+              <button id="exportBtn" class="px-4 py-2 bg-slate-200 text-slate-700 rounded text-sm font-semibold hover:bg-slate-300">
                 📥 Export
               </button>
             </div>
@@ -492,75 +778,237 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
   const sessionTypeFilter = document.getElementById('sessionTypeFilter');
-  const schoolLevelFilter = document.getElementById('schoolLevelFilter');
   const gradeLevelFilter = document.getElementById('gradeLevelFilter');
   
-  // Function to get filtered subjects for a section
-  function getFilteredSubjects(isSpecial) {
-    const specializedCodes = window.schedulerData.specializedSubjectCodes;
+  // Session selector logic
+  const scheduleLevelSelector = document.getElementById('scheduleLevelSelector');
+  const generateScheduleBtn = document.getElementById('generateScheduleBtn');
+  const saveScheduleBtn = document.getElementById('saveScheduleBtn');
+  const viewDraftsBtn = document.getElementById('viewDraftsBtn');
+  const sessionStatus = document.getElementById('sessionStatus');
+  const exportBtn = document.getElementById('exportBtn');
+  
+  // Handle schedule level selection
+  scheduleLevelSelector.addEventListener('change', function() {
+    const selectedLevel = this.value;
     
-    if (isSpecial) {
-      // Special sections: show all subjects (core + specialized)
-      return window.schedulerData.subjects;
-    } else {
-      // Regular sections: show only core subjects (exclude SPA, SPJ)
-      return window.schedulerData.subjects.filter(subject => 
-        !specializedCodes.includes(subject.code)
-      );
+    if (!selectedLevel) {
+      generateScheduleBtn.disabled = true;
+      sessionStatus.className = 'text-xs font-semibold px-2 py-1 bg-yellow-100 text-yellow-800 rounded';
+      sessionStatus.textContent = '⚙️ Not configured';
+      return;
     }
-  }
+    
+    // Check if SHS Sem2 and disable if SHS Sem1 not complete
+    if (selectedLevel === 'senior_high_sem2') {
+      generateScheduleBtn.disabled = true;
+      sessionStatus.className = 'text-xs font-semibold px-2 py-1 bg-red-100 text-red-800 rounded';
+      sessionStatus.textContent = '🔒 Requires SHS Sem1 completion';
+      alert('Senior High Sem 2 schedule generation requires SHS Sem 1 to be completed first.');
+      scheduleLevelSelector.value = '';
+      return;
+    }
+    
+    generateScheduleBtn.disabled = false;
+    sessionStatus.className = 'text-xs font-semibold px-2 py-1 bg-green-100 text-green-800 rounded';
+    sessionStatus.textContent = `✅ Ready: ${selectedLevel.replace(/_/g, ' ')}`;
+  });
   
-  // Function to check if a subject is specialized
-  function isSpecializedSubject(subjectId) {
-    const subject = window.schedulerData.subjects.find(s => s.id == subjectId);
-    return subject && window.schedulerData.specializedSubjectCodes.includes(subject.code);
-  }
-
-  // Subject constraints helpers
-  function isSubjectBlockedAtPeriod(subjectId, periodNumber) {
-    if (!subjectId || !periodNumber) return false;
-    const constraints = window.schedulerData.subjectConstraints;
-    if (!constraints) return false;
-    if (Array.isArray(constraints)) {
-      const entry = constraints.find(c => parseInt(c.subject_id) === parseInt(subjectId));
-      if (!entry) return false;
-      const periods = Array.isArray(entry.periods) ? entry.periods : [];
-      return periods.includes(parseInt(periodNumber));
+  // Handle generate schedule button
+  generateScheduleBtn.addEventListener('click', function() {
+    const selectedLevel = scheduleLevelSelector.value;
+    
+    if (!selectedLevel) {
+      alert('Please select a schedule level first');
+      return;
     }
-    // object-map fallback: { [subjectId]: [periods] }
-    const arr = constraints[String(subjectId)] || constraints[parseInt(subjectId)] || [];
-    return Array.isArray(arr) && arr.includes(parseInt(periodNumber));
-  }
-
-  function applySubjectConstraintsToDropdown(subjectDropdown, periodNumber) {
-    if (!subjectDropdown) return;
-    Array.from(subjectDropdown.options).forEach(opt => {
-      const sid = parseInt(opt.value || '');
-      if (!sid) return;
-      const blocked = isSubjectBlockedAtPeriod(sid, periodNumber);
-      if (blocked) {
-        opt.disabled = true;
-        opt.title = `Blocked by Subject Constraints for P${periodNumber}`;
-        opt.classList.add('text-slate-400');
+    
+    generateScheduleBtn.disabled = true;
+    generateScheduleBtn.textContent = '⏳ Generating...';
+    
+    // Call backend to generate schedule
+    fetch('<?php echo e(route("admin.schedule-maker.generate")); ?>', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+      },
+      body: JSON.stringify({
+        level: selectedLevel,
+        year: '2024-2025'
+      })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        sessionStatus.className = 'text-xs font-semibold px-2 py-1 bg-green-100 text-green-800 rounded';
+        sessionStatus.textContent = `✅ Generated: ${data.entries_created} assignments`;
+        
+        // Fetch and display the generated schedule
+        fetch(`<?php echo e(route('admin.schedule-maker.settings.get-schedule-entries')); ?>?run_id=${data.run_id}`)
+          .then(res => res.json())
+          .then(scheduleData => {
+            if (scheduleData.success && scheduleData.entries) {
+              // Store entries indexed by key: section_period_day
+              scheduleData.entries.forEach(entry => {
+                const key = `${entry.section_id}_${entry.period}_${entry.day}`;
+                window.schedulerData.generatedSchedule[key] = {
+                  subject_id: entry.subject_id,
+                  teacher_id: entry.teacher_id
+                };
+              });
+              
+              // Populate all cells with generated data
+              document.querySelectorAll('.schedule-cell').forEach(cell => {
+                const sectionRow = cell.closest('tr');
+                const sectionId = parseInt(sectionRow.dataset.sectionId);
+                const period = parseInt(cell.getAttribute('data-period'));
+                
+                // For now, using day 1 (Monday) - in future, support multiple days
+                const key = `${sectionId}_${period}_1`;
+                const assignment = window.schedulerData.generatedSchedule[key];
+                
+                if (assignment && assignment.subject_id) {
+                  const subjectDropdown = cell.querySelector('.subject-dropdown');
+                  const teacherDropdown = cell.querySelector('.teacher-dropdown');
+                  
+                  if (subjectDropdown && teacherDropdown) {
+                    // Get subject data
+                    const subject = window.schedulerData.subjects.find(s => s.id == assignment.subject_id);
+                    
+                    if (subject) {
+                      // Set subject value
+                      subjectDropdown.value = assignment.subject_id;
+                      subjectDropdown.classList.remove('text-slate-400');
+                      
+                      // Populate teacher dropdown with teachers from this subject
+                      const teachers = subject.teachers || [];
+                      teacherDropdown.innerHTML = '<option value="">Assign Teacher</option>';
+                      teachers.forEach(teacher => {
+                        const option = document.createElement('option');
+                        option.value = teacher.id;
+                        option.textContent = teacher.name;
+                        teacherDropdown.appendChild(option);
+                      });
+                      
+                      // Set teacher value if available
+                      if (assignment.teacher_id) {
+                        teacherDropdown.value = assignment.teacher_id;
+                        teacherDropdown.classList.remove('text-slate-400');
+                      }
+                    }
+                  }
+                }
+              });
+              
+              console.log('Schedule populated with', Object.keys(window.schedulerData.generatedSchedule).length, 'entries');
+              
+              // Enable Save button now that schedule is generated
+              saveScheduleBtn.disabled = false;
+            }
+          })
+          .catch(err => console.error('Error loading schedule entries:', err));
+        
+        // Optionally reload page after delay
+        // setTimeout(() => location.reload(), 2000);
       } else {
-        opt.disabled = false;
-        opt.title = '';
-        opt.classList.remove('text-slate-400');
+        throw new Error(data.message || 'Generation failed');
       }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      alert(`Error: ${error.message}`);
+      sessionStatus.className = 'text-xs font-semibold px-2 py-1 bg-red-100 text-red-800 rounded';
+      sessionStatus.textContent = '❌ Generation failed';
+    })
+    .finally(() => {
+      generateScheduleBtn.disabled = false;
+      generateScheduleBtn.textContent = '✨ Generate Schedule';
     });
-  }
+  });
   
-  // Function to count specialized subjects in a section row
-  function countSpecializedSubjects(sectionRow) {
-    let count = 0;
-    const subjectDropdowns = sectionRow.querySelectorAll('.subject-dropdown');
-    subjectDropdowns.forEach(dropdown => {
-      if (dropdown.value && isSpecializedSubject(parseInt(dropdown.value))) {
-        count++;
+  // Export button
+  exportBtn.addEventListener('click', function() {
+    alert('Export feature coming soon');
+  });
+  
+  // Save Schedule button
+  saveScheduleBtn.addEventListener('click', function() {
+    const selectedLevel = scheduleLevelSelector.value;
+    
+    if (!selectedLevel) {
+      alert('Please select a schedule level first');
+      return;
+    }
+    
+    if (Object.keys(window.schedulerData.generatedSchedule).length === 0) {
+      alert('No schedule has been generated yet');
+      return;
+    }
+    
+    saveScheduleBtn.disabled = true;
+    saveScheduleBtn.textContent = '⏳ Saving...';
+    
+    // Call backend to save the schedule (update status from draft to locked)
+    fetch('<?php echo e(route("admin.schedule-maker.save")); ?>', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+      },
+      body: JSON.stringify({
+        level: selectedLevel,
+        year: '2024-2025'
+      })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        sessionStatus.className = 'text-xs font-semibold px-2 py-1 bg-green-100 text-green-800 rounded';
+        sessionStatus.textContent = `✅ Saved: ${data.run_id ? 'Run #' + data.run_id : 'Schedule saved'}`;
+        alert('Schedule saved successfully!');
+      } else {
+        throw new Error(data.message || 'Save failed');
       }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      alert(`Error: ${error.message}`);
+      sessionStatus.className = 'text-xs font-semibold px-2 py-1 bg-red-100 text-red-800 rounded';
+      sessionStatus.textContent = '❌ Save failed';
+    })
+    .finally(() => {
+      saveScheduleBtn.disabled = false;
+      saveScheduleBtn.textContent = '💾 Save Schedule';
     });
-    return count;
-  }
+  });
+  
+  // View Drafts button
+  viewDraftsBtn.addEventListener('click', function() {
+    const selectedLevel = scheduleLevelSelector.value || 'junior_high';
+    
+    // Fetch all drafts for this level
+    fetch(`<?php echo e(route('admin.schedule-maker.get-drafts')); ?>?level=${selectedLevel}`)
+      .then(response => response.json())
+      .then(data => {
+        if (data.success && data.drafts && data.drafts.length > 0) {
+          // Display drafts in a modal or list
+          let draftList = 'Available Drafts:\n\n';
+          data.drafts.forEach((draft, index) => {
+            draftList += `${index + 1}. ${draft.name}\n   Created: ${new Date(draft.created_at).toLocaleString()}\n   Entries: ${draft.meta?.entries_created || 0}\n\n`;
+          });
+          alert(draftList);
+        } else {
+          alert('No saved drafts found for this level');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('Error loading drafts');
+      });
+  });
+  
+  // Helper functions already defined above in the script block
   
   // Function to render period headers
   function renderPeriodHeaders(sessionType) {
@@ -601,7 +1049,6 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Function to apply filters to section rows
   function applyFilters() {
-    const schoolLevel = schoolLevelFilter.value;
     const gradeLevel = gradeLevelFilter.value;
     const sectionRows = document.querySelectorAll('tbody tr[data-section-id]');
     
@@ -609,14 +1056,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     sectionRows.forEach(row => {
       let showRow = true;
-      
-      // Filter by school level
-      if (schoolLevel !== 'all') {
-        const rowSchoolLevel = row.getAttribute('data-school-level');
-        if (rowSchoolLevel !== schoolLevel) {
-          showRow = false;
-        }
-      }
       
       // Filter by grade level
       if (gradeLevel !== 'all') {
@@ -641,32 +1080,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     return visibleCount;
   }
-  
-  // Handle school level changes (JH/SH filtering)
-  schoolLevelFilter.addEventListener('change', function() {
-    const selectedLevel = this.value;
-    const gradeOptions = gradeLevelFilter.querySelectorAll('option[data-level]');
-    
-    // Reset to "All Grades"
-    gradeLevelFilter.value = 'all';
-    
-    // Show/hide grade options based on school level
-    gradeOptions.forEach(option => {
-      if (selectedLevel === 'all') {
-        // Show all grades
-        option.style.display = '';
-      } else if (option.dataset.level === selectedLevel) {
-        // Show matching grades (JH: 7-10, SH: 11-12)
-        option.style.display = '';
-      } else {
-        // Hide non-matching grades
-        option.style.display = 'none';
-      }
-    });
-    
-    // Apply filters to sections
-    applyFilters();
-  });
   
   // Handle grade level changes
   gradeLevelFilter.addEventListener('change', function() {
@@ -722,6 +1135,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   // Initialize all schedule cells with dropdown functionality
+  // NOTE: Subject dropdowns are populated by window.initializeDropdowns() after constraints load
   document.querySelectorAll('.schedule-cell').forEach(cell => {
     const subjectDropdown = cell.querySelector('.subject-dropdown');
     const teacherDropdown = cell.querySelector('.teacher-dropdown');
@@ -732,102 +1146,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const sectionRow = cell.closest('tr');
     const isSpecial = sectionRow.dataset.isSpecial === '1';
     const sectionId = sectionRow.dataset.sectionId;
-    
-    // Populate subject dropdown based on section type
-    const filteredSubjects = getFilteredSubjects(isSpecial);
-    const currentSubject = subjectDropdown.value;
-    const periodNumber = parseInt(cell.getAttribute('data-period'));
-    
-    subjectDropdown.innerHTML = '<option value="">Select Subject</option>';
-    filteredSubjects.forEach(subject => {
-      const option = document.createElement('option');
-      option.value = subject.id;
-      option.textContent = subject.name;
-      if (subject.id == currentSubject) {
-        option.selected = true;
-      }
-      subjectDropdown.appendChild(option);
-    });
-
-    // Apply subject constraints (disable blocked subjects for this period)
-    applySubjectConstraintsToDropdown(subjectDropdown, periodNumber);
-    
-    // Function to check if a teacher is restricted for a period
-    function isTeacherRestricted(teacher, period) {
-      const restrictions = window.schedulerData.facultyRestrictions;
-      const teacherAncillaries = window.schedulerData.teacherAncillaries[teacher.id] || [];
-      
-      // Check all restrictions
-      for (const restrictionId in restrictions) {
-        const restriction = restrictions[restrictionId];
-        
-        // Skip if periods don't include this period
-        if (!restriction.periods || !restriction.periods.includes(period)) {
-          continue;
-        }
-        
-        // Check restriction type
-        if (restriction.type === 'teacher') {
-          // Specific teacher restriction
-          if (restriction.metadata.teacherId === teacher.id) {
-            return true;
-          }
-        } else if (restriction.type === 'all-ancillary') {
-          // All teachers with ANY ancillary task
-          if (teacherAncillaries.length > 0) {
-            return true;
-          }
-        } else if (restriction.type === 'ancillary-role') {
-          // Specific ancillary role
-          const roleName = restriction.metadata.roleName;
-          if (teacherAncillaries.includes(roleName)) {
-            return true;
-          }
-        }
-      }
-      
-      return false;
-    }
-    
-    // Function to get restriction reason for a teacher
-    function getRestrictionReason(teacher, period) {
-      const restrictions = window.schedulerData.facultyRestrictions;
-      const teacherAncillaries = window.schedulerData.teacherAncillaries[teacher.id] || [];
-      
-      // Check all restrictions
-      for (const restrictionId in restrictions) {
-        const restriction = restrictions[restrictionId];
-        
-        // Skip if periods don't include this period
-        if (!restriction.periods || !restriction.periods.includes(period)) {
-          continue;
-        }
-        
-        // Check if this restriction applies to this teacher
-        let applies = false;
-        
-        if (restriction.type === 'teacher') {
-          if (restriction.metadata.teacherId === teacher.id) {
-            applies = true;
-          }
-        } else if (restriction.type === 'all-ancillary') {
-          if (teacherAncillaries.length > 0) {
-            applies = true;
-          }
-        } else if (restriction.type === 'ancillary-role') {
-          const roleName = restriction.metadata.roleName;
-          if (teacherAncillaries.includes(roleName)) {
-            applies = true;
-          }
-        }
-        
-        if (applies) {
-          return restriction.reason;
-        }
-      }
-      
-      return '';
-    }
     
     // Function to update teacher dropdown based on selected subject
     function updateTeacherDropdown() {
@@ -846,8 +1164,8 @@ document.addEventListener('DOMContentLoaded', function() {
             option.value = teacher.id;
             
             // Check if teacher is restricted for this period
-            const isRestricted = isTeacherRestricted(teacher, periodNumber);
-            const restrictionReason = getRestrictionReason(teacher, periodNumber);
+            const isRestricted = window.isTeacherRestricted(teacher, periodNumber);
+            const restrictionReason = window.getRestrictionReason(teacher, periodNumber);
             
             if (isRestricted) {
               // Show but disable restricted teachers
@@ -917,16 +1235,6 @@ document.addEventListener('DOMContentLoaded', function() {
     teacherDropdown.addEventListener('change', function() {
       styleDropdown(teacherDropdown, false);
       saveScheduleChange(cell, subjectDropdown, teacherDropdown);
-    });
-  });
-
-  // Once subject constraints are loaded, apply to all subject dropdowns
-  window.addEventListener('subjectConstraintsLoaded', function() {
-    document.querySelectorAll('.schedule-cell').forEach(cell => {
-      const subjectDropdown = cell.querySelector('.subject-dropdown');
-      if (!subjectDropdown) return;
-      const periodNumber = parseInt(cell.getAttribute('data-period'));
-      applySubjectConstraintsToDropdown(subjectDropdown, periodNumber);
     });
   });
   
