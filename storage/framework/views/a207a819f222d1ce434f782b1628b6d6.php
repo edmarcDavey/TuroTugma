@@ -40,19 +40,18 @@
 
     
     <script>
-      // @ts-nocheck
       window.schedulerData = {
-        subjects: <?php echo json_encode($subjects, 15, 512) ?>,
-        teachers: <?php echo json_encode($teachers, 15, 512) ?>,
-        periodsRegular: <?php echo json_encode($periodsRegular, 15, 512) ?>,
-        periodsShortened: <?php echo json_encode($periodsShortened, 15, 512) ?>,
-        sections: <?php echo json_encode($sections, 15, 512) ?>,
+        subjects: <?php echo json_encode($subjects); ?>,
+        teachers: <?php echo json_encode($teachers); ?>,
+        periodsRegular: <?php echo json_encode($periodsRegular); ?>,
+        periodsShortened: <?php echo json_encode($periodsShortened); ?>,
+        sections: <?php echo json_encode($sections); ?>,
         specializedSubjectCodes: ['SPA', 'SPJ'], // Specialized subjects for special sections
         generatedSchedule: {}, // Will store: section_id_period_day -> {subject_id, teacher_id}
         // Build teacher ancillary assignments map for restriction checking
         teacherAncillaries: (function() {
           const map = {};
-          const teachers = <?php echo json_encode($teachers, 15, 512) ?>;
+          const teachers = <?php echo json_encode($teachers); ?>;
           teachers.forEach(teacher => {
             if (teacher.ancillary_assignments) {
               try {
@@ -381,30 +380,29 @@
     <!-- Main Content: Full Width Schedule -->
     <!-- Tabs Navigation -->
           <div class="border-b bg-slate-50 flex">
-            <button data-tab="master" class="tab-button flex-1 px-6 py-4 font-semibold border-b-2 border-blue-600 text-blue-600 hover:bg-blue-50">
-              📊 Master Schedule
+            <button data-tab="master" class="tab-button flex-1 px-6 py-4 font-semibold border-b-2 border-transparent transition-colors duration-200" id="tab-master-btn">
+              Master Schedule
             </button>
-            <button data-tab="sections" class="tab-button flex-1 px-6 py-4 font-semibold text-slate-500 hover:text-slate-700 hover:bg-slate-100">
-              🏫 Sections
+            <button data-tab="sections" class="tab-button flex-1 px-6 py-4 font-semibold border-b-2 border-transparent transition-colors duration-200" id="tab-sections-btn">
+              Sections
             </button>
-            <button data-tab="teachers" class="tab-button flex-1 px-6 py-4 font-semibold text-slate-500 hover:text-slate-700 hover:bg-slate-100">
-              👥 Teachers
+            <button data-tab="teachers" class="tab-button flex-1 px-6 py-4 font-semibold border-b-2 border-transparent transition-colors duration-200" id="tab-teachers-btn">
+              Teachers
             </button>
-            <button data-tab="conflicts" class="tab-button flex-1 px-6 py-4 font-semibold text-slate-500 hover:text-slate-700 hover:bg-slate-100">
-              ⚠️ Conflicts
+            <button data-tab="conflicts" class="tab-button flex-1 px-6 py-4 font-semibold border-b-2 border-transparent transition-colors duration-200" id="tab-conflicts-btn">
+              Conflicts
             </button>
           </div>
 
           <!-- Tab Content: Master Schedule -->
           <div id="tab-master" class="tab-content p-6">
             <div class="mb-2 bg-slate-50 border border-slate-200 rounded-lg p-2">
-              <h3 class="text-base font-bold text-slate-900 mb-2">📊 Master Schedule - SY 2024-2025</h3>
-              
+              <h3 class="text-base font-bold text-slate-900 mb-2">Master Schedule - SY 2024-2025</h3>
               <!-- Session Selection Panel -->
               <div class="mb-2 p-2 bg-white border border-blue-200 rounded-lg">
                 <div class="flex items-center justify-between mb-2">
-                  <h4 class="text-sm font-semibold text-slate-700">📋 Select Schedule to Generate</h4>
-                  <span id="sessionStatus" class="text-xs font-semibold px-2 py-1 bg-yellow-100 text-yellow-800 rounded">⚙️ Not configured</span>
+                  <h4 class="text-sm font-semibold text-slate-700">Select Schedule to Generate</h4>
+                  <span id="sessionStatus" class="text-xs font-semibold px-2 py-1 bg-yellow-100 text-yellow-800 rounded">Not configured</span>
                 </div>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
@@ -496,95 +494,378 @@
           <!-- Tab Content: Sections -->
           <div id="tab-sections" class="tab-content p-6 hidden">
             <h3 class="text-lg font-bold text-slate-900 mb-4">🏫 Sections View - SY 2024-2025</h3>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <!-- Section Card -->
-              <div class="bg-white border-2 border-slate-200 rounded-lg p-4 hover:border-blue-500 hover:shadow-lg transition">
-                <div class="flex items-start justify-between mb-3">
-                  <div>
-                    <h4 class="font-bold text-slate-900">Grade 7-Rizal</h4>
-                    <p class="text-xs text-slate-500">Junior High | 42 students</p>
-                  </div>
-                  <span class="bg-green-100 text-green-700 text-xs px-2 py-1 rounded font-semibold">Complete</span>
-                </div>
-                <div class="space-y-1 text-sm">
-                  <div class="flex justify-between">
-                    <span class="text-slate-600">Adviser:</span>
-                    <span class="font-semibold">Mr. Cruz</span>
-                  </div>
-                  <div class="flex justify-between">
-                    <span class="text-slate-600">Subjects:</span>
-                    <span class="font-semibold">8/8</span>
-                  </div>
-                  <div class="flex justify-between">
-                    <span class="text-slate-600">Assigned:</span>
-                    <span class="text-green-600 font-bold">100%</span>
-                  </div>
-                </div>
-                <button class="mt-3 w-full bg-blue-600 text-white py-2 rounded text-sm font-semibold hover:bg-blue-700">
-                  View Schedule
-                </button>
-              </div>
+            <div class="overflow-x-auto border rounded-lg bg-white p-4">
+              <!-- Schedule 1 -->
+              <table class="w-full text-xs border border-slate-400 mb-8">
+                <tr><td colspan="8" class="text-center font-bold text-base py-2">CLASS PROGRAM SECOND SEMESTER SY 2025-2026</td></tr>
+                <tr>
+                  <td colspan="2" class="font-bold">Section:</td>
+                  <td colspan="2" class="font-bold">12-Zara (TVL-EPAS)</td>
+                  <td colspan="2">Name of Adviser</td>
+                  <td colspan="2" class="font-bold">Lorenzo, Euxenic Loyd H.</td>
+                </tr>
+                <tr>
+                  <td colspan="2" class="font-bold">School:</td>
+                  <td colspan="2" class="font-bold">Diadi National High School</td>
+                  <td colspan="2">Specialization</td>
+                  <td colspan="2" class="font-bold">Electronics Product Assembly and Servicing</td>
+                </tr>
+                <tr>
+                  <td colspan="2" class="font-bold">District:</td>
+                  <td colspan="2" class="font-bold">Diadi</td>
+                  <td colspan="4"></td>
+                </tr>
+              </table>
+              <table class="w-full text-xs border border-slate-400 mb-8">
+                <tr class="bg-slate-100">
+                  <th colspan="2" class="border border-slate-400 px-2 py-1 text-center">Time</th>
+                  <th class="border border-slate-400 px-2 py-1">Monday</th>
+                  <th class="border border-slate-400 px-2 py-1">Tuesday</th>
+                  <th class="border border-slate-400 px-2 py-1">Wednesday</th>
+                  <th class="border border-slate-400 px-2 py-1">Thursday</th>
+                  <th class="border border-slate-400 px-2 py-1">Friday</th>
+                </tr>
+                <tr class="bg-slate-100">
+                  <th class="border border-slate-400 px-2 py-1 text-center">M</th>
+                  <th class="border border-slate-400 px-2 py-1 text-center">T, W, TH, F</th>
+                  <th colspan="5" class="border border-slate-400 px-2 py-1"></th>
+                </tr>
+                <tr>
+                  <td class="border border-slate-400 px-2 py-1">7:15-7:30</td>
+                  <td class="border border-slate-400 px-2 py-1">7:15-7:30</td>
+                  <td class="border border-slate-400 px-2 py-1">Work Immersion<br><span class="text-xs italic">Lorenzo, Euxenic Loyd H.</span></td>
+                  <td class="border border-slate-400 px-2 py-1">Work Immersion<br><span class="text-xs italic">Lorenzo, Euxenic Loyd H.</span></td>
+                  <td class="border border-slate-400 px-2 py-1">Work Immersion<br><span class="text-xs italic">Lorenzo, Euxenic Loyd H.</span></td>
+                  <td class="border border-slate-400 px-2 py-1">Work Immersion<br><span class="text-xs italic">Lorenzo, Euxenic Loyd H.</span></td>
+                  <td class="border border-slate-400 px-2 py-1">HGP<br><span class="text-xs italic">Lorenzo, Euxenic Loyd H.</span></td>
+                </tr>
+                <tr>
+                  <td class="border border-slate-400 px-2 py-1">7:30-8:10</td>
+                  <td class="border border-slate-400 px-2 py-1">7:30-8:30</td>
+                  <td class="border border-slate-400 px-2 py-1">Media and Information Literacy<br><span class="text-xs italic">Chagulon, Jhelly W.</span></td>
+                  <td class="border border-slate-400 px-2 py-1">Physical Science<br><span class="text-xs italic">Mabini, Karen Joy</span></td>
+                  <td class="border border-slate-400 px-2 py-1">Media and Information Literacy<br><span class="text-xs italic">Chagulon, Jhelly W.</span></td>
+                  <td class="border border-slate-400 px-2 py-1">Media and Information Literacy<br><span class="text-xs italic">Chagulon, Jhelly W.</span></td>
+                  <td class="border border-slate-400 px-2 py-1">Media and Information Literacy<br><span class="text-xs italic">Chagulon, Jhelly W.</span></td>
+                </tr>
+                <tr>
+                  <td class="border border-slate-400 px-2 py-1">8:10-8:50</td>
+                  <td class="border border-slate-400 px-2 py-1">8:30-9:30</td>
+                  <td class="border border-slate-400 px-2 py-1"></td>
+                  <td class="border border-slate-400 px-2 py-1"></td>
+                  <td class="border border-slate-400 px-2 py-1"></td>
+                  <td class="border border-slate-400 px-2 py-1"></td>
+                  <td class="border border-slate-400 px-2 py-1"></td>
+                </tr>
+                <tr>
+                  <td class="border border-slate-400 px-2 py-1">8:50-9:30</td>
+                  <td class="border border-slate-400 px-2 py-1">9:30-9:50</td>
+                  <td class="border border-slate-400 px-2 py-1">Specialized TVL EPAS 12<br><span class="text-xs italic">Lorenzo, Euxenic Loyd H.</span></td>
+                  <td class="border border-slate-400 px-2 py-1">Specialized TVL EPAS 12<br><span class="text-xs italic">Lorenzo, Euxenic Loyd H.</span></td>
+                  <td class="border border-slate-400 px-2 py-1">Physical Science<br><span class="text-xs italic">Mabini, Karen Joy</span></td>
+                  <td class="border border-slate-400 px-2 py-1">Specialized TVL EPAS 12<br><span class="text-xs italic">Lorenzo, Euxenic Loyd H.</span></td>
+                  <td class="border border-slate-400 px-2 py-1">Specialized TVL EPAS 12<br><span class="text-xs italic">Lorenzo, Euxenic Loyd H.</span></td>
+                </tr>
+                <tr>
+                  <td class="border border-slate-400 px-2 py-1">9:30-9:50</td>
+                  <td class="border border-slate-400 px-2 py-1">9:50-10:50</td>
+                  <td colspan="5" class="border border-slate-400 px-2 py-1 bg-yellow-50 text-center font-bold">Break</td>
+                </tr>
+                <tr>
+                  <td class="border border-slate-400 px-2 py-1">9:50-10:30</td>
+                  <td class="border border-slate-400 px-2 py-1">10:50-11:50</td>
+                  <td class="border border-slate-400 px-2 py-1">Specialized TVL EPAS 12<br><span class="text-xs italic">Lorenzo, Euxenic Loyd H.</span></td>
+                  <td class="border border-slate-400 px-2 py-1">Specialized TVL EPAS 12<br><span class="text-xs italic">Lorenzo, Euxenic Loyd H.</span></td>
+                  <td class="border border-slate-400 px-2 py-1">HOPE<br><span class="text-xs italic">Salazar, Marc James C.</span></td>
+                  <td class="border border-slate-400 px-2 py-1">Specialized TVL EPAS 12<br><span class="text-xs italic">Lorenzo, Euxenic Loyd H.</span></td>
+                  <td class="border border-slate-400 px-2 py-1">Specialized TVL EPAS 12<br><span class="text-xs italic">Lorenzo, Euxenic Loyd H.</span></td>
+                </tr>
+                <tr>
+                  <td class="border border-slate-400 px-2 py-1">10:50-11:50</td>
+                  <td class="border border-slate-400 px-2 py-1">11:50-1:00</td>
+                  <td class="border border-slate-400 px-2 py-1">3Is-Inquiries, Investigations and Imn<br><span class="text-xs italic">Binay-an, Julie G.</span></td>
+                  <td class="border border-slate-400 px-2 py-1"></td>
+                  <td class="border border-slate-400 px-2 py-1"></td>
+                  <td class="border border-slate-400 px-2 py-1"></td>
+                  <td class="border border-slate-400 px-2 py-1">3Is-Inquiries, Investigations and Imn<br><span class="text-xs italic">Binay-an, Julie G.</span></td>
+                </tr>
+                <tr>
+                  <td class="border border-slate-400 px-2 py-1">11:50-1:00</td>
+                  <td class="border border-slate-400 px-2 py-1">1:00-2:00</td>
+                  <td colspan="5" class="border border-slate-400 px-2 py-1 bg-yellow-50 text-center font-bold">Lunch Break</td>
+                </tr>
+                <tr>
+                  <td class="border border-slate-400 px-2 py-1">1:00-1:40</td>
+                  <td class="border border-slate-400 px-2 py-1">2:00-3:00</td>
+                  <td class="border border-slate-400 px-2 py-1">3Is-Inquiries, Investigations and Imn<br><span class="text-xs italic">Binay-an, Julie G.</span></td>
+                  <td class="border border-slate-400 px-2 py-1"></td>
+                  <td class="border border-slate-400 px-2 py-1"></td>
+                  <td class="border border-slate-400 px-2 py-1"></td>
+                  <td class="border border-slate-400 px-2 py-1">3Is-Inquiries, Investigations and Imn<br><span class="text-xs italic">Binay-an, Julie G.</span></td>
+                </tr>
+                <tr>
+                  <td class="border border-slate-400 px-2 py-1">1:40-2:20</td>
+                  <td class="border border-slate-400 px-2 py-1">3:00-4:00</td>
+                  <td class="border border-slate-400 px-2 py-1">Physical Science<br><span class="text-xs italic">Mabini, Karen Joy</span></td>
+                  <td class="border border-slate-400 px-2 py-1"></td>
+                  <td class="border border-slate-400 px-2 py-1"></td>
+                  <td class="border border-slate-400 px-2 py-1"></td>
+                  <td class="border border-slate-400 px-2 py-1">Physical Science<br><span class="text-xs italic">Mabini, Karen Joy</span></td>
+                </tr>
+                <tr>
+                  <td class="border border-slate-400 px-2 py-1">3:00-4:00</td>
+                  <td class="border border-slate-400 px-2 py-1">4:00-4:30</td>
+                  <td colspan="5" class="border border-slate-400 px-2 py-1 bg-yellow-50 text-center font-bold">COLLABORATIVE EXPERTISE SESSION</td>
+                </tr>
+              </table>
 
-              <!-- Section Card -->
-              <div class="bg-white border-2 border-slate-200 rounded-lg p-4 hover:border-blue-500 hover:shadow-lg transition">
-                <div class="flex items-start justify-between mb-3">
-                  <div>
-                    <h4 class="font-bold text-slate-900">Grade 7-Bonifacio</h4>
-                    <p class="text-xs text-slate-500">Junior High | 40 students</p>
-                  </div>
-                  <span class="bg-amber-100 text-amber-700 text-xs px-2 py-1 rounded font-semibold">Incomplete</span>
-                </div>
-                <div class="space-y-1 text-sm">
-                  <div class="flex justify-between">
-                    <span class="text-slate-600">Adviser:</span>
-                    <span class="font-semibold">Ms. Ramos</span>
-                  </div>
-                  <div class="flex justify-between">
-                    <span class="text-slate-600">Subjects:</span>
-                    <span class="font-semibold">8/8</span>
-                  </div>
-                  <div class="flex justify-between">
-                    <span class="text-slate-600">Assigned:</span>
-                    <span class="text-amber-600 font-bold">87%</span>
-                  </div>
-                </div>
-                <button class="mt-3 w-full bg-blue-600 text-white py-2 rounded text-sm font-semibold hover:bg-blue-700">
-                  View Schedule
-                </button>
-              </div>
+              <!-- Schedule 2 -->
+              <table class="w-full text-xs border border-slate-400 mb-8">
+                <tr><td colspan="8" class="text-center font-bold text-base py-2">CLASS PROGRAM SECOND SEMESTER SY 2025-2026</td></tr>
+                <tr>
+                  <td colspan="2" class="font-bold">Section:</td>
+                  <td colspan="2" class="font-bold">12-Malaya (TVL-ICT)</td>
+                  <td colspan="2">Name of Adviser</td>
+                  <td colspan="2" class="font-bold">Dela Cruz, Maria Liza</td>
+                </tr>
+                <tr>
+                  <td colspan="2" class="font-bold">School:</td>
+                  <td colspan="2" class="font-bold">Diadi National High School</td>
+                  <td colspan="2">Specialization</td>
+                  <td colspan="2" class="font-bold">Information and Communications Technology</td>
+                </tr>
+                <tr>
+                  <td colspan="2" class="font-bold">District:</td>
+                  <td colspan="2" class="font-bold">Diadi</td>
+                  <td colspan="4"></td>
+                </tr>
+              </table>
+              <table class="w-full text-xs border border-slate-400 mb-8">
+                <tr class="bg-slate-100">
+                  <th colspan="2" class="border border-slate-400 px-2 py-1 text-center">Time</th>
+                  <th class="border border-slate-400 px-2 py-1">Monday</th>
+                  <th class="border border-slate-400 px-2 py-1">Tuesday</th>
+                  <th class="border border-slate-400 px-2 py-1">Wednesday</th>
+                  <th class="border border-slate-400 px-2 py-1">Thursday</th>
+                  <th class="border border-slate-400 px-2 py-1">Friday</th>
+                </tr>
+                <tr class="bg-slate-100">
+                  <th class="border border-slate-400 px-2 py-1 text-center">M</th>
+                  <th class="border border-slate-400 px-2 py-1 text-center">T, W, TH, F</th>
+                  <th colspan="5" class="border border-slate-400 px-2 py-1"></th>
+                </tr>
+                <tr>
+                  <td class="border border-slate-400 px-2 py-1">7:15-7:30</td>
+                  <td class="border border-slate-400 px-2 py-1">7:15-7:30</td>
+                  <td class="border border-slate-400 px-2 py-1">Computer Programming<br><span class="text-xs italic">Reyes, Anna Mae</span></td>
+                  <td class="border border-slate-400 px-2 py-1">Computer Programming<br><span class="text-xs italic">Reyes, Anna Mae</span></td>
+                  <td class="border border-slate-400 px-2 py-1">Computer Programming<br><span class="text-xs italic">Reyes, Anna Mae</span></td>
+                  <td class="border border-slate-400 px-2 py-1">Computer Programming<br><span class="text-xs italic">Reyes, Anna Mae</span></td>
+                  <td class="border border-slate-400 px-2 py-1">Work Immersion<br><span class="text-xs italic">Dela Cruz, Maria Liza</span></td>
+                </tr>
+                <tr>
+                  <td class="border border-slate-400 px-2 py-1">7:30-8:10</td>
+                  <td class="border border-slate-400 px-2 py-1">7:30-8:30</td>
+                  <td class="border border-slate-400 px-2 py-1">Media and Information Literacy<br><span class="text-xs italic">Santos, John Paul</span></td>
+                  <td class="border border-slate-400 px-2 py-1">Physical Science<br><span class="text-xs italic">Reyes, Anna Mae</span></td>
+                  <td class="border border-slate-400 px-2 py-1">Media and Information Literacy<br><span class="text-xs italic">Santos, John Paul</span></td>
+                  <td class="border border-slate-400 px-2 py-1">Media and Information Literacy<br><span class="text-xs italic">Santos, John Paul</span></td>
+                  <td class="border border-slate-400 px-2 py-1">Media and Information Literacy<br><span class="text-xs italic">Santos, John Paul</span></td>
+                </tr>
+                <tr>
+                  <td class="border border-slate-400 px-2 py-1">8:10-8:50</td>
+                  <td class="border border-slate-400 px-2 py-1">8:30-9:30</td>
+                  <td class="border border-slate-400 px-2 py-1"></td>
+                  <td class="border border-slate-400 px-2 py-1"></td>
+                  <td class="border border-slate-400 px-2 py-1"></td>
+                  <td class="border border-slate-400 px-2 py-1"></td>
+                  <td class="border border-slate-400 px-2 py-1"></td>
+                </tr>
+                <tr>
+                  <td class="border border-slate-400 px-2 py-1">8:50-9:30</td>
+                  <td class="border border-slate-400 px-2 py-1">9:30-9:50</td>
+                  <td class="border border-slate-400 px-2 py-1">Specialized TVL ICT 12<br><span class="text-xs italic">Dela Cruz, Maria Liza</span></td>
+                  <td class="border border-slate-400 px-2 py-1">Specialized TVL ICT 12<br><span class="text-xs italic">Dela Cruz, Maria Liza</span></td>
+                  <td class="border border-slate-400 px-2 py-1">Physical Science<br><span class="text-xs italic">Reyes, Anna Mae</span></td>
+                  <td class="border border-slate-400 px-2 py-1">Specialized TVL ICT 12<br><span class="text-xs italic">Dela Cruz, Maria Liza</span></td>
+                  <td class="border border-slate-400 px-2 py-1">Specialized TVL ICT 12<br><span class="text-xs italic">Dela Cruz, Maria Liza</span></td>
+                </tr>
+                <tr>
+                  <td class="border border-slate-400 px-2 py-1">9:30-9:50</td>
+                  <td class="border border-slate-400 px-2 py-1">9:50-10:50</td>
+                  <td colspan="5" class="border border-slate-400 px-2 py-1 bg-yellow-50 text-center font-bold">Break</td>
+                </tr>
+                <tr>
+                  <td class="border border-slate-400 px-2 py-1">9:50-10:30</td>
+                  <td class="border border-slate-400 px-2 py-1">10:50-11:50</td>
+                  <td class="border border-slate-400 px-2 py-1">Specialized TVL ICT 12<br><span class="text-xs italic">Dela Cruz, Maria Liza</span></td>
+                  <td class="border border-slate-400 px-2 py-1">Specialized TVL ICT 12<br><span class="text-xs italic">Dela Cruz, Maria Liza</span></td>
+                  <td class="border border-slate-400 px-2 py-1">HOPE<br><span class="text-xs italic">Santos, John Paul</span></td>
+                  <td class="border border-slate-400 px-2 py-1">Specialized TVL ICT 12<br><span class="text-xs italic">Dela Cruz, Maria Liza</span></td>
+                  <td class="border border-slate-400 px-2 py-1">Specialized TVL ICT 12<br><span class="text-xs italic">Dela Cruz, Maria Liza</span></td>
+                </tr>
+                <tr>
+                  <td class="border border-slate-400 px-2 py-1">10:50-11:50</td>
+                  <td class="border border-slate-400 px-2 py-1">11:50-1:00</td>
+                  <td class="border border-slate-400 px-2 py-1">3Is-Inquiries, Investigations and Imn<br><span class="text-xs italic">Santos, John Paul</span></td>
+                  <td class="border border-slate-400 px-2 py-1"></td>
+                  <td class="border border-slate-400 px-2 py-1"></td>
+                  <td class="border border-slate-400 px-2 py-1"></td>
+                  <td class="border border-slate-400 px-2 py-1">3Is-Inquiries, Investigations and Imn<br><span class="text-xs italic">Santos, John Paul</span></td>
+                </tr>
+                <tr>
+                  <td class="border border-slate-400 px-2 py-1">11:50-1:00</td>
+                  <td class="border border-slate-400 px-2 py-1">1:00-2:00</td>
+                  <td colspan="5" class="border border-slate-400 px-2 py-1 bg-yellow-50 text-center font-bold">Lunch Break</td>
+                </tr>
+                <tr>
+                  <td class="border border-slate-400 px-2 py-1">1:00-1:40</td>
+                  <td class="border border-slate-400 px-2 py-1">2:00-3:00</td>
+                  <td class="border border-slate-400 px-2 py-1">3Is-Inquiries, Investigations and Imn<br><span class="text-xs italic">Santos, John Paul</span></td>
+                  <td class="border border-slate-400 px-2 py-1"></td>
+                  <td class="border border-slate-400 px-2 py-1"></td>
+                  <td class="border border-slate-400 px-2 py-1"></td>
+                  <td class="border border-slate-400 px-2 py-1">3Is-Inquiries, Investigations and Imn<br><span class="text-xs italic">Santos, John Paul</span></td>
+                </tr>
+                <tr>
+                  <td class="border border-slate-400 px-2 py-1">1:40-2:20</td>
+                  <td class="border border-slate-400 px-2 py-1">3:00-4:00</td>
+                  <td class="border border-slate-400 px-2 py-1">Physical Science<br><span class="text-xs italic">Reyes, Anna Mae</span></td>
+                  <td class="border border-slate-400 px-2 py-1"></td>
+                  <td class="border border-slate-400 px-2 py-1"></td>
+                  <td class="border border-slate-400 px-2 py-1"></td>
+                  <td class="border border-slate-400 px-2 py-1">Physical Science<br><span class="text-xs italic">Reyes, Anna Mae</span></td>
+                </tr>
+                <tr>
+                  <td class="border border-slate-400 px-2 py-1">3:00-4:00</td>
+                  <td class="border border-slate-400 px-2 py-1">4:00-4:30</td>
+                  <td colspan="5" class="border border-slate-400 px-2 py-1 bg-yellow-50 text-center font-bold">COLLABORATIVE EXPERTISE SESSION</td>
+                </tr>
+              </table>
 
-              <!-- Section Card -->
-              <div class="bg-white border-2 border-slate-200 rounded-lg p-4 hover:border-blue-500 hover:shadow-lg transition">
-                <div class="flex items-start justify-between mb-3">
-                  <div>
-                    <h4 class="font-bold text-slate-900">Grade 11-STEM-A</h4>
-                    <p class="text-xs text-slate-500">Senior High | 38 students</p>
-                  </div>
-                  <span class="bg-green-100 text-green-700 text-xs px-2 py-1 rounded font-semibold">Complete</span>
-                </div>
-                <div class="space-y-1 text-sm">
-                  <div class="flex justify-between">
-                    <span class="text-slate-600">Adviser:</span>
-                    <span class="font-semibold">Dr. Santos</span>
-                  </div>
-                  <div class="flex justify-between">
-                    <span class="text-slate-600">Subjects:</span>
-                    <span class="font-semibold">9/9</span>
-                  </div>
-                  <div class="flex justify-between">
-                    <span class="text-slate-600">Assigned:</span>
-                    <span class="text-green-600 font-bold">100%</span>
-                  </div>
-                </div>
-                <button class="mt-3 w-full bg-blue-600 text-white py-2 rounded text-sm font-semibold hover:bg-blue-700">
-                  View Schedule
-                </button>
-              </div>
-            </div>
-
-            <div class="mt-4 p-3 bg-slate-50 border border-slate-200 rounded text-sm text-slate-700">
-              ℹ️ <strong>Showing 3 of 32 sections.</strong> Click on a section to view detailed schedule.
+              <!-- Schedule 3 -->
+              <table class="w-full text-xs border border-slate-400 mb-8">
+                <tr><td colspan="8" class="text-center font-bold text-base py-2">CLASS PROGRAM SECOND SEMESTER SY 2025-2026</td></tr>
+                <tr>
+                  <td colspan="2" class="font-bold">Section:</td>
+                  <td colspan="2" class="font-bold">12-Masigasig (HUMSS)</td>
+                  <td colspan="2">Name of Adviser</td>
+                  <td colspan="2" class="font-bold">Garcia, Michael</td>
+                </tr>
+                <tr>
+                  <td colspan="2" class="font-bold">School:</td>
+                  <td colspan="2" class="font-bold">Diadi National High School</td>
+                  <td colspan="2">Specialization</td>
+                  <td colspan="2" class="font-bold">Humanities and Social Sciences</td>
+                </tr>
+                <tr>
+                  <td colspan="2" class="font-bold">District:</td>
+                  <td colspan="2" class="font-bold">Diadi</td>
+                  <td colspan="4"></td>
+                </tr>
+              </table>
+              <table class="w-full text-xs border border-slate-400 mb-8">
+                <tr class="bg-slate-100">
+                  <th colspan="2" class="border border-slate-400 px-2 py-1 text-center">Time</th>
+                  <th class="border border-slate-400 px-2 py-1">Monday</th>
+                  <th class="border border-slate-400 px-2 py-1">Tuesday</th>
+                  <th class="border border-slate-400 px-2 py-1">Wednesday</th>
+                  <th class="border border-slate-400 px-2 py-1">Thursday</th>
+                  <th class="border border-slate-400 px-2 py-1">Friday</th>
+                </tr>
+                <tr class="bg-slate-100">
+                  <th class="border border-slate-400 px-2 py-1 text-center">M</th>
+                  <th class="border border-slate-400 px-2 py-1 text-center">T, W, TH, F</th>
+                  <th colspan="5" class="border border-slate-400 px-2 py-1"></th>
+                </tr>
+                <tr>
+                  <td class="border border-slate-400 px-2 py-1">7:15-7:30</td>
+                  <td class="border border-slate-400 px-2 py-1">7:15-7:30</td>
+                  <td class="border border-slate-400 px-2 py-1">Oral Communication<br><span class="text-xs italic">Garcia, Michael</span></td>
+                  <td class="border border-slate-400 px-2 py-1">Oral Communication<br><span class="text-xs italic">Garcia, Michael</span></td>
+                  <td class="border border-slate-400 px-2 py-1">Oral Communication<br><span class="text-xs italic">Garcia, Michael</span></td>
+                  <td class="border border-slate-400 px-2 py-1">Oral Communication<br><span class="text-xs italic">Garcia, Michael</span></td>
+                  <td class="border border-slate-400 px-2 py-1">Work Immersion<br><span class="text-xs italic">Garcia, Michael</span></td>
+                </tr>
+                <tr>
+                  <td class="border border-slate-400 px-2 py-1">7:30-8:10</td>
+                  <td class="border border-slate-400 px-2 py-1">7:30-8:30</td>
+                  <td class="border border-slate-400 px-2 py-1">Media and Information Literacy<br><span class="text-xs italic">Santos, John Paul</span></td>
+                  <td class="border border-slate-400 px-2 py-1">Philippine Politics and Governance<br><span class="text-xs italic">Reyes, Anna Mae</span></td>
+                  <td class="border border-slate-400 px-2 py-1">Media and Information Literacy<br><span class="text-xs italic">Santos, John Paul</span></td>
+                  <td class="border border-slate-400 px-2 py-1">Media and Information Literacy<br><span class="text-xs italic">Santos, John Paul</span></td>
+                  <td class="border border-slate-400 px-2 py-1">Media and Information Literacy<br><span class="text-xs italic">Santos, John Paul</span></td>
+                </tr>
+                <tr>
+                  <td class="border border-slate-400 px-2 py-1">8:10-8:50</td>
+                  <td class="border border-slate-400 px-2 py-1">8:30-9:30</td>
+                  <td class="border border-slate-400 px-2 py-1"></td>
+                  <td class="border border-slate-400 px-2 py-1"></td>
+                  <td class="border border-slate-400 px-2 py-1"></td>
+                  <td class="border border-slate-400 px-2 py-1"></td>
+                  <td class="border border-slate-400 px-2 py-1"></td>
+                </tr>
+                <tr>
+                  <td class="border border-slate-400 px-2 py-1">8:50-9:30</td>
+                  <td class="border border-slate-400 px-2 py-1">9:30-9:50</td>
+                  <td class="border border-slate-400 px-2 py-1">Introduction to World Religions<br><span class="text-xs italic">Garcia, Michael</span></td>
+                  <td class="border border-slate-400 px-2 py-1">Introduction to World Religions<br><span class="text-xs italic">Garcia, Michael</span></td>
+                  <td class="border border-slate-400 px-2 py-1">Philippine Politics and Governance<br><span class="text-xs italic">Reyes, Anna Mae</span></td>
+                  <td class="border border-slate-400 px-2 py-1">Introduction to World Religions<br><span class="text-xs italic">Garcia, Michael</span></td>
+                  <td class="border border-slate-400 px-2 py-1">Introduction to World Religions<br><span class="text-xs italic">Garcia, Michael</span></td>
+                </tr>
+                <tr>
+                  <td class="border border-slate-400 px-2 py-1">9:30-9:50</td>
+                  <td class="border border-slate-400 px-2 py-1">9:50-10:50</td>
+                  <td colspan="5" class="border border-slate-400 px-2 py-1 bg-yellow-50 text-center font-bold">Break</td>
+                </tr>
+                <tr>
+                  <td class="border border-slate-400 px-2 py-1">9:50-10:30</td>
+                  <td class="border border-slate-400 px-2 py-1">10:50-11:50</td>
+                  <td class="border border-slate-400 px-2 py-1">Introduction to World Religions<br><span class="text-xs italic">Garcia, Michael</span></td>
+                  <td class="border border-slate-400 px-2 py-1">Introduction to World Religions<br><span class="text-xs italic">Garcia, Michael</span></td>
+                  <td class="border border-slate-400 px-2 py-1">HOPE<br><span class="text-xs italic">Santos, John Paul</span></td>
+                  <td class="border border-slate-400 px-2 py-1">Introduction to World Religions<br><span class="text-xs italic">Garcia, Michael</span></td>
+                  <td class="border border-slate-400 px-2 py-1">Introduction to World Religions<br><span class="text-xs italic">Garcia, Michael</span></td>
+                </tr>
+                <tr>
+                  <td class="border border-slate-400 px-2 py-1">10:50-11:50</td>
+                  <td class="border border-slate-400 px-2 py-1">11:50-1:00</td>
+                  <td class="border border-slate-400 px-2 py-1">3Is-Inquiries, Investigations and Imn<br><span class="text-xs italic">Santos, John Paul</span></td>
+                  <td class="border border-slate-400 px-2 py-1"></td>
+                  <td class="border border-slate-400 px-2 py-1"></td>
+                  <td class="border border-slate-400 px-2 py-1"></td>
+                  <td class="border border-slate-400 px-2 py-1">3Is-Inquiries, Investigations and Imn<br><span class="text-xs italic">Santos, John Paul</span></td>
+                </tr>
+                <tr>
+                  <td class="border border-slate-400 px-2 py-1">11:50-1:00</td>
+                  <td class="border border-slate-400 px-2 py-1">1:00-2:00</td>
+                  <td colspan="5" class="border border-slate-400 px-2 py-1 bg-yellow-50 text-center font-bold">Lunch Break</td>
+                </tr>
+                <tr>
+                  <td class="border border-slate-400 px-2 py-1">1:00-1:40</td>
+                  <td class="border border-slate-400 px-2 py-1">2:00-3:00</td>
+                  <td class="border border-slate-400 px-2 py-1">3Is-Inquiries, Investigations and Imn<br><span class="text-xs italic">Santos, John Paul</span></td>
+                  <td class="border border-slate-400 px-2 py-1"></td>
+                  <td class="border border-slate-400 px-2 py-1"></td>
+                  <td class="border border-slate-400 px-2 py-1"></td>
+                  <td class="border border-slate-400 px-2 py-1">3Is-Inquiries, Investigations and Imn<br><span class="text-xs italic">Santos, John Paul</span></td>
+                </tr>
+                <tr>
+                  <td class="border border-slate-400 px-2 py-1">1:40-2:20</td>
+                  <td class="border border-slate-400 px-2 py-1">3:00-4:00</td>
+                  <td class="border border-slate-400 px-2 py-1">Philippine Politics and Governance<br><span class="text-xs italic">Reyes, Anna Mae</span></td>
+                  <td class="border border-slate-400 px-2 py-1"></td>
+                  <td class="border border-slate-400 px-2 py-1"></td>
+                  <td class="border border-slate-400 px-2 py-1"></td>
+                  <td class="border border-slate-400 px-2 py-1">Philippine Politics and Governance<br><span class="text-xs italic">Reyes, Anna Mae</span></td>
+                </tr>
+                <tr>
+                  <td class="border border-slate-400 px-2 py-1">3:00-4:00</td>
+                  <td class="border border-slate-400 px-2 py-1">4:00-4:30</td>
+                  <td colspan="5" class="border border-slate-400 px-2 py-1 bg-yellow-50 text-center font-bold">COLLABORATIVE EXPERTISE SESSION</td>
+                </tr>
+              </table>
             </div>
           </div>
 
@@ -756,6 +1037,36 @@
 </div>
 
 <script>
+    // Tab switching UI improvement
+    document.addEventListener('DOMContentLoaded', function() {
+      const tabButtons = document.querySelectorAll('.tab-button');
+      const tabContents = document.querySelectorAll('.tab-content');
+      function setActiveTab(tabName) {
+        tabButtons.forEach(b => {
+          if (b.getAttribute('data-tab') === tabName) {
+            b.classList.add('border-blue-600', 'text-blue-700', 'bg-blue-50');
+            b.classList.remove('border-transparent');
+          } else {
+            b.classList.remove('border-blue-600', 'text-blue-700', 'bg-blue-50');
+            b.classList.add('border-transparent');
+          }
+        });
+        tabContents.forEach(content => {
+          if (content.id === 'tab-' + tabName) {
+            content.style.display = '';
+          } else {
+            content.style.display = 'none';
+          }
+        });
+      }
+      tabButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+          setActiveTab(btn.getAttribute('data-tab'));
+        });
+      });
+      // Set initial active tab (default to master)
+      setActiveTab('master');
+    });
 document.addEventListener('DOMContentLoaded', function() {
   const sessionTypeFilter = document.getElementById('sessionTypeFilter');
   const gradeLevelFilter = document.getElementById('gradeLevelFilter');

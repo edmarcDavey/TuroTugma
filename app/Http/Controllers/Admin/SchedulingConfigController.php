@@ -395,7 +395,7 @@ class SchedulingConfigController extends Controller
     public function storeJHConfig(Request $request)
     {
         try {
-            \Log::info('storeJHConfig called with data:', $request->all());
+            Log::info('storeJHConfig called with data:', $request->all());
             
             $validated = $request->validate([
                 'period_duration' => 'required|integer|min:30|max:90',
@@ -414,9 +414,9 @@ class SchedulingConfigController extends Controller
                 'session_type' => 'required|in:regular,shortened',
             ]);
             
-            \Log::info('Validated data:', $validated);
+            Log::info('Validated data:', $validated);
         } catch (\Exception $e) {
-            \Log::error('Validation failed: ' . $e->getMessage());
+            Log::error('Validation failed: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Validation error: ' . $e->getMessage()
@@ -870,7 +870,7 @@ class SchedulingConfigController extends Controller
             $schedulingRun = \App\Models\SchedulingRun::create([
                 'name' => $runName,
                 'status' => 'draft',
-                'created_by' => auth()->id() ?? 1,
+                'created_by' => (auth() && auth()->user()) ? auth()->id() : 1,
                 'meta' => [
                     'level' => $level,
                     'schedule_level' => $scheduleLevel,
