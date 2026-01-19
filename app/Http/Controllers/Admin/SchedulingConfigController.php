@@ -820,8 +820,35 @@ class SchedulingConfigController extends Controller
             // Load weekly calendar and constraints
             $dayConfigs = DayConfig::where('scheduling_config_id', $config->id)->get();
             $activeDays = $dayConfigs->where('is_active', true)->pluck('day_of_week')->toArray();
-            $facultyRestrictions = $config->faculty_restrictions ? json_decode($config->faculty_restrictions, true) : [];
-            $subjectConstraints = $config->subject_constraints ? json_decode($config->subject_constraints, true) : [];
+            
+            // Load restrictions and constraints from GENERAL config (where they are actually stored)
+            $generalConfig = SchedulingConfig::where('level', 'general')->first();
+            $facultyRestrictions = [];
+            $subjectConstraints = [];
+            
+            if ($generalConfig) {
+                if ($generalConfig->faculty_restrictions) {
+                    $facultyRestrictions = json_decode($generalConfig->faculty_restrictions, true) ?? [];
+                }
+                if ($generalConfig->subject_constraints) {
+                    $subjectConstraints = json_decode($generalConfig->subject_constraints, true) ?? [];
+                }
+            }
+            
+            // Load break configuration from first active day
+            $breakConfig = $dayConfigs->first();
+            $breaks = $breakConfig ? json_decode($breakConfig->breaks ?? '{}', true) : [];
+            
+            Log::info('Generation Configuration Loaded', [
+                'level' => $level,
+                'schedule_level' => $scheduleLevel,
+                'faculty_restrictions_count' => count($facultyRestrictions),
+                'subject_constraints_count' => count($subjectConstraints),
+                'breaks_configured' => !empty($breaks),
+                'breaks' => $breaks,
+                'active_days' => $activeDays,
+                'day_configs_count' => $dayConfigs->count()
+            ]);
 
             // Map schedule level to school_stage for joining with GradeLevel
             $stageMap = [
@@ -879,11 +906,53 @@ class SchedulingConfigController extends Controller
                     // For each period
                     for ($period = 1; $period <= $periodCount; $period++) {
                         try {
+                            // Count existing specialized subjects (SPA, SPJ) in this section FOR THIS DAY
+                            // to enforce limit of 1 SPA + 1 SPJ per special section per day
+                            $existingSpecialized = [];
+                            if ($section->is_special) {
+                                $existingSpecialized = \App\Models\ScheduleEntry::where('scheduling_run_id', $schedulingRun->id)
+                                    ->where('section_id', $section->id)
+                                    ->where('day', $dayOfWeek)
+                                    ->whereHas('subject', function($q) {
+                                        $q->whereIn('code', ['SPA', 'SPJ']);
+                                    })
+                                    ->with('subject')
+                                    ->get()
+                                    ->pluck('subject.code')
+                                    ->unique()
+                                    ->toArray();
+                                
+                                Log::debug("Existing specialized subjects in section for this day", [
+                                    'section_id' => $section->id,
+                                    'day' => $dayOfWeek,
+                                    'period' => $period,
+                                    'existing' => $existingSpecialized
+                                ]);
+                            }
+                            
                             // Pick a subject (simple round-robin for demo)
-                            $availableSubjects = $subjects->filter(function ($subject) use ($section, $period, $subjectConstraints) {
+                            $availableSubjects = $subjects->filter(function ($subject) use ($section, $period, $subjectConstraints, $existingSpecialized, $schedulingRun, $dayOfWeek) {
+                                // CHECK: Don't assign same subject twice to same section on same day
+                                $alreadyAssigned = \App\Models\ScheduleEntry::where('scheduling_run_id', $schedulingRun->id)
+                                    ->where('section_id', $section->id)
+                                    ->where('day', $dayOfWeek)
+                                    ->where('subject_id', $subject->id)
+                                    ->exists();
+                                
+                                if ($alreadyAssigned) {
+                                    return false; // Subject already assigned to this section today
+                                }
+                                
                                 // Filter out specialized subjects for regular sections
                                 if (!$section->is_special && in_array($subject->code, ['SPA', 'SPJ'])) {
                                     return false;
+                                }
+                                
+                                // For special sections, enforce max 1 SPA + 1 SPJ (don't repeat same code)
+                                if ($section->is_special && in_array($subject->code, ['SPA', 'SPJ'])) {
+                                    if (in_array($subject->code, $existingSpecialized)) {
+                                        return false; // Already have this specialized subject code
+                                    }
                                 }
 
                                 // Check subject constraints
@@ -956,7 +1025,7 @@ class SchedulingConfigController extends Controller
 
             // Update scheduling run status
             $schedulingRun->update([
-                'status' => 'locked',
+                'status' => 'draft',
                 'meta' => array_merge($schedulingRun->meta ?? [], [
                     'entries_created' => $entriesCreated,
                     'entries_failed' => $entriesFailed,
@@ -1057,7 +1126,7 @@ class SchedulingConfigController extends Controller
             $scheduleLevel = in_array($level, ['senior_high_sem1', 'senior_high_sem2']) ? 'senior_high' : 'junior_high';
             
             $schedulingRun = \App\Models\SchedulingRun::where('status', 'draft')
-                ->where(function ($query) {
+                ->where(function ($query) use ($level) {
                     $query->where('meta->level', $level)
                         ->orWhere('meta->schedule_level', $level);
                 })
