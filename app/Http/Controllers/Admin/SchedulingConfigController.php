@@ -957,9 +957,17 @@ class SchedulingConfigController extends Controller
 
                                 // Check subject constraints
                                 foreach ($subjectConstraints as $constraint) {
-                                    if ($constraint['subject_id'] == $subject->id) {
+                                    // Use strict integer comparison to avoid type mismatch
+                                    if (intval($constraint['subject_id']) === intval($subject->id)) {
                                         $constraintPeriods = $constraint['periods'] ?? [];
                                         if (in_array($period, $constraintPeriods)) {
+                                            Log::debug("Subject blocked by constraint", [
+                                                'subject_id' => $subject->id,
+                                                'subject_name' => $subject->name,
+                                                'subject_code' => $subject->code ?? '',
+                                                'period' => $period,
+                                                'constraint_periods' => $constraintPeriods
+                                            ]);
                                             return false; // Subject restricted for this period
                                         }
                                     }
@@ -1105,6 +1113,61 @@ class SchedulingConfigController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error getting schedule entries: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get the latest schedule (locked or draft) for a level
+     */
+    public function getLatestSchedule(Request $request)
+    {
+        try {
+            $level = $request->query('level', 'junior_high');
+            
+            // Find most recent schedule (prefer locked, then draft)
+            $schedulingRun = \App\Models\SchedulingRun::whereIn('status', ['locked', 'draft'])
+                ->where(function ($query) use ($level) {
+                    $query->whereJsonContains('meta->level', $level)
+                        ->orWhereJsonContains('meta->schedule_level', $level);
+                })
+                ->orderByRaw("CASE WHEN status = 'locked' THEN 1 WHEN status = 'draft' THEN 2 ELSE 3 END")
+                ->orderBy('created_at', 'desc')
+                ->first();
+            
+            if (!$schedulingRun) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No schedule found'
+                ]);
+            }
+            
+            $entries = \App\Models\ScheduleEntry::where('scheduling_run_id', $schedulingRun->id)
+                ->with(['section', 'subject', 'teacher'])
+                ->get()
+                ->map(function ($entry) {
+                    return [
+                        'section_id' => $entry->section_id,
+                        'day' => $entry->day,
+                        'period' => $entry->period,
+                        'subject_id' => $entry->subject_id,
+                        'teacher_id' => $entry->teacher_id,
+                    ];
+                });
+
+            return response()->json([
+                'success' => true,
+                'run_id' => $schedulingRun->id,
+                'status' => $schedulingRun->status,
+                'entries' => $entries,
+                'count' => $entries->count()
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error getting latest schedule: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error getting latest schedule: ' . $e->getMessage()
             ], 500);
         }
     }

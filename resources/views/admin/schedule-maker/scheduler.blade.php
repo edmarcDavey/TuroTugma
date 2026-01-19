@@ -770,6 +770,88 @@ document.addEventListener('DOMContentLoaded', function() {
   const sessionStatus = document.getElementById('sessionStatus');
   const exportBtn = document.getElementById('exportBtn');
   
+  // Function to load existing schedule from database
+  function loadExistingSchedule(level = 'junior_high') {
+    fetch(`{{ route('admin.schedule-maker.get-latest-schedule') }}?level=${level}`)
+      .then(response => response.json())
+      .then(data => {
+        if (data.success && data.run_id && data.entries && data.entries.length > 0) {
+          console.log(`Loading existing ${data.status} schedule, run_id=${data.run_id}, ${data.entries.length} entries`);
+          
+          // Store entries indexed by key
+          window.schedulerData.generatedSchedule = {};
+          data.entries.forEach(entry => {
+            const key = `${entry.section_id}_${entry.period}_${entry.day}`;
+            window.schedulerData.generatedSchedule[key] = {
+              subject_id: entry.subject_id,
+              teacher_id: entry.teacher_id
+            };
+          });
+          
+          // Populate UI
+          populateScheduleUI();
+          
+          // Update status display
+          sessionStatus.className = 'text-xs font-semibold px-2 py-1 bg-blue-100 text-blue-800 rounded';
+          sessionStatus.textContent = `📋 Loaded: ${data.status} schedule (${data.entries.length} entries)`;
+          
+          // Enable save button if draft
+          if (data.status === 'draft') {
+            saveScheduleBtn.disabled = false;
+          }
+        } else {
+          console.log('No existing schedule found for', level);
+        }
+      })
+      .catch(error => {
+        console.error('Error loading existing schedule:', error);
+      });
+  }
+  
+  // Function to populate schedule UI from generatedSchedule data
+  function populateScheduleUI() {
+    document.querySelectorAll('.schedule-cell').forEach(cell => {
+      const sectionRow = cell.closest('tr');
+      const sectionId = parseInt(sectionRow.dataset.sectionId);
+      const period = parseInt(cell.getAttribute('data-period'));
+      
+      // Using day 1 (Monday) for now
+      const key = `${sectionId}_${period}_1`;
+      const assignment = window.schedulerData.generatedSchedule[key];
+      
+      if (assignment && assignment.subject_id) {
+        const subjectDropdown = cell.querySelector('.subject-dropdown');
+        const teacherDropdown = cell.querySelector('.teacher-dropdown');
+        
+        if (subjectDropdown && teacherDropdown) {
+          const subject = window.schedulerData.subjects.find(s => s.id == assignment.subject_id);
+          
+          if (subject) {
+            subjectDropdown.value = assignment.subject_id;
+            styleDropdown(subjectDropdown, true);
+            
+            const teachers = subject.teachers || [];
+            teacherDropdown.innerHTML = '<option value="">Assign Teacher</option>';
+            teachers.forEach(teacher => {
+              const option = document.createElement('option');
+              option.value = teacher.id;
+              option.textContent = teacher.name;
+              teacherDropdown.appendChild(option);
+            });
+            
+            if (assignment.teacher_id) {
+              teacherDropdown.value = assignment.teacher_id;
+              styleDropdown(teacherDropdown, false);
+            }
+          }
+        }
+      }
+    });
+  }
+  
+  // Load existing schedule on page load
+  setTimeout(() => loadExistingSchedule('junior_high'), 500);
+  
   // Handle schedule level selection
   scheduleLevelSelector.addEventListener('change', function() {
     const selectedLevel = this.value;
