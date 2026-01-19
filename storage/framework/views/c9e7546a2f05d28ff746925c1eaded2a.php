@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <?php echo app('Illuminate\Foundation\Vite')(['resources/css/app.css', 'resources/js/app.js']); ?>
     <style>
       :root{--primary:#3b4197}
       .logo-font{font-family:'Poppins', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial}
@@ -53,7 +53,7 @@
           </div>
           <p class="mt-2 text-sm text-green-800">Generated schedule showing sections, time periods, subjects, and assigned teachers.</p>
           <div class="mt-4 bg-white p-4 rounded border border-green-200">
-            @if(isset($finalTimetable) && count($finalTimetable) > 0)
+            <?php if(isset($finalTimetable) && count($finalTimetable) > 0): ?>
               <?php
                 // Group entries by section
                 $sectionsByGrade = [];
@@ -112,31 +112,31 @@
                 }
               ?>
               
-              @foreach($sectionsByGrade as $grade => $sections)
+              <?php $__currentLoopData = $sectionsByGrade; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $grade => $sections): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                 <div class="mb-6">
-                  <h4 class="font-semibold text-green-800 mb-3">🎓 Grade {{ $grade }}</h4>
+                  <h4 class="font-semibold text-green-800 mb-3">🎓 Grade <?php echo e($grade); ?></h4>
                   
-                  @foreach($sections as $section => $entries)
+                  <?php $__currentLoopData = $sections; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $section => $entries): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                     <div class="mb-4 border rounded-lg p-4 bg-gray-50">
-                      <h5 class="font-medium text-slate-700 mb-3">{{ $section }}</h5>
+                      <h5 class="font-medium text-slate-700 mb-3"><?php echo e($section); ?></h5>
                       
                       <table class="w-full text-sm border-collapse">
                         <thead class="bg-gray-100">
                           <tr>
                             <th class="text-center p-2 font-bold border border-gray-300">Period</th>
                             <th class="text-center p-2 font-semibold border border-gray-300">Time</th>
-                            @foreach($days as $dayNum => $dayName)
-                              <th class="text-center p-2 font-semibold border border-gray-300">{{ $dayName }}</th>
-                            @endforeach
+                            <?php $__currentLoopData = $days; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $dayNum => $dayName): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                              <th class="text-center p-2 font-semibold border border-gray-300"><?php echo e($dayName); ?></th>
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                           </tr>
                         </thead>
                         <tbody>
-                          @foreach($periods as $periodNum => $periodInfo)
+                          <?php $__currentLoopData = $periods; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $periodNum => $periodInfo): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                             <tr class="border-b hover:bg-gray-50">
-                              <td class="p-2 font-bold text-center border border-gray-300">{{ $periodNum }}</td>
-                              <td class="p-2 text-slate-600 text-xs text-center border border-gray-300 whitespace-nowrap">{{ $periodInfo['time'] }}</td>
+                              <td class="p-2 font-bold text-center border border-gray-300"><?php echo e($periodNum); ?></td>
+                              <td class="p-2 text-slate-600 text-xs text-center border border-gray-300 whitespace-nowrap"><?php echo e($periodInfo['time']); ?></td>
                               
-                              @foreach($days as $dayNum => $dayName)
+                              <?php $__currentLoopData = $days; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $dayNum => $dayName): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                 <?php
                                   $cellEntry = null;
                                   foreach($entries as $entry) {
@@ -147,23 +147,23 @@
                                   }
                                 ?>
                                 <td class="p-2 border border-gray-300 text-center">
-                                  @if($cellEntry)
+                                  <?php if($cellEntry): ?>
                                     <div class="text-xs">
-                                      <div class="font-bold text-slate-700">{{ $cellEntry['subject'] }}</div>
-                                      <div class="text-slate-600">{{ $cellEntry['teacher'] }}</div>
+                                      <div class="font-bold text-slate-700"><?php echo e($cellEntry['subject']); ?></div>
+                                      <div class="text-slate-600"><?php echo e($cellEntry['teacher']); ?></div>
                                     </div>
-                                  @endif
+                                  <?php endif; ?>
                                 </td>
-                              @endforeach
+                              <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </tr>
-                          @endforeach
+                          <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </tbody>
                       </table>
                     </div>
-                  @endforeach
+                  <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </div>
-              @endforeach
-            @else
+              <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+            <?php else: ?>
               <div class="text-center py-6">
                 <div class="text-5xl mb-3">📅</div>
                 <p class="text-green-700 font-semibold text-lg">No Schedule Generated Yet</p>
@@ -172,7 +172,7 @@
                   Go to Scheduler →
                 </a>
               </div>
-            @endif
+            <?php endif; ?>
           </div>
 
           <div class="mt-6 flex gap-3">
@@ -310,3 +310,4 @@
     </div>
   </body>
 </html>
+<?php /**PATH C:\Users\Admin\TuroTugma\resources\views\dashboard.blade.php ENDPATH**/ ?>
