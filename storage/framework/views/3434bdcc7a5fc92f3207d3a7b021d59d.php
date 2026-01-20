@@ -1,9 +1,9 @@
-@extends('admin.layout')
 
-@section('title','Schedule Maker - Settings')
-@section('heading','Schedule Maker - Settings')
 
-@section('content')
+<?php $__env->startSection('title','Schedule Maker - Settings'); ?>
+<?php $__env->startSection('heading','Schedule Maker - Settings'); ?>
+
+<?php $__env->startSection('content'); ?>
 
 <style>
   /* Hide JH config inputs while loading from DB */
@@ -726,12 +726,12 @@
                 <option value="">-- Select --</option>
                 <option value="teacher">Specific Teacher</option>
                 <option value="all-ancillary">All Teachers with Ancillary Tasks</option>
-                @if($ancillaryRoles->count() > 0)
+                <?php if($ancillaryRoles->count() > 0): ?>
                   <option value="" disabled style="font-weight: bold; background-color: #f3f4f6;">── Ancillary Roles ──</option>
-                  @foreach($ancillaryRoles as $role)
-                    <option value="ancillary-{{ strtolower(str_replace(' ', '-', $role)) }}">&nbsp;&nbsp;{{ $role }}</option>
-                  @endforeach
-                @endif
+                  <?php $__currentLoopData = $ancillaryRoles; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $role): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <option value="ancillary-<?php echo e(strtolower(str_replace(' ', '-', $role))); ?>">&nbsp;&nbsp;<?php echo e($role); ?></option>
+                  <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                <?php endif; ?>
               </select>
             </div>
 
@@ -739,9 +739,9 @@
               <label class="block text-sm font-semibold text-slate-700 mb-2">Select Teacher</label>
               <select id="teacher-select" class="w-full border border-slate-300 rounded px-3 py-2 text-sm">
                 <option value="">-- Select Teacher --</option>
-                @foreach($teachers as $teacher)
-                  <option value="{{ $teacher->id }}">{{ $teacher->name }}</option>
-                @endforeach
+                <?php $__currentLoopData = $teachers; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $teacher): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                  <option value="<?php echo e($teacher->id); ?>"><?php echo e($teacher->name); ?></option>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
               </select>
             </div>
 
@@ -847,9 +847,9 @@
                 <input type="text" id="subject-search" class="w-full border border-slate-300 rounded px-3 py-2 text-sm" placeholder="Type to search or select a subject">
                 <select id="subject-name" class="hidden">
                   <option value="">-- Select a subject --</option>
-                  @foreach($subjects as $subject)
-                    <option value="{{ $subject->id }}" data-name="{{ $subject->name }}">{{ $subject->name }}</option>
-                  @endforeach
+                  <?php $__currentLoopData = $subjects; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $subject): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <option value="<?php echo e($subject->id); ?>" data-name="<?php echo e($subject->name); ?>"><?php echo e($subject->name); ?></option>
+                  <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </select>
                 <div id="subject-dropdown" class="hidden absolute top-full left-0 right-0 mt-1 border border-slate-300 bg-white rounded shadow-lg z-50 max-h-48 overflow-y-auto">
                 </div>
@@ -1624,7 +1624,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Load saved JH config on page load
   function loadSavedJHConfig() {
-    fetch('{{ route("admin.schedule-maker.settings.get-jh-config") }}')
+    fetch('<?php echo e(route("admin.schedule-maker.settings.get-jh-config")); ?>')
       .then(response => response.json())
       .then(data => {
         if (data.success && data.config) {
@@ -2033,7 +2033,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // Load restrictions from database on page load
   function loadFacultyRestrictionsFromDatabase() {
     console.log('Loading faculty restrictions from database...');
-    fetch('{{ route("admin.schedule-maker.settings.get-faculty-restrictions") }}')
+    fetch('<?php echo e(route("admin.schedule-maker.settings.get-faculty-restrictions")); ?>')
       .then(response => {
         console.log('Load response status:', response.status);
         return response.json();
@@ -2421,7 +2421,7 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('Saving restrictions:', restrictions);
     
     // Save to database
-    fetch('{{ route("admin.schedule-maker.settings.save-faculty-restrictions") }}', {
+    fetch('<?php echo e(route("admin.schedule-maker.settings.save-faculty-restrictions")); ?>', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -2770,7 +2770,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     console.log('Saving subject constraints:', constraints);
     
-    fetch('{{ route("admin.schedule-maker.settings.save-subject-constraints") }}', {
+    fetch('<?php echo e(route("admin.schedule-maker.settings.save-subject-constraints")); ?>', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -2796,7 +2796,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // Load constraints from database on page load
   function loadSubjectConstraintsFromDatabase() {
     console.log('Loading subject constraints from database...');
-    fetch('{{ route("admin.schedule-maker.settings.get-subject-constraints") }}')
+    fetch('<?php echo e(route("admin.schedule-maker.settings.get-subject-constraints")); ?>')
       .then(response => response.json())
       .then(data => {
         console.log('Constraints load response:', data);
@@ -2947,7 +2947,7 @@ document.addEventListener('DOMContentLoaded', function() {
     updateAutoSaveIndicator('saving', 'Saving...');
     hasUnsavedChanges = false;
 
-    fetch('{{ route("admin.schedule-maker.settings.save-jh-config") }}', {
+    fetch('<?php echo e(route("admin.schedule-maker.settings.save-jh-config")); ?>', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -3021,4 +3021,6 @@ document.addEventListener('DOMContentLoaded', function() {
   }, 30000);
 });
 </script>
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('admin.layout', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\TuroTugma\resources\views/admin/schedule-maker/settings.blade.php ENDPATH**/ ?>
