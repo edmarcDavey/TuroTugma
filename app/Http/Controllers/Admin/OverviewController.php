@@ -445,6 +445,101 @@ class OverviewController extends Controller
     }
 
     /**
+     * Get final timetable data for dashboard display.
+     * Returns formatted schedule entries with section, time, subject, and teacher.
+     */
+    private function getFinalTimetable($run)
+    {
+        if (!$run) {
+            return [];
+        }
+
+        // Get schedule entries with relationships
+        $entries = \App\Models\ScheduleEntry::where('scheduling_run_id', $run->id)
+            ->with(['section', 'subject', 'teacher'])
+            ->orderBy('day')
+            ->orderBy('period')
+            ->get();
+
+        $timetable = [];
+        $dayNames = [1 => 'Monday', 2 => 'Tuesday', 3 => 'Wednesday', 4 => 'Thursday', 5 => 'Friday'];
+
+        foreach ($entries as $entry) {
+            // Get period times from scheduling config
+            $timeRange = $this->getPeriodTimeRange($entry->period, $run);
+            
+            $timetable[] = [
+                'section' => $entry->section?->name ?? 'Unknown',
+                'day_name' => $dayNames[$entry->day] ?? "Day {$entry->day}",
+                'day' => $entry->day,
+                'period' => $entry->period,
+                'time_range' => $timeRange,
+                'subject' => $entry->subject?->name ?? 'Unknown',
+                'teacher' => $entry->teacher?->name ?? 'Unknown',
+            ];
+        }
+
+        return $timetable;
+    }
+
+    /**
+     * Get period time range based on scheduling configuration.
+     */
+    private function getPeriodTimeRange($period, $run)
+    {
+        // Try to get period times from scheduling config
+        $config = \App\Models\SchedulingConfig::find($run->meta['schedule_level'] ?? 'junior_high');
+        
+        if ($config && $config->dayConfigs) {
+            $dayConfig = $config->dayConfigs->first();
+            if ($dayConfig && $dayConfig->period_duration) {
+                $duration = $dayConfig->period_duration;
+                $startTime = 7 * 60 + 30; // 7:30 AM in minutes
+                
+                // Calculate start time for this period
+                $periodStart = $startTime + ($period - 1) * $duration;
+                
+                // Add breaks if needed (simplified logic)
+                if ($period >= 3) $periodStart += 15; // Morning break after period 2
+                if ($period >= 5) $periodStart += 60; // Lunch break after period 4
+                
+                $periodEnd = $periodStart + $duration;
+                
+                return $this->minutesToTime($periodStart) . ' - ' . $this->minutesToTime($periodEnd);
+            }
+        }
+        
+        // Fallback to default times
+        $defaultTimes = [
+            1 => '7:30 - 8:30',
+            2 => '8:30 - 9:30', 
+            3 => '9:45 - 10:45',
+            4 => '10:45 - 11:45',
+            5 => '1:00 - 2:00',
+            6 => '2:00 - 3:00',
+            7 => '3:00 - 4:00',
+            8 => '4:00 - 5:00',
+        ];
+        
+        return $defaultTimes[$period] ?? "Period {$period}";
+    }
+
+    /**
+     * Convert minutes since midnight to HH:MM format.
+     */
+    private function minutesToTime($minutes)
+    {
+        $hours = intdiv($minutes, 60);
+        $mins = $minutes % 60;
+        $period = $hours >= 12 ? 'PM' : 'AM';
+        $displayHours = $hours % 12;
+        if ($displayHours == 0) {
+            $displayHours = 12;
+        }
+        return sprintf('%d:%02d %s', $displayHours, $mins, $period);
+    }
+
+    /**
      * Return JSON data for charts / analytics.
      */
     public function data(Request $request)

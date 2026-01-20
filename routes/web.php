@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Route;
 
 // Public landing and simple pages
 Route::get('/', fn() => view('landing'));
-Route::get('/dashboard', fn() => view('dashboard'));
+Route::get('/dashboard', [\App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
 Route::get('/features', fn() => view('features'));
 Route::get('/about', fn() => view('about'));
 
@@ -249,7 +249,15 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
         Route::get('/settings/faculty-restrictions', [\App\Http\Controllers\Admin\SchedulingConfigController::class, 'getFacultyRestrictions'])->name('settings.get-faculty-restrictions');
         Route::post('/settings/subject-constraints', [\App\Http\Controllers\Admin\SchedulingConfigController::class, 'saveSubjectConstraints'])->name('settings.save-subject-constraints');
         Route::get('/settings/subject-constraints', [\App\Http\Controllers\Admin\SchedulingConfigController::class, 'getSubjectConstraints'])->name('settings.get-subject-constraints');
-        Route::get('/settings/schedule-entries', [\App\Http\Controllers\Admin\SchedulingConfigController::class, 'getScheduleEntries'])->name('settings.get-schedule-entries');        Route::get('/get-latest-schedule', [\App\Http\Controllers\Admin\SchedulingConfigController::class, 'getLatestSchedule'])->name('get-latest-schedule');        Route::post('/generate', [\App\Http\Controllers\Admin\SchedulingConfigController::class, 'generateSchedule'])->name('generate');
+        Route::get('/settings/schedule-entries', [\App\Http\Controllers\Admin\SchedulingConfigController::class, 'getScheduleEntries'])->name('settings.get-schedule-entries');
+        Route::get('/get-latest-schedule', [\App\Http\Controllers\Admin\SchedulingConfigController::class, 'getLatestSchedule'])->name('get-latest-schedule');
+        Route::post('/test-generate', function() {
+            return response()->json([
+                'success' => true,
+                'message' => 'Test endpoint working',
+                'timestamp' => now()->toDateTimeString()
+            ]);
+        })->name('test-generate');        Route::post('/generate', [\App\Http\Controllers\Admin\SchedulingConfigController::class, 'generateSchedule'])->name('generate');
         Route::post('/save', [\App\Http\Controllers\Admin\SchedulingConfigController::class, 'saveSchedule'])->name('save');
         Route::get('/drafts', [\App\Http\Controllers\Admin\SchedulingConfigController::class, 'getDrafts'])->name('get-drafts');
     });

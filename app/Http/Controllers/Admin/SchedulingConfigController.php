@@ -437,10 +437,17 @@ class SchedulingConfigController extends Controller
             $jhConfig['sessions'] = [];
         }
 
+        // Force Friday (Day 5) to always be included in active_days
+        $activeDays = $validated['active_days'] ?? [1, 2, 3, 4];
+        if (!in_array(5, $activeDays)) {
+            $activeDays[] = 5; // Always add Friday
+        }
+        sort($activeDays); // Keep days in order
+        
         $jhConfig['sessions'][$validated['session_type']] = [
             'period_duration' => $validated['period_duration'],
             'total_periods' => $validated['total_periods'],
-            'active_days' => $validated['active_days'],
+            'active_days' => $activeDays, // Use the modified active_days that always includes Friday
             'breaks' => [
                 'morning_break_enabled' => $validated['morning_break_enabled'],
                 'morning_break_after_period' => $validated['morning_break_after_period'],
@@ -484,6 +491,13 @@ class SchedulingConfigController extends Controller
         // Update DayConfig for all active days - specific to this session type
         $activeDays = $validated['active_days'] ?? [];
         $sessionType = $validated['session_type'];
+        
+        // Force Friday (Day 5) to always be included in DayConfig
+        if (!in_array(5, $activeDays)) {
+            $activeDays[] = 5;
+            Log::info('Friday (Day 5) added to DayConfig active days');
+        }
+        sort($activeDays); // Keep days in order
         
         foreach ($activeDays as $dayOfWeek) {
             \App\Models\DayConfig::updateOrCreate(
@@ -560,6 +574,11 @@ class SchedulingConfigController extends Controller
             \Log::info('All configs from DB:', $allConfigs);
             $configData = $allConfigs['sessions'][$sessionType] ?? null;
             \Log::info('Config data for session type:', ['configData' => $configData]);
+        } elseif ($level === 'senior_high') {
+            $allConfigs = json_decode($config->shs_config ?? '{}', true) ?? [];
+            \Log::info('All SHS configs from DB:', $allConfigs);
+            $configData = $allConfigs['sessions'][$sessionType] ?? null;
+            \Log::info('SHS config data for session type:', ['configData' => $configData]);
         }
 
         if (!$configData) {
@@ -788,6 +807,8 @@ class SchedulingConfigController extends Controller
     public function generateSchedule(Request $request)
     {
         try {
+            Log::info('generateSchedule called', ['request_data' => $request->all()]);
+            
             // Validate input
             $validated = $request->validate([
                 'level' => 'required|string|in:junior_high,senior_high_sem1,senior_high_sem2',
@@ -821,6 +842,15 @@ class SchedulingConfigController extends Controller
             $dayConfigs = DayConfig::where('scheduling_config_id', $config->id)->get();
             $activeDays = $dayConfigs->where('is_active', true)->pluck('day_of_week')->toArray();
             
+            // Force Friday (Day 5) to always be included in active days
+            if (!in_array(5, $activeDays)) {
+                $activeDays[] = 5;
+                Log::info('Friday (Day 5) added to active days for schedule generation');
+            }
+            sort($activeDays); // Keep days in order
+            
+            Log::info('Active days for schedule generation', ['active_days' => $activeDays]);
+            
             // Load restrictions and constraints from GENERAL config (where they are actually stored)
             $generalConfig = SchedulingConfig::where('level', 'general')->first();
             $facultyRestrictions = [];
@@ -837,7 +867,15 @@ class SchedulingConfigController extends Controller
             
             // Load break configuration from first active day
             $breakConfig = $dayConfigs->first();
-            $breaks = $breakConfig ? json_decode($breakConfig->breaks ?? '{}', true) : [];
+            $breaks = [];
+            if ($breakConfig && $breakConfig->breaks) {
+                // Check if breaks is already an array or needs to be decoded
+                if (is_string($breakConfig->breaks)) {
+                    $breaks = json_decode($breakConfig->breaks, true) ?? [];
+                } elseif (is_array($breakConfig->breaks)) {
+                    $breaks = $breakConfig->breaks;
+                }
+            }
             
             Log::info('Generation Configuration Loaded', [
                 'level' => $level,

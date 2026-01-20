@@ -458,6 +458,18 @@
                 </select>
               </div>
               
+              <!-- Day Filter -->
+              <div>
+                <label class="text-xs text-slate-600 block mb-1">Filter View by Day</label>
+                <select id="dayFilter" class="px-3 py-2 border border-slate-300 rounded text-sm">
+                  <option value="1" selected>Monday</option>
+                  <option value="2">Tuesday</option>
+                  <option value="3">Wednesday</option>
+                  <option value="4">Thursday</option>
+                  <option value="5">Friday</option>
+                </select>
+              </div>
+              
               <div class="flex-1"></div>
               
               <button id="saveScheduleBtn" class="px-4 py-2 bg-green-600 text-white rounded text-sm font-semibold hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed" disabled title="Save the generated schedule">
@@ -1122,13 +1134,15 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Function to populate schedule UI from generatedSchedule data
   function populateScheduleUI() {
+    const selectedDay = document.getElementById('dayFilter').value;
+    
     document.querySelectorAll('.schedule-cell').forEach(cell => {
       const sectionRow = cell.closest('tr');
       const sectionId = parseInt(sectionRow.dataset.sectionId);
       const period = parseInt(cell.getAttribute('data-period'));
       
-      // Using day 1 (Monday) for now
-      const key = `${sectionId}_${period}_1`;
+      // Use the selected day instead of hardcoded day 1
+      const key = `${sectionId}_${period}_${selectedDay}`;
       const assignment = window.schedulerData.generatedSchedule[key];
       
       if (assignment && assignment.subject_id) {
@@ -1163,6 +1177,12 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Load existing schedule on page load
   setTimeout(() => loadExistingSchedule('junior_high'), 500);
+  
+  // Handle day filter change
+  document.getElementById('dayFilter').addEventListener('change', function() {
+    // Reload schedule for the selected day
+    loadExistingSchedule('junior_high');
+  });
   
   // Handle schedule level selection
   scheduleLevelSelector.addEventListener('change', function() {
