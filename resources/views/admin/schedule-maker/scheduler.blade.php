@@ -458,17 +458,7 @@
                 </select>
               </div>
               
-              <!-- Day Filter -->
-              <div>
-                <label class="text-xs text-slate-600 block mb-1">Filter View by Day</label>
-                <select id="dayFilter" class="px-3 py-2 border border-slate-300 rounded text-sm">
-                  <option value="1" selected>Monday</option>
-                  <option value="2">Tuesday</option>
-                  <option value="3">Wednesday</option>
-                  <option value="4">Thursday</option>
-                  <option value="5">Friday</option>
-                </select>
-              </div>
+
               
               <div class="flex-1"></div>
               
@@ -1134,7 +1124,7 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Function to populate schedule UI from generatedSchedule data
   function populateScheduleUI() {
-    const selectedDay = document.getElementById('dayFilter').value;
+    const selectedDay = 1; // Default to Monday or handle as needed
     
     document.querySelectorAll('.schedule-cell').forEach(cell => {
       const sectionRow = cell.closest('tr');
@@ -1179,10 +1169,7 @@ document.addEventListener('DOMContentLoaded', function() {
   setTimeout(() => loadExistingSchedule('junior_high'), 500);
   
   // Handle day filter change
-  document.getElementById('dayFilter').addEventListener('change', function() {
-    // Reload schedule for the selected day
-    loadExistingSchedule('junior_high');
-  });
+
   
   // Handle schedule level selection
   scheduleLevelSelector.addEventListener('change', function() {
