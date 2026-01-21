@@ -57,6 +57,7 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::patch('/grade-levels/{gradeLevel}', [\App\Http\Controllers\Admin\GradeLevelController::class, 'update'])->name('grade-levels.update');
     Route::get('/grade-levels/{gradeLevel}/sections', [\App\Http\Controllers\Admin\SectionController::class, 'listForGrade'])->name('grade-levels.sections.index');
     Route::post('/grade-levels/{gradeLevel}/sections', [\App\Http\Controllers\Admin\SectionController::class, 'store'])->name('grade-levels.sections.store');
+        Route::post('/grade-levels/{gradeLevel}/sections/bulk-create', [\App\Http\Controllers\Admin\SectionController::class, 'bulkStore'])->name('grade-levels.sections.bulk-create');
     Route::put('/sections/{section}', [\App\Http\Controllers\Admin\SectionController::class, 'update'])->name('sections.update');
     Route::delete('/sections/{section}', [\App\Http\Controllers\Admin\SectionController::class, 'destroy'])->name('sections.destroy');
     Route::post('/grade-levels/preview', [\App\Http\Controllers\Admin\GradeLevelController::class, 'previewAnonymous'])->name('grade-levels.preview');

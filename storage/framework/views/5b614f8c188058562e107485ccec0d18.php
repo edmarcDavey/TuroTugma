@@ -1,9 +1,7 @@
-@extends('admin.layout')
+<?php $__env->startSection('title','Sections & Subjects'); ?>
+<?php $__env->startSection('heading','Sections & Subjects'); ?>
 
-@section('title','Sections & Subjects')
-@section('heading','Sections & Subjects')
-
-@section('content')
+<?php $__env->startSection('content'); ?>
 <div class="pb-16 pt-0">
     <div class="space-y-8">
 
@@ -18,14 +16,14 @@
         <div id="ss-grid" class="grid grid-cols-1 gap-8 mt-0">
         <!-- Sections panel -->
         <div id="panel-sections" class="block" role="tabpanel" aria-labelledby="tab-sections">
-                @php
+                <?php
                     // themes config
                     $allThemes = config('section_themes.themes');
                     // $hasSections should be provided by the route; fallback to DB check if not set
                     $hasSections = $hasSections ?? \App\Models\Section::exists();
-                @endphp
+                ?>
 
-                @if(!$hasSections)
+                <?php if(!$hasSections): ?>
                     <div class="space-y-6">
                         <!-- Junior High builder -->
                         <div class="border rounded p-4">
@@ -34,8 +32,8 @@
                                 <div class="text-sm text-slate-500">Grades 7 &ndash; 10</div>
                             </div>
                             <div class="space-y-3">
-                                @foreach(range(7,10) as $yr)
-                                    @php
+                                <?php $__currentLoopData = range(7,10); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $yr): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <?php
                                         $grade = $gradeLevels->firstWhere('year', $yr);
                                         $name = $grade->name ?? 'Grade '.$yr;
                                         $gid = $grade->id ?? '';
@@ -43,24 +41,24 @@
                                         // Always randomize theme, ignore any pre-set theme
                                         $themeKeys = array_keys($allThemes ?: []);
                                         $selectedThemeKey = (count($themeKeys) ? $themeKeys[array_rand($themeKeys)] : '');
-                                    @endphp
+                                    ?>
                                     <div class="grid grid-cols-1 md:grid-cols-4 gap-3 items-center py-2 border-b">
-                                        <div class="md:col-span-1 font-medium">{{ $name }}</div>
+                                        <div class="md:col-span-1 font-medium"><?php echo e($name); ?></div>
                                         <div>
-                                            <select name="theme" data-year="{{ $yr }}" data-grade-id="{{ $gid }}" class="w-full border rounded px-2 py-1">
-                                                @foreach($allThemes as $tkey => $t)
-                                                    <option value="{{ $tkey }}" data-label="{{ $t['label'] }}" {{ ($tkey === $selectedThemeKey) ? 'selected' : '' }}>{{ $t['label'] }}</option>
-                                                @endforeach
+                                            <select name="theme" data-year="<?php echo e($yr); ?>" data-grade-id="<?php echo e($gid); ?>" class="w-full border rounded px-2 py-1">
+                                                <?php $__currentLoopData = $allThemes; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $tkey => $t): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                                    <option value="<?php echo e($tkey); ?>" data-label="<?php echo e($t['label']); ?>" <?php echo e(($tkey === $selectedThemeKey) ? 'selected' : ''); ?>><?php echo e($t['label']); ?></option>
+                                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                             </select>
                                         </div>
                                         <div>
-                                            <input name="count" data-year="{{ $yr }}" data-grade-id="{{ $gid }}" type="number" min="0" class="w-full border rounded px-2 py-1" value="{{ $planned }}">
+                                            <input name="count" data-year="<?php echo e($yr); ?>" data-grade-id="<?php echo e($gid); ?>" type="number" min="0" class="w-full border rounded px-2 py-1" value="<?php echo e($planned); ?>">
                                         </div>
                                         <div class="md:col-span-4 mt-2">
-                                            <div class="preview-area" data-year="{{ $yr }}" data-grade-id="{{ $gid }}"></div>
+                                            <div class="preview-area" data-year="<?php echo e($yr); ?>" data-grade-id="<?php echo e($gid); ?>"></div>
                                         </div>
                                     </div>
-                                @endforeach
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </div>
                         </div>
 
@@ -80,7 +78,7 @@
                             <button id="save-all" type="button" class="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 w-36 text-center">Create Sections</button>
                         </div>
                     </div>
-                @else
+                <?php else: ?>
                     <div id="server-created-sections" class="space-y-6">
                         <div class="border rounded p-4 bg-white">
                             <div class="flex items-center justify-between mb-3">
@@ -88,8 +86,8 @@
                                 <div class="text-sm text-slate-500">Grades 7 &ndash; 10</div>
                             </div>
                             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                                @foreach(range(7,10) as $yr)
-                                    @php $grade = $gradeLevels->firstWhere('year',$yr); 
+                                <?php $__currentLoopData = range(7,10); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $yr): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <?php $grade = $gradeLevels->firstWhere('year',$yr); 
                                         $secs = collect();
                                         if($grade && $grade->sections){
                                             // For Junior High, put special sections first then order by ordinal
@@ -98,33 +96,33 @@
                                                 return $key;
                                             });
                                         }
-                                    @endphp
+                                    ?>
                                     <div class="border rounded p-3 bg-gray-50">
                                         <div class="flex items-center justify-between mb-2">
-                                            <div class="font-medium">Grade {{ $yr }}</div>
+                                            <div class="font-medium">Grade <?php echo e($yr); ?></div>
                                             <div class="flex items-center gap-3">
-                                                <div class="text-xs text-slate-500">{{ $secs->count() }} item(s)</div>
-                                                @if($grade && $grade->id)
-                                                    <button type="button" class="text-sm text-indigo-600 grade-edit-btn" data-grade-id="{{ $grade->id }}" data-year="{{ $yr }}">Edit</button>
-                                                @endif
+                                                <div class="text-xs text-slate-500"><?php echo e($secs->count()); ?> item(s)</div>
+                                                <?php if($grade && $grade->id): ?>
+                                                    <button type="button" class="text-sm text-indigo-600 grade-edit-btn" data-grade-id="<?php echo e($grade->id); ?>" data-year="<?php echo e($yr); ?>">Edit</button>
+                                                <?php endif; ?>
                                             </div>
                                         </div>
-                                        @if($secs->count())
+                                        <?php if($secs->count()): ?>
                                             <ul class="space-y-1">
-                                                @foreach($secs as $s)
-                                                    <li class="py-1" data-section-id="{{ $s->id }}">
+                                                <?php $__currentLoopData = $secs; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $s): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                                    <li class="py-1" data-section-id="<?php echo e($s->id); ?>">
                                                         <div class="flex items-center justify-between">
-                                                            <div class="font-medium section-name">{{ $s->name }}</div>
-                                                            <div class="text-xs text-slate-500 section-meta">{{ $s->track ?? ($s->is_special ? 'Special' : '') }}</div>
+                                                            <div class="font-medium section-name"><?php echo e($s->name); ?></div>
+                                                            <div class="text-xs text-slate-500 section-meta"><?php echo e($s->track ?? ($s->is_special ? 'Special' : '')); ?></div>
                                                         </div>
                                                     </li>
-                                                @endforeach
+                                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                             </ul>
-                                        @else
+                                        <?php else: ?>
                                             <div class="text-sm text-slate-500">No sections</div>
-                                        @endif
+                                        <?php endif; ?>
                                     </div>
-                                @endforeach
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </div>
                         </div>
 
@@ -134,36 +132,36 @@
                                 <div class="text-sm text-slate-500">Grades 11 &ndash; 12</div>
                             </div>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                @foreach(range(11,12) as $yr)
-                                    @php $grade = $gradeLevels->firstWhere('year',$yr); 
+                                <?php $__currentLoopData = range(11,12); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $yr): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <?php $grade = $gradeLevels->firstWhere('year',$yr); 
                                         $secs = collect();
                                         if($grade && $grade->sections){
                                             // For Senior High we keep ordinal ordering; SHS tracks will be shown in meta
                                             $secs = $grade->sections->sortBy('ordinal');
                                         }
-                                    @endphp
+                                    ?>
                                     <div class="border rounded p-3 bg-gray-50">
-                                        <div class="flex items-center justify-between mb-2"><div class="font-medium">Grade {{ $yr }}</div><div class="text-xs text-slate-500">{{ $secs->count() }} item(s)</div></div>
-                                        @if($secs->count())
+                                        <div class="flex items-center justify-between mb-2"><div class="font-medium">Grade <?php echo e($yr); ?></div><div class="text-xs text-slate-500"><?php echo e($secs->count()); ?> item(s)</div></div>
+                                        <?php if($secs->count()): ?>
                                             <ul class="space-y-1">
-                                                @foreach($secs as $s)
+                                                <?php $__currentLoopData = $secs; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $s): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                                     <li class="py-1">
                                                         <div class="flex items-center justify-between">
-                                                            <div class="font-medium">{{ $s->name }}</div>
-                                                            <div class="text-xs text-slate-500">{{ $s->track ?? ($s->is_special ? 'Special' : '') }}</div>
+                                                            <div class="font-medium"><?php echo e($s->name); ?></div>
+                                                            <div class="text-xs text-slate-500"><?php echo e($s->track ?? ($s->is_special ? 'Special' : '')); ?></div>
                                                         </div>
                                                     </li>
-                                                @endforeach
+                                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                             </ul>
-                                        @else
+                                        <?php else: ?>
                                             <div class="text-sm text-slate-500">No sections</div>
-                                        @endif
+                                        <?php endif; ?>
                                     </div>
-                                @endforeach
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </div>
                         </div>
                     </div>
-                @endif
+                <?php endif; ?>
         </div>
         <!-- End Sections panel -->
 
@@ -181,17 +179,17 @@
                         <option value="">All Levels</option>
                         <option value="junior-high">Junior High (Grade 7-10)</option>
                         <option value="senior-high" disabled>Senior High (Coming Soon)</option>
-                        @foreach($gradeLevels as $gl)
-                            @if(in_array($gl->name, ['Grade 11', 'Grade 12']))
-                                <option value="{{ $gl->id }}" disabled>{{ $gl->name }} (Coming Soon)</option>
-                            @endif
-                        @endforeach
+                        <?php $__currentLoopData = $gradeLevels; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $gl): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <?php if(in_array($gl->name, ['Grade 11', 'Grade 12'])): ?>
+                                <option value="<?php echo e($gl->id); ?>" disabled><?php echo e($gl->name); ?> (Coming Soon)</option>
+                            <?php endif; ?>
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                     </select>
                     <select id="filter-strand" class="px-3 py-2 border rounded text-sm opacity-50 cursor-not-allowed" disabled>
                         <option value="">All Strands</option>
-                        @foreach($strands as $st)
-                            <option value="{{ $st->id }}">{{ $st->name }}</option>
-                        @endforeach
+                        <?php $__currentLoopData = $strands; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $st): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <option value="<?php echo e($st->id); ?>"><?php echo e($st->name); ?></option>
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                     </select>
                     <select id="filter-type" class="px-3 py-2 border rounded text-sm">
                         <option value="">All Types</option>
@@ -220,37 +218,37 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-200">
-                        @forelse($subjects as $subj)
-                            <tr class="hover:bg-slate-50" data-subject-id="{{ $subj->id }}" data-grade-ids="{{ $subj->gradeLevels->pluck('id')->join(',') }}" data-strand-id="{{ $subj->strand_id ?? '' }}" data-type="{{ $subj->type }}">
-                                <td class="px-4 py-3 font-medium text-slate-900">{{ $subj->name }}</td>
-                                <td class="px-4 py-3 text-sm text-slate-600">{{ $subj->code ?? '—' }}</td>
+                        <?php $__empty_1 = true; $__currentLoopData = $subjects; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $subj): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                            <tr class="hover:bg-slate-50" data-subject-id="<?php echo e($subj->id); ?>" data-grade-ids="<?php echo e($subj->gradeLevels->pluck('id')->join(',')); ?>" data-strand-id="<?php echo e($subj->strand_id ?? ''); ?>" data-type="<?php echo e($subj->type); ?>">
+                                <td class="px-4 py-3 font-medium text-slate-900"><?php echo e($subj->name); ?></td>
+                                <td class="px-4 py-3 text-sm text-slate-600"><?php echo e($subj->code ?? '—'); ?></td>
                                 <td class="px-4 py-3 text-sm">
-                                    @if($subj->strand)
-                                        <span class="px-2 py-1 text-xs font-semibold rounded bg-purple-100 text-purple-800">{{ $subj->strand->name }}</span>
-                                    @else
+                                    <?php if($subj->strand): ?>
+                                        <span class="px-2 py-1 text-xs font-semibold rounded bg-purple-100 text-purple-800"><?php echo e($subj->strand->name); ?></span>
+                                    <?php else: ?>
                                         <span class="text-slate-500">—</span>
-                                    @endif
+                                    <?php endif; ?>
                                 </td>
                                 <td class="px-4 py-3">
-                                    @if($subj->type)
-                                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">{{ ucfirst($subj->type) }}</span>
-                                    @else
+                                    <?php if($subj->type): ?>
+                                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800"><?php echo e(ucfirst($subj->type)); ?></span>
+                                    <?php else: ?>
                                         <span class="text-slate-500">—</span>
-                                    @endif
+                                    <?php endif; ?>
                                 </td>
-                                <td class="px-4 py-3 text-sm text-slate-600">{{ $subj->hours_per_week ?? '—' }}</td>
+                                <td class="px-4 py-3 text-sm text-slate-600"><?php echo e($subj->hours_per_week ?? '—'); ?></td>
                                 <td class="px-4 py-3 text-sm">
-                                    <button class="text-blue-600 hover:text-blue-800 mr-2 btn-edit-subject" data-id="{{ $subj->id }}">Edit</button>
-                                    <button class="text-red-600 hover:text-red-800 btn-delete-subject" data-id="{{ $subj->id }}">Delete</button>
+                                    <button class="text-blue-600 hover:text-blue-800 mr-2 btn-edit-subject" data-id="<?php echo e($subj->id); ?>">Edit</button>
+                                    <button class="text-red-600 hover:text-red-800 btn-delete-subject" data-id="<?php echo e($subj->id); ?>">Delete</button>
                                 </td>
                             </tr>
-                        @empty
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                             <tr id="empty-row">
                                 <td colspan="7" class="px-4 py-8 text-center text-slate-500 italic text-sm">
                                     No subjects yet. Click "+ Add Subject" to create one.
                                 </td>
                             </tr>
-                        @endforelse
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>
@@ -277,25 +275,25 @@
                             <div class="md:col-span-2">
                                 <label class="block text-sm font-medium text-slate-700 mb-2">Grade Levels *</label>
                                 <div class="flex flex-col gap-2">
-                                    @php
+                                    <?php
                                         $juniorHighGrades = $gradeLevels->filter(function($gl) {
                                             return in_array($gl->name, ['Grade 7', 'Grade 8', 'Grade 9', 'Grade 10']);
                                         });
                                         $juniorHighIds = $juniorHighGrades->pluck('id')->toArray();
-                                    @endphp
+                                    ?>
                                     
                                     <label class="inline-flex items-center">
-                                        <input type="checkbox" id="junior-high-checkbox" data-grade-ids="{{ json_encode($juniorHighIds) }}" class="mr-2">
+                                        <input type="checkbox" id="junior-high-checkbox" data-grade-ids="<?php echo e(json_encode($juniorHighIds)); ?>" class="mr-2">
                                         <span class="text-sm">Junior High (Grade 7-10)</span>
                                     </label>
                                     
-                                    @foreach($gradeLevels->whereIn('name', ['Grade 11', 'Grade 12']) as $gl)
+                                    <?php $__currentLoopData = $gradeLevels->whereIn('name', ['Grade 11', 'Grade 12']); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $gl): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                         <label class="inline-flex items-center opacity-50 cursor-not-allowed">
-                                            <input type="checkbox" name="grade_levels[]" value="{{ $gl->id }}" class="mr-2" disabled data-shs="1">
-                                            <span class="text-sm">{{ $gl->name }}</span>
+                                            <input type="checkbox" name="grade_levels[]" value="<?php echo e($gl->id); ?>" class="mr-2" disabled data-shs="1">
+                                            <span class="text-sm"><?php echo e($gl->name); ?></span>
                                             <span class="text-xs text-amber-600 ml-1">(Coming Soon)</span>
                                         </label>
-                                    @endforeach
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                 </div>
                                 
                                 <!-- Hidden inputs for Junior High grades -->
@@ -305,9 +303,9 @@
                                 <label class="block text-sm font-medium text-slate-700 mb-1">Strand (Senior High only)</label>
                                 <select id="subject-strand" name="strand_id" class="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-[#3b4197] opacity-50 cursor-not-allowed" disabled>
                                     <option value="">None</option>
-                                    @foreach($strands as $st)
-                                        <option value="{{ $st->id }}">{{ $st->name }}</option>
-                                    @endforeach
+                                    <?php $__currentLoopData = $strands; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $st): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                        <option value="<?php echo e($st->id); ?>"><?php echo e($st->name); ?></option>
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                 </select>
                             </div>
                             <div>
@@ -352,9 +350,9 @@
         </div>
     </div>
 
-@endsection
+<?php $__env->stopSection(); ?>
 
-@section('scripts')
+<?php $__env->startSection('scripts'); ?>
 <!-- Toggle pill styles for Regular / Special -->
 <style>
     /* Tabs: underline indicator and hover state to match the provided design */
@@ -395,8 +393,8 @@
     .toggle-pill .pill-label{ font-size:0.85rem; padding:4px 8px; color:#475569; display:inline-block; position:relative; z-index:3; transition:color .12s ease, opacity .12s ease; }
 </style>
 <div id="ss-hooks" style="display:none"
-    data-preview-url="{{ route('admin.grade-levels.preview') }}"
-    data-subject-store-url="{{ route('admin.subjects.store') }}"
+    data-preview-url="<?php echo e(route('admin.grade-levels.preview')); ?>"
+    data-subject-store-url="<?php echo e(route('admin.subjects.store')); ?>"
 ></div>
 <script>
     (function(){
@@ -1779,7 +1777,8 @@
 
     })();
 </script>
-@endsection
+<?php $__env->stopSection(); ?>
 
 
     
+<?php echo $__env->make('admin.layout', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\TuroTugma\resources\views/admin/sections/subjects-sections.blade.php ENDPATH**/ ?>
