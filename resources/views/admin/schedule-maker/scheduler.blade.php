@@ -44,17 +44,17 @@
     <script>
       // Plain JavaScript only. Removed TypeScript decorators.
       window.schedulerData = {
-        subjects: @json($subjects),
-        teachers: @json($teachers),
-        periodsRegular: @json($periodsRegular),
-        periodsShortened: @json($periodsShortened),
-        sections: @json($sections),
+        subjects: JSON.parse('{!! addslashes(json_encode($subjects)) !!}'),
+        teachers: JSON.parse('{!! addslashes(json_encode($teachers)) !!}'),
+        periodsRegular: JSON.parse('{!! addslashes(json_encode($periodsRegular)) !!}'),
+        periodsShortened: JSON.parse('{!! addslashes(json_encode($periodsShortened)) !!}'),
+        sections: JSON.parse('{!! addslashes(json_encode($sections)) !!}'),
         specializedSubjectCodes: ['SPA', 'SPJ'], // Specialized subjects for special sections
         generatedSchedule: {}, // Will store: section_id_period_day -> {subject_id, teacher_id}
         // Build teacher ancillary assignments map for restriction checking
         teacherAncillaries: (function() {
           const map = {};
-          const teachers = @json($teachers);
+          const teachers = JSON.parse('{!! addslashes(json_encode($teachers)) !!}');
           teachers.forEach(teacher => {
             if (teacher.ancillary_assignments) {
               try {

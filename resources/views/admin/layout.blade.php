@@ -6,41 +6,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Admin - @yield('title', 'Dashboard')</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   </head>
   <body class="bg-white text-slate-800 min-h-screen">
     <div class="flex">
-      <aside class="w-44 p-4 border-r bg-slate-50 min-h-screen">
-        <a href="{{ route('admin.dashboard') }}" class="text-xl font-bold text-[#3b4197]">Admin</a>
-        <nav class="mt-6 space-y-3 text-base">
-          <a href="{{ route('admin.dashboard') }}" class="block text-slate-700 hover:text-[#3b4197]">Overview</a>
-          <a href="{{ route('admin.subjects-sections') }}" class="block text-slate-700 hover:text-[#3b4197]">Sections and Subjects</a>
-          <a href="{{ route('admin.teachers.index') }}" class="block text-slate-700 hover:text-[#3b4197]">Teachers</a>
-
-          <div class="mt-1">
-            <div class="text-base font-medium text-slate-700">Schedule Maker</div>
-            <nav class="ml-3 mt-1 space-y-1 text-base">
-              <a href="{{ url('/admin/schedule-maker/scheduler') }}" class="block text-slate-700 hover:text-[#3b4197]">Scheduler</a>
-              <a href="{{ url('/admin/schedule-maker/settings') }}" class="block text-slate-700 hover:text-[#3b4197]">Settings</a>
-            </nav>
-          </div>
-
-          <div class="mt-1">
-            <div class="text-base font-medium text-slate-700">Substitution Finder</div>
-            <nav class="ml-3 mt-1 space-y-1 text-base">
-              <a href="{{ url('/admin/substitution-finder/find') }}" class="block text-slate-700 hover:text-[#3b4197]">Find Substitutes</a>
-              <a href="{{ url('/admin/substitution-finder/history') }}" class="block text-slate-700 hover:text-[#3b4197]">History</a>
-            </nav>
-          </div>
-          <a href="{{ route('admin.exports') }}" class="block text-slate-700 hover:text-[#3b4197]">Exports & Analytics</a>
-          <a href="{{ route('admin.logs') }}" class="block text-slate-700 hover:text-[#3b4197]">Run History</a>
+      <aside class="w-56 px-0 pt-8 pb-6 border-r bg-slate-50 min-h-screen flex flex-col items-center">
+        <!-- Brand Text Only -->
+        <div class="mb-8">
+          <a href="{{ route('admin.dashboard') }}" class="block">
+            <span class="text-2xl font-bold text-[#3b4197] tracking-wide">TuroTugma</span>
+          </a>
+        </div>
+        <!-- Single Navigation -->
+        <nav class="w-full flex-1">
+          <ul class="space-y-4 px-6">
+            <li><a href="{{ route('admin.dashboard') }}" class="flex items-center gap-3 py-2 px-3 rounded text-base font-semibold text-[#3b4197] hover:bg-blue-50"><span class="material-icons">dashboard</span><span>Dashboard</span></a></li>
+            <li><a href="{{ route('admin.subjects-sections') }}" class="flex items-center gap-3 py-2 px-3 rounded text-base font-semibold text-[#3b4197] hover:bg-blue-50"><span class="material-icons">view_list</span><span>Sections & Subjects</span></a></li>
+            <li><a href="{{ route('admin.teachers.index') }}" class="flex items-center gap-3 py-2 px-3 rounded text-base font-semibold text-[#3b4197] hover:bg-blue-50"><span class="material-icons">people</span><span>Faculty Management</span></a></li>
+            <li><a href="{{ url('/admin/schedule-maker/scheduler') }}" class="flex items-center gap-3 py-2 px-3 rounded text-base font-semibold text-[#3b4197] hover:bg-blue-50"><span class="material-icons">calendar_today</span><span>Schedule Maker</span></a></li>
+            <li><a href="{{ url('/admin/schedule-maker/settings') }}" class="flex items-center gap-3 py-2 px-3 rounded text-base font-semibold text-[#3b4197] hover:bg-blue-50"><span class="material-icons">settings</span><span>Scheduling Configurations</span></a></li>
+            <li><a href="{{ url('/admin/substitution-finder') }}" class="flex items-center gap-3 py-2 px-3 rounded text-base font-semibold text-[#3b4197] hover:bg-blue-50"><span class="material-icons">swap_horiz</span><span>Substitution Finder</span></a></li>
+            <li><a href="{{ route('admin.exports') }}" class="flex items-center gap-3 py-2 px-3 rounded text-base font-semibold text-[#3b4197] hover:bg-blue-50"><span class="material-icons">bar_chart</span><span>Exports & Analytics</span></a></li>
+            <li><a href="{{ route('admin.logs') }}" class="flex items-center gap-3 py-2 px-3 rounded text-base font-semibold text-[#3b4197] hover:bg-blue-50"><span class="material-icons">history</span><span>Run History</span></a></li>
+          </ul>
         </nav>
-        <div class="mt-6">
-          <form method="POST" action="{{ route('logout') }}">@csrf<button class="text-base text-slate-600">Logout</button></form>
+        <div class="w-full px-6 mt-8">
+          <form method="POST" action="{{ route('logout') }}">@csrf
+            <button class="w-full flex items-center gap-3 py-2 px-3 rounded text-base font-semibold text-slate-600 hover:bg-blue-50"><span class="material-icons">logout</span><span>Logout</span></button>
+          </form>
         </div>
       </aside>
-
       <main class="flex-1 p-8">
-        <h1 class="text-2xl font-semibold mb-4">@yield('heading', 'Overview')</h1>
+        <h1 class="text-2xl font-semibold mb-4 text-[#3b4197]">@yield('heading', 'Overview')</h1>
         <div>
           @yield('content')
         </div>
