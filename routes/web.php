@@ -92,72 +92,55 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
         Route::get('/scheduler', function() {
             $subjects = \App\Models\Subject::with('teachers')->orderBy('name')->get();
             $teachers = \App\Models\Teacher::with('subjects')->orderBy('name')->get();
-            // Get Junior High sections only (grade level IDs 1-4 which are Grade 7-10)
             $sections = \App\Models\Section::with('gradeLevel')
                 ->whereIn('grade_level_id', [1, 2, 3, 4])
                 ->orderBy('grade_level_id')
                 ->orderBy('name')
                 ->get();
-            
-            // Load period configuration from DayConfig table for Junior High
+            // ...period config code unchanged...
             $jhConfig = \App\Models\SchedulingConfig::where('level', 'junior_high')->first();
-            
             if ($jhConfig) {
-                // Get DayConfigs for regular and shortened sessions
                 $regularDayConfig = \App\Models\DayConfig::where('scheduling_config_id', $jhConfig->id)
                     ->where('session_type', 'regular')
                     ->where('is_active', true)
                     ->first();
-                    
                 $shortenedDayConfig = \App\Models\DayConfig::where('scheduling_config_id', $jhConfig->id)
                     ->where('session_type', 'shortened')
                     ->where('is_active', true)
                     ->first();
-                
-                // Build periods array from DayConfig
                 $periodsRegular = [];
                 if ($regularDayConfig) {
                     $periodCount = $regularDayConfig->period_count ?? 8;
                     $startTime = $regularDayConfig->start_time ?? '07:30';
                     $duration = $regularDayConfig->period_duration ?? 50;
-                    
-                    // Decode breaks JSON if it's a string
                     $breaks = $regularDayConfig->breaks;
                     if (is_string($breaks)) {
                         $breaks = json_decode($breaks, true) ?? [];
                     } elseif (!is_array($breaks)) {
                         $breaks = [];
                     }
-                    
                     $currentTime = new \DateTime($startTime);
                     for ($i = 1; $i <= $periodCount; $i++) {
                         $endTime = clone $currentTime;
                         $endTime->modify("+{$duration} minutes");
-                        
                         $periodsRegular[] = [
                             'number' => $i,
                             'start' => $currentTime->format('H:i'),
                             'end' => $endTime->format('H:i')
                         ];
-                        
                         $currentTime = $endTime;
-                        
-                        // Add break time if configured - handle both nested and flat formats
                         if (is_array($breaks)) {
                             foreach (['morning', 'lunch', 'afternoon'] as $breakName) {
-                                // Try nested format first (morning.enabled)
                                 if (isset($breaks[$breakName])) {
                                     $breakConfig = $breaks[$breakName];
                                     $afterPeriod = $breakConfig['after_period'] ?? null;
                                     $breakDuration = $breakConfig['duration'] ?? 0;
                                     $breakEnabled = $breakConfig['enabled'] ?? false;
                                 } else {
-                                    // Fall back to flat format (morning_break_enabled)
                                     $afterPeriod = $breaks[$breakName . '_break_after_period'] ?? null;
                                     $breakDuration = $breaks[$breakName . '_break_duration'] ?? 0;
                                     $breakEnabled = $breaks[$breakName . '_break_enabled'] ?? false;
                                 }
-                                
                                 if ($breakEnabled && $afterPeriod == $i && $breakDuration > 0) {
                                     $currentTime->modify("+{$breakDuration} minutes");
                                 }
@@ -165,55 +148,43 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
                         }
                     }
                 } else {
-                    // Fallback to default 8 periods
                     for ($i = 1; $i <= 8; $i++) {
                         $periodsRegular[] = ['number' => $i, 'start' => '07:30', 'end' => '08:20'];
                     }
                 }
-                
                 $periodsShortened = [];
                 if ($shortenedDayConfig) {
                     $periodCount = $shortenedDayConfig->period_count ?? 8;
                     $startTime = $shortenedDayConfig->start_time ?? '07:30';
                     $duration = $shortenedDayConfig->period_duration ?? 40;
-                    
-                    // Decode breaks JSON if it's a string
                     $breaks = $shortenedDayConfig->breaks;
                     if (is_string($breaks)) {
                         $breaks = json_decode($breaks, true) ?? [];
                     } elseif (!is_array($breaks)) {
                         $breaks = [];
                     }
-                    
                     $currentTime = new \DateTime($startTime);
                     for ($i = 1; $i <= $periodCount; $i++) {
                         $endTime = clone $currentTime;
                         $endTime->modify("+{$duration} minutes");
-                        
                         $periodsShortened[] = [
                             'number' => $i,
                             'start' => $currentTime->format('H:i'),
                             'end' => $endTime->format('H:i')
                         ];
-                        
                         $currentTime = $endTime;
-                        
-                        // Add break time if configured - handle both nested and flat formats
                         if (is_array($breaks)) {
                             foreach (['morning', 'lunch', 'afternoon'] as $breakName) {
-                                // Try nested format first (morning.enabled)
                                 if (isset($breaks[$breakName])) {
                                     $breakConfig = $breaks[$breakName];
                                     $afterPeriod = $breakConfig['after_period'] ?? null;
                                     $breakDuration = $breakConfig['duration'] ?? 0;
                                     $breakEnabled = $breakConfig['enabled'] ?? false;
                                 } else {
-                                    // Fall back to flat format (morning_break_enabled)
                                     $afterPeriod = $breaks[$breakName . '_break_after_period'] ?? null;
                                     $breakDuration = $breaks[$breakName . '_break_duration'] ?? 0;
                                     $breakEnabled = $breaks[$breakName . '_break_enabled'] ?? false;
                                 }
-                                
                                 if ($breakEnabled && $afterPeriod == $i && $breakDuration > 0) {
                                     $currentTime->modify("+{$breakDuration} minutes");
                                 }
@@ -221,13 +192,11 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
                         }
                     }
                 } else {
-                    // Fallback to default 8 periods
                     for ($i = 1; $i <= 8; $i++) {
                         $periodsShortened[] = ['number' => $i, 'start' => '07:30', 'end' => '08:10'];
                     }
                 }
             } else {
-                // No config found, use defaults
                 $periodsRegular = [];
                 $periodsShortened = [];
                 for ($i = 1; $i <= 8; $i++) {
@@ -235,8 +204,24 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
                     $periodsShortened[] = ['number' => $i, 'start' => '07:30', 'end' => '08:10'];
                 }
             }
-            
-            return view('admin.schedule-maker.scheduler', compact('subjects', 'teachers', 'sections', 'periodsRegular', 'periodsShortened'));
+
+            // Load latest schedule entries
+            $entries = \App\Models\ScheduleEntry::with(['section','subject','teacher'])
+                ->orderByDesc('id')
+                ->get();
+
+            $generatedSchedule = [];
+            foreach ($entries as $entry) {
+                $key = "{$entry->section_id}_{$entry->period}_{$entry->day}";
+                $generatedSchedule[$key] = [
+                    'subject_id' => $entry->subject_id,
+                    'teacher_id' => $entry->teacher_id,
+                ];
+            }
+
+            // For JHS, days are 1-5 (Mon-Fri)
+            $days = [1,2,3,4,5];
+            return view('admin.schedule-maker.scheduler', compact('subjects', 'teachers', 'sections', 'periodsRegular', 'periodsShortened', 'generatedSchedule', 'days'));
         })->name('scheduler');
         Route::get('/settings', [\App\Http\Controllers\Admin\SchedulingConfigController::class, 'index'])->name('settings');
         Route::post('/settings', [\App\Http\Controllers\Admin\SchedulingConfigController::class, 'store'])->name('settings.save');
