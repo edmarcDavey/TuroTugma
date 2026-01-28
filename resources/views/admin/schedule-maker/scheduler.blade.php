@@ -1,21 +1,3 @@
-                            // DEBUG: Output full schedulerData as JSON
-                            try {
-                              console.log('DEBUG: window.schedulerData (JSON)', JSON.stringify(window.schedulerData));
-                            } catch (e) {
-                              console.log('DEBUG: window.schedulerData could not be stringified', e);
-                            }
-              // DEBUG: Output generatedSchedule keys and a sample value
-              if (window.schedulerData.generatedSchedule) {
-                const schedKeys = Object.keys(window.schedulerData.generatedSchedule);
-                console.log('DEBUG: generatedSchedule keys', schedKeys);
-                if (schedKeys.length > 0) {
-                  console.log('DEBUG: sample generatedSchedule entry', schedKeys[0], window.schedulerData.generatedSchedule[schedKeys[0]]);
-                } else {
-                  console.log('DEBUG: generatedSchedule is empty');
-                }
-              } else {
-                console.log('DEBUG: generatedSchedule is undefined');
-              }
 @extends('admin.layout')
 
 @section('title','Schedule Maker - Scheduler')
