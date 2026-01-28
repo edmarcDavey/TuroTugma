@@ -389,7 +389,7 @@
               Section Schedule
             </button>
             <button data-tab="teachers" class="tab-button flex-1 px-6 py-4 font-semibold border-b-2 border-transparent transition-colors duration-200" id="tab-teachers-btn">
-              Teachers
+              Teacher's Schedule
             </button>
             <button data-tab="conflicts" class="tab-button flex-1 px-6 py-4 font-semibold border-b-2 border-transparent transition-colors duration-200" id="tab-conflicts-btn">
               Conflicts
