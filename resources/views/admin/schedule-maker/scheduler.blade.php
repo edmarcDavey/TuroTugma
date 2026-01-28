@@ -388,10 +388,10 @@
               Master Schedule
             </button>
             <button data-tab="sections" class="tab-button flex-1 px-6 py-4 font-semibold border-b-2 border-transparent transition-colors duration-200" id="tab-sections-btn">
-              Section Schedule
+              Sections Schedule
             </button>
             <button data-tab="teachers" class="tab-button flex-1 px-6 py-4 font-semibold border-b-2 border-transparent transition-colors duration-200" id="tab-teachers-btn">
-              Teacher's Schedule
+              Teachers Schedule
             </button>
             <button data-tab="conflicts" class="tab-button flex-1 px-6 py-4 font-semibold border-b-2 border-transparent transition-colors duration-200" id="tab-conflicts-btn">
               Conflicts
