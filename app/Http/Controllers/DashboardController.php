@@ -19,7 +19,7 @@ class DashboardController extends Controller
         $lastSchedulingRun = \App\Models\SchedulingRun::orderBy('created_at', 'desc')->first();
         $finalTimetable = $this->getFinalTimetable($lastSchedulingRun);
 
-        return view('dashboard', [
+        return view('public-dashboard', [
             'finalTimetable' => $finalTimetable,
         ]);
     }

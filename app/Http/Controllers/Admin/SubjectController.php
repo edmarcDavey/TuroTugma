@@ -48,7 +48,7 @@ class SubjectController extends Controller
             'name' => 'required|string|max:255',
             'type' => 'nullable|string|max:64',
             'strand_id' => 'nullable|exists:strands,id',
-            'hours_per_week' => 'nullable|integer|min:1|max:20',
+            'hours_per_week' => 'nullable|numeric|min:0|max:20',
             'grade_levels' => 'nullable|array',
             'description' => 'nullable|string',
         ]);
@@ -81,7 +81,7 @@ class SubjectController extends Controller
             'name' => 'required|string|max:255',
             'type' => 'nullable|string|max:64',
             'strand_id' => 'nullable|exists:strands,id',
-            'hours_per_week' => 'nullable|integer|min:1|max:20',
+            'hours_per_week' => 'nullable|numeric|min:0|max:20',
             'grade_levels' => 'nullable|array',
             'description' => 'nullable|string',
         ]);

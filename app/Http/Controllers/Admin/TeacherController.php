@@ -75,9 +75,12 @@ class TeacherController extends Controller
     public function index(Request $request)
     {
         $q = trim((string)$request->input('q', ''));
-        $filterDesignation = $request->input('designation', '');
-        $filterSubject = $request->input('subject', '');
-        $filterGradeLevel = $request->input('grade_level', '');
+
+        // Always cast to array for multi-select compatibility
+        $filterDesignation = (array) $request->input('designation', []);
+        $filterStatus = (array) $request->input('status_of_appointment', []);
+        $filterSubject = (array) $request->input('subject', []);
+        $filterGradeLevel = (array) $request->input('grade_level', []);
 
         $query = Teacher::with(['subjects','gradeLevels']);
         
@@ -89,40 +92,76 @@ class TeacherController extends Controller
             });
         }
 
-        // Filter by designation
-        if ($filterDesignation !== '') {
-            $query->where('designation', $filterDesignation);
+        // Filter by designation (multi)
+        $filterDesignation = is_array($filterDesignation) ? $filterDesignation : [$filterDesignation];
+        $filterDesignation = array_filter($filterDesignation, fn($v) => $v !== '' && $v !== null);
+        if (count($filterDesignation)) {
+            $query->whereIn('designation', $filterDesignation);
         }
 
-        // Filter by subject
-        if ($filterSubject !== '') {
+        // Filter by status_of_appointment (multi)
+        $filterStatus = is_array($filterStatus) ? $filterStatus : [$filterStatus];
+        $filterStatus = array_filter($filterStatus, fn($v) => $v !== '' && $v !== null);
+        if (count($filterStatus)) {
+            $query->whereIn('status_of_appointment', $filterStatus);
+        }
+
+        // Filter by subject (multi)
+        $filterSubject = is_array($filterSubject) ? $filterSubject : [$filterSubject];
+        $filterSubject = array_filter($filterSubject, fn($v) => $v !== '' && $v !== null);
+        if (count($filterSubject)) {
             $query->whereHas('subjects', function($sq) use ($filterSubject) {
-                $sq->where('subjects.id', $filterSubject);
+                $sq->whereIn('subjects.id', $filterSubject);
             });
         }
 
-        // Filter by grade level
-        if ($filterGradeLevel !== '') {
+        // Filter by grade level (multi)
+        $filterGradeLevel = is_array($filterGradeLevel) ? $filterGradeLevel : [$filterGradeLevel];
+        $filterGradeLevel = array_filter($filterGradeLevel, fn($v) => $v !== '' && $v !== null);
+        if (count($filterGradeLevel)) {
             $query->whereHas('gradeLevels', function($gq) use ($filterGradeLevel) {
-                $gq->where('grade_levels.id', $filterGradeLevel);
+                $gq->whereIn('grade_levels.id', $filterGradeLevel);
             });
         }
 
         $teachers = $query->paginate(68)->withQueryString();
+        // Enrich teachers with workload, status, and validationIssues (same as AJAX)
+        $teachersData = $teachers->getCollection()->map(function($teacher) {
+            return [
+                'teacher' => $teacher,
+                'workload' => $this->calculateWorkload($teacher),
+                'status' => $this->getTeacherStatus($teacher),
+                'validationIssues' => $this->getTeacherValidationIssues($teacher)
+            ];
+        });
+        // Replace the paginator's collection with the enriched data for easy iteration
+        $teachersEnriched = new \Illuminate\Pagination\LengthAwarePaginator(
+            $teachersData,
+            $teachers->total(),
+            $teachers->perPage(),
+            $teachers->currentPage(),
+            [
+                'path' => $teachers->path(),
+                'query' => $teachers->getOptions()['query'] ?? []
+            ]
+        );
         $subjects = Subject::orderBy('name')->get();
         $gradeLevels = GradeLevel::orderBy('year')->get();
         $designations = config('teachers.designations', []);
+        $statuses = config('teachers.statuses', []);
         
-        return view('admin.teachers.index', compact(
-            'teachers',
-            'subjects',
-            'gradeLevels',
-            'designations',
-            'q',
-            'filterDesignation',
-            'filterSubject',
-            'filterGradeLevel'
-        ));
+        return view('admin.teachers.index', [
+            'teachers' => $teachersEnriched,
+            'subjects' => $subjects,
+            'gradeLevels' => $gradeLevels,
+            'designations' => $designations,
+            'statuses' => $statuses,
+            'q' => $q,
+            'filterDesignation' => $filterDesignation,
+            'filterStatus' => $filterStatus,
+            'filterSubject' => $filterSubject,
+            'filterGradeLevel' => $filterGradeLevel,
+        ]);
     }
 
     public function create()
@@ -222,12 +261,14 @@ class TeacherController extends Controller
     public function listFragment(Request $request)
     {
         $q = trim((string)$request->input('q', ''));
-        $filterDesignation = $request->input('designation', '');
-        $filterSubject = $request->input('subject', '');
-        $filterGradeLevel = $request->input('grade_level', '');
+        $filterDesignation = (array) $request->input('designation', []);
+        $filterStatus = (array) $request->input('status_of_appointment', []);
+        $filterSubject = (array) $request->input('subject', []);
+        $filterGradeLevel = (array) $request->input('grade_level', []);
+        $sort = $request->input('sort', 'name_asc');
 
         $query = Teacher::with(['subjects','gradeLevels']);
-        
+
         // Text search
         if ($q !== '') {
             $query->where(function($wr) use ($q) {
@@ -236,27 +277,54 @@ class TeacherController extends Controller
             });
         }
 
-        // Filter by designation
-        if ($filterDesignation !== '') {
-            $query->where('designation', $filterDesignation);
+        // Filter by designation (multi)
+        $filterDesignation = array_filter($filterDesignation, fn($v) => $v !== '' && $v !== null);
+        if (count($filterDesignation)) {
+            $query->whereIn('designation', $filterDesignation);
         }
 
-        // Filter by subject
-        if ($filterSubject !== '') {
+        // Filter by status_of_appointment (multi)
+        $filterStatus = array_filter($filterStatus, fn($v) => $v !== '' && $v !== null);
+        if (count($filterStatus)) {
+            $query->whereIn('status_of_appointment', $filterStatus);
+        }
+
+        // Filter by subject (multi)
+        $filterSubject = array_filter($filterSubject, fn($v) => $v !== '' && $v !== null);
+        if (count($filterSubject)) {
             $query->whereHas('subjects', function($sq) use ($filterSubject) {
-                $sq->where('subjects.id', $filterSubject);
+                $sq->whereIn('subjects.id', $filterSubject);
             });
         }
 
-        // Filter by grade level
-        if ($filterGradeLevel !== '') {
+        // Filter by grade level (multi)
+        $filterGradeLevel = array_filter($filterGradeLevel, fn($v) => $v !== '' && $v !== null);
+        if (count($filterGradeLevel)) {
             $query->whereHas('gradeLevels', function($gq) use ($filterGradeLevel) {
-                $gq->where('grade_levels.id', $filterGradeLevel);
+                $gq->whereIn('grade_levels.id', $filterGradeLevel);
             });
+        }
+
+        // Sorting
+        switch ($sort) {
+            case 'name_asc':
+                $query->orderBy('name', 'asc');
+                break;
+            case 'name_desc':
+                $query->orderBy('name', 'desc');
+                break;
+            case 'workload_desc':
+                // Sort by workload descending (custom sort after fetch)
+                break;
+            case 'workload_asc':
+                // Sort by workload ascending (custom sort after fetch)
+                break;
+            default:
+                $query->orderBy('name', 'asc');
         }
 
         $teachers = $query->paginate(68)->withQueryString();
-        
+
         // Enrich teachers with workload and status data
         $teachersData = $teachers->map(function($teacher) {
             return [
@@ -266,12 +334,22 @@ class TeacherController extends Controller
                 'validationIssues' => $this->getTeacherValidationIssues($teacher)
             ];
         });
-        
-        $html = view('admin.teachers._list', ['teachers' => $teachersData])->render();
-        
+
+        // Custom sort for workload if needed
+        if ($sort === 'workload_desc') {
+            $teachersData = $teachersData->sortByDesc(fn($t) => $t['workload']['current'] ?? 0)->values();
+        } elseif ($sort === 'workload_asc') {
+            $teachersData = $teachersData->sortBy(fn($t) => $t['workload']['current'] ?? 0)->values();
+        }
+
+        $html = $teachersData->isEmpty()
+            ? ''
+            : view('admin.teachers._list', ['teachers' => $teachersData])->render();
+        $count = $teachers->total();
         return response()->json([
             'html' => $html,
-            'next' => $teachers->nextPageUrl()
+            'next' => $teachers->nextPageUrl(),
+            'count' => $count
         ]);
     }
 

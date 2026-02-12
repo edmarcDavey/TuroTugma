@@ -127,6 +127,7 @@
     @if($subjectLoadBalance['senior_high'] && count($subjectLoadBalance['senior_high']['subjects']) > 0)
     <div class="mt-6">
       <h4 class="font-semibold text-green-800 border-b-2 border-green-400 pb-2 text-lg">🎓 Senior High School</h4>
+      <a href="#" class="btn btn-secondary disabled" style="pointer-events: none; opacity: 0.5;">SHS</a>
       @foreach($subjectLoadBalance['senior_high']['grades_by_year'] as $year => $gradesInYear)
       <div class="mt-4">
         <h5 class="font-semibold text-green-700 text-base bg-green-50 p-2 rounded">Grade {{ $year }}</h5>

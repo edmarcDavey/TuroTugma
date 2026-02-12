@@ -183,6 +183,7 @@
     <?php if($subjectLoadBalance['senior_high'] && count($subjectLoadBalance['senior_high']['subjects']) > 0): ?>
     <div class="mt-6">
       <h4 class="font-semibold text-green-800 border-b-2 border-green-400 pb-2 text-lg">🎓 Senior High School</h4>
+      <a href="#" class="btn btn-secondary disabled" style="pointer-events: none; opacity: 0.5;">SHS</a>
       <?php $__currentLoopData = $subjectLoadBalance['senior_high']['grades_by_year']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $year => $gradesInYear): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
       <div class="mt-4">
         <h5 class="font-semibold text-green-700 text-base bg-green-50 p-2 rounded">Grade <?php echo e($year); ?></h5>
@@ -452,4 +453,4 @@
 </div>
 <?php $__env->stopSection(); ?>
 
-<?php echo $__env->make('admin.layout', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\TuroTugma\resources\views/admin/dashboard.blade.php ENDPATH**/ ?>
+<?php echo $__env->make('admin.layout', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\TuroTugma\resources\views/admin/admin-dashboard.blade.php ENDPATH**/ ?>

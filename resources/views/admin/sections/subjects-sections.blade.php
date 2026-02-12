@@ -169,10 +169,6 @@
 
         <!-- Subjects panel -->
         <div id="panel-subjects" class="hidden bg-white border rounded p-4" role="tabpanel" aria-labelledby="tab-subjects">
-            <div class="mb-4 p-4 bg-amber-50 border-l-4 border-amber-500 text-amber-900">
-                <p class="font-semibold">⏳ Senior High Coming Soon</p>
-                <p class="text-sm mt-1">Senior High (Grade 11-12) subject management will be available in the future. Currently, only Junior High (Grade 7-10) subjects can be managed.</p>
-            </div>
 
             <!-- Filter & Action Bar -->
             <div class="mb-4 flex items-center justify-between gap-4 flex-wrap">
@@ -193,12 +189,14 @@
                             <option value="{{ $st->id }}">{{ $st->name }}</option>
                         @endforeach
                     </select>
+                    @php
+                        $types = collect($subjects)->pluck('type')->filter()->unique()->sort()->values();
+                    @endphp
                     <select id="filter-type" class="px-3 py-2 border rounded text-sm">
                         <option value="">All Types</option>
-                        <option value="core">Core</option>
-                        <option value="specialized">Specialized</option>
-                        <option value="applied">Applied</option>
-                        <option value="elective">Elective</option>
+                        @foreach($types as $type)
+                            <option value="{{ $type }}">{{ ucfirst($type) }}</option>
+                        @endforeach
                     </select>
                 </div>
                 <button id="btn-add-subject" class="px-4 py-2 bg-[#3b4197] text-white rounded font-semibold hover:bg-[#2d3273]">
@@ -238,9 +236,33 @@
                                         <span class="text-slate-500">—</span>
                                     @endif
                                 </td>
-                                <td class="px-4 py-3 text-sm text-slate-600">{{ $subj->hours_per_week ?? '—' }}</td>
+                                <td class="px-4 py-3 text-sm text-slate-600">
+                                    @if($subj->hours_per_week !== null)
+                                        @php
+                                            $hours = floor($subj->hours_per_week);
+                                            $minutes = round(($subj->hours_per_week - $hours) * 60);
+                                        @endphp
+                                        @if($hours > 0)
+                                            {{ $hours }} hr{{ $hours > 1 ? 's' : '' }}
+                                        @endif
+                                        @if($minutes > 0)
+                                            {{ $hours > 0 ? ' ' : '' }}{{ $minutes }} min{{ $minutes > 1 ? 's' : '' }}
+                                        @endif
+                                        @if($hours == 0 && $minutes == 0)
+                                            0
+                                        @endif
+                                    @else
+                                        —
+                                    @endif
+                                </td>
                                 <td class="px-4 py-3 text-sm">
-                                    <button class="text-blue-600 hover:text-blue-800 mr-2 btn-edit-subject" data-id="{{ $subj->id }}">Edit</button>
+                                    <button type="button" class="text-blue-600 hover:text-blue-800 mr-2 btn-edit-subject" 
+                                        data-id="{{ $subj->id }}"
+                                        data-name="{{ $subj->name }}"
+                                        data-code="{{ $subj->code }}"
+                                        data-type="{{ $subj->type }}"
+                                        data-hours="{{ $subj->hours_per_week }}"
+                                        >Edit</button>
                                     <button class="text-red-600 hover:text-red-800 btn-delete-subject" data-id="{{ $subj->id }}">Delete</button>
                                 </td>
                             </tr>
@@ -262,7 +284,9 @@
                         <h3 id="modal-title" class="text-lg font-semibold">Add Subject</h3>
                         <button id="close-modal" class="text-slate-400 hover:text-slate-600">&times;</button>
                     </div>
-                    <form id="subject-form" class="px-6 py-4">
+                    <form id="subject-form" class="px-6 py-4" method="POST" action="{{ route('admin.subjects.store') }}">
+                        @csrf
+                        <input type="hidden" id="_method" name="_method" value="POST">
                         <input type="hidden" id="subject-id" name="id">
                         
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -322,7 +346,11 @@
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1">Hours per Week *</label>
-                                <input type="number" id="subject-hours" name="hours_per_week" min="1" max="20" class="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-[#3b4197]" required>
+                                <div class="flex gap-2">
+                                    <input type="number" id="subject-hours" name="hours_input" min="0" max="20" step="1" class="w-1/2 px-3 py-2 border rounded focus:ring-2 focus:ring-[#3b4197]" placeholder="Hours">
+                                    <input type="number" id="subject-minutes" name="minutes_input" min="0" max="59" step="1" class="w-1/2 px-3 py-2 border rounded focus:ring-2 focus:ring-[#3b4197]" placeholder="Minutes">
+                                </div>
+                                <input type="hidden" id="subject-hours-per-week" name="hours_per_week">
                             </div>
                         </div>
                         
@@ -330,6 +358,114 @@
                             <button type="button" id="cancel-modal" class="px-4 py-2 bg-slate-200 text-slate-700 rounded hover:bg-slate-300">Cancel</button>
                             <button type="submit" class="px-4 py-2 bg-[#3b4197] text-white rounded hover:bg-[#2d3273]">Save Subject</button>
                         </div>
+                        <script>
+                        // Edit button handler: open modal in edit mode with subject data
+                        document.addEventListener('DOMContentLoaded', function() {
+                            document.querySelectorAll('.btn-edit-subject').forEach(function(btn) {
+                                btn.addEventListener('click', function() {
+                                    // Fill modal fields
+                                    document.getElementById('subject-id').value = btn.dataset.id;
+                                    document.getElementById('subject-name-input').value = btn.dataset.name || '';
+                                    document.getElementById('subject-code').value = btn.dataset.code || '';
+                                    document.getElementById('subject-type').value = btn.dataset.type || '';
+                                    // Dispatch event for hours/minutes and form action/method
+                                    var event = new CustomEvent('openSubjectModal', { detail: {
+                                        id: btn.dataset.id,
+                                        hours_per_week: btn.dataset.hours
+                                    }});
+                                    document.dispatchEvent(event);
+                                    // Show modal
+                                    document.getElementById('subject-modal').classList.remove('hidden');
+                                });
+                            });
+                        });
+                        // Helper to get update route
+                        function getUpdateRoute(id) {
+                            return '/admin/subjects/' + id;
+                        }
+                        // On form submit, convert hours and minutes to decimal and set hidden input
+                        document.addEventListener('DOMContentLoaded', function() {
+                            // Set form to create mode by default
+                            var form = document.getElementById('subject-form');
+                            if(form) {
+                                form.setAttribute('action', '{{ route('admin.subjects.store') }}');
+                                document.getElementById('_method').value = 'POST';
+                            }
+                            var form = document.getElementById('subject-form');
+                            if(form) {
+                                form.addEventListener('submit', function(e) {
+                                    e.preventDefault();
+                                    var hours = parseInt(document.getElementById('subject-hours').value) || 0;
+                                    var minutes = parseInt(document.getElementById('subject-minutes').value) || 0;
+                                    if ((isNaN(hours) || isNaN(minutes)) || (hours === 0 && minutes === 0)) {
+                                        alert('Please enter at least one non-zero value for hours or minutes.');
+                                        return false;
+                                    }
+                                    var decimal = hours + (minutes / 60);
+                                    document.getElementById('subject-hours-per-week').value = decimal > 0 ? decimal.toFixed(2) : '';
+
+                                    // AJAX submit
+                                    var formData = new FormData(form);
+                                    var url = form.getAttribute('action') || window.location.href;
+                                    var method = form.getAttribute('method') || 'POST';
+                                    fetch(url, {
+                                        method: method,
+                                        headers: {
+                                            'X-Requested-With': 'XMLHttpRequest',
+                                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                                        },
+                                        body: formData
+                                    })
+                                    .then(async function(response) {
+                                        let data;
+                                        try {
+                                            data = await response.json();
+                                        } catch (e) {
+                                            data = null;
+                                        }
+                                        if (response.ok && data && data.success) {
+                                            window.location.reload();
+                                        } else if (data && data.errors) {
+                                            let msg = '';
+                                            for (const key in data.errors) {
+                                                msg += key + ': ' + data.errors[key].join(', ') + '\n';
+                                            }
+                                            alert('Validation error:\n' + msg);
+                                        } else if (data && data.message) {
+                                            alert('Error: ' + data.message);
+                                        } else {
+                                            alert('An error occurred while saving.');
+                                        }
+                                    })
+                                    .catch(function(err) {
+                                        alert('An error occurred: ' + err);
+                                    });
+                                });
+                            }
+
+                            // Prefill hours/minutes and set form action/method when editing
+                            document.addEventListener('openSubjectModal', function(e) {
+                                var decimal = parseFloat(e.detail.hours_per_week);
+                                if (!isNaN(decimal)) {
+                                    var hours = Math.floor(decimal);
+                                    var minutes = Math.round((decimal - hours) * 60);
+                                    document.getElementById('subject-hours').value = hours;
+                                    document.getElementById('subject-minutes').value = minutes;
+                                } else {
+                                    document.getElementById('subject-hours').value = '';
+                                    document.getElementById('subject-minutes').value = '';
+                                }
+                                // If editing, set action to update and method to PUT
+                                if (e.detail && e.detail.id) {
+                                    form.setAttribute('action', getUpdateRoute(e.detail.id));
+                                    document.getElementById('_method').value = 'PUT';
+                                } else {
+                                    form.setAttribute('action', '{{ route('admin.subjects.store') }}');
+                                    document.getElementById('_method').value = 'POST';
+                                }
+                            });
+                        });
+                        </script>
                     </form>
                 </div>
             </div>
@@ -1228,7 +1364,7 @@
                                 }
                                 hideModal();
                             } else {
-                                // replace modal body with server-returned HTML (validation errors)
+                                // replace modal body with server-returned HTML (it says please enter a valid format at least values nearest toation errors)
                                 const text = await resp.text();
                                 subjectModalBody.innerHTML = text;
                             }

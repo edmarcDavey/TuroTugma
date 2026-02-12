@@ -43,7 +43,7 @@ class OverviewController extends Controller
         $teacherAvailability = $this->calculateTeacherAvailability();
         $recentActivity = $this->calculateRecentActivity();
 
-        return view('admin.dashboard', [
+        return view('admin.admin-dashboard', [
             'teachersCount' => $counts['teachers'],
             'sectionsCount' => $counts['sections'],
             'subjectsCount' => $counts['subjects'],
